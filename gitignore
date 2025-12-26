@@ -1,0 +1,63 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# API Keys (IMPORTANT - Never commit!)
+*.key
+*.pem
+credentials.json
+client_secret.json
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build
+dist/
+build/
+out/
+
+# Temporary Files
+temp/
+tmp/
+*.tmp
+
+# Testing
+coverage/
+.nyc_output/
+
+# Backup Files
+*.bak
+*.backup
+*_OLD.*
+
+# Sensitive Data (add your own)
+uploads/
+screenshots/
+customer-data/
