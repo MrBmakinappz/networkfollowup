@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | NetworkFollowUp</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo-text {
+            font-size: 32px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        .logo-accent {
+            color: #10B981;
+        }
+
+        .logo-subtitle {
+            color: #94A3B8;
+            font-size: 14px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 24px;
+            padding: 48px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 32px;
+            background: #F1F5F9;
+            padding: 4px;
+            border-radius: 12px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            color: #64748B;
+            transition: all 0.3s;
+            border: none;
+            background: transparent;
+        }
+
+        .tab.active {
+            background: white;
+            color: #10B981;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 800;
+            color: #0F172A;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #64748B;
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #1E293B;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #E2E8F0;
+            border-radius: 12px;
+            font-family: 'Manrope', sans-serif;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #10B981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        input.error {
+            border-color: #EF4444;
+        }
+
+        .error-message {
+            color: #EF4444;
+            font-size: 12px;
+            margin-top: 4px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .password-toggle {
+            position: relative;
+        }
+
+        .password-toggle button {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #64748B;
+            font-size: 18px;
+            padding: 4px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Manrope', sans-serif;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 24px 0;
+            color: #94A3B8;
+            font-size: 13px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #E2E8F0;
+        }
+
+        .divider::before {
+            margin-right: 12px;
+        }
+
+        .divider::after {
+            margin-left: 12px;
+        }
+
+        .google-btn {
+            width: 100%;
+            padding: 14px;
+            background: white;
+            border: 2px solid #E2E8F0;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-family: 'Manrope', sans-serif;
+            color: #1E293B;
+        }
+
+        .google-btn:hover {
+            border-color: #10B981;
+            background: #F0FDF4;
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin-top: -12px;
+            margin-bottom: 24px;
+        }
+
+        .forgot-password a {
+            color: #10B981;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .forgot-password a:hover {
+            text-decoration: underline;
+        }
+
+        .back-home {
+            text-align: center;
+            margin-top: 24px;
+        }
+
+        .back-home a {
+            color: #94A3B8;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-home a:hover {
+            color: #10B981;
+        }
+
+        /* Admin Secret Access */
+        .admin-access {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .admin-access.show {
+            opacity: 1;
+        }
+
+        .admin-btn {
+            background: #1E293B;
+            color: #10B981;
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: 1px solid #10B981;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Manrope', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .admin-btn:hover {
+            background: #10B981;
+            color: white;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid white;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .btn.loading .btn-text {
+            display: none;
+        }
+
+        .btn.loading .spinner {
+            display: block;
+        }
+
+        .success-message {
+            background: #D1FAE5;
+            border: 2px solid #10B981;
+            color: #065F46;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                padding: 32px 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <div class="logo-text">
+                Network<span class="logo-accent">FollowUp</span>
+            </div>
+            <div class="logo-subtitle">AI-Powered Follow-Up Automation</div>
+        </div>
+
+        <div class="card">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('login')">Login</button>
+                <button class="tab" onclick="switchTab('signup')">Sign Up</button>
+            </div>
+
+            <!-- LOGIN FORM -->
+            <div id="loginForm" class="form-section active">
+                <h2>Welcome Back!</h2>
+                <p class="subtitle">Enter your credentials to access your account</p>
+
+                <div class="success-message" id="loginSuccess"></div>
+
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="loginEmail">Email Address</label>
+                        <input 
+                            type="email" 
+                            id="loginEmail" 
+                            placeholder="you@example.com"
+                            required
+                        >
+                        <div class="error-message" id="loginEmailError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <div class="password-toggle">
+                            <input 
+                                type="password" 
+                                id="loginPassword" 
+                                placeholder="Enter your password"
+                                required
+                            >
+                            <button type="button" onclick="togglePassword('loginPassword')">👁️</button>
+                        </div>
+                        <div class="error-message" id="loginPasswordError"></div>
+                    </div>
+
+                    <div class="forgot-password">
+                        <a href="#" onclick="alert('Password reset coming soon!'); return false;">Forgot password?</a>
+                    </div>
+
+                    <button type="submit" class="btn" id="loginBtn">
+                        <span class="btn-text">Log In</span>
+                        <div class="spinner"></div>
+                    </button>
+                </form>
+
+                <div class="divider">or continue with</div>
+
+                <button class="google-btn" onclick="loginWithGoogle()">
+                    <svg width="18" height="18" viewBox="0 0 18 18">
+                        <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+                        <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+                        <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707 0-.593.102-1.17.282-1.709V4.958H.957C.347 6.173 0 7.548 0 9c0 1.452.348 2.827.957 4.042l3.007-2.335z"/>
+                        <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+                    </svg>
+                    Continue with Google
+                </button>
+            </div>
+
+            <!-- SIGNUP FORM -->
+            <div id="signupForm" class="form-section">
+                <h2>Create Account</h2>
+                <p class="subtitle">Start your 14-day free trial today</p>
+
+                <div class="success-message" id="signupSuccess"></div>
+
+                <form onsubmit="handleSignup(event)">
+                    <div class="form-group">
+                        <label for="signupName">Full Name</label>
+                        <input 
+                            type="text" 
+                            id="signupName" 
+                            placeholder="John Smith"
+                            required
+                        >
+                        <div class="error-message" id="signupNameError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="signupEmail">Email Address</label>
+                        <input 
+                            type="email" 
+                            id="signupEmail" 
+                            placeholder="you@example.com"
+                            required
+                        >
+                        <div class="error-message" id="signupEmailError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="signupPassword">Password</label>
+                        <div class="password-toggle">
+                            <input 
+                                type="password" 
+                                id="signupPassword" 
+                                placeholder="Min. 8 characters"
+                                required
+                                minlength="8"
+                            >
+                            <button type="button" onclick="togglePassword('signupPassword')">👁️</button>
+                        </div>
+                        <div class="error-message" id="signupPasswordError"></div>
+                    </div>
+
+                    <button type="submit" class="btn" id="signupBtn">
+                        <span class="btn-text">Create Account</span>
+                        <div class="spinner"></div>
+                    </button>
+                </form>
+
+                <div class="divider">or sign up with</div>
+
+                <button class="google-btn" onclick="signupWithGoogle()">
+                    <svg width="18" height="18" viewBox="0 0 18 18">
+                        <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+                        <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+                        <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707 0-.593.102-1.17.282-1.709V4.958H.957C.347 6.173 0 7.548 0 9c0 1.452.348 2.827.957 4.042l3.007-2.335z"/>
+                        <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+                    </svg>
+                    Sign up with Google
+                </button>
+            </div>
+
+            <div class="back-home">
+                <a href="index.html">← Back to home</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Secret Access (appears after 3 clicks on logo) -->
+    <div class="admin-access" id="adminAccess">
+        <button class="admin-btn" onclick="adminLogin()">🔐 Admin Access</button>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_URL = 'https://your-backend.vercel.app/api'; // Update this later
+        
+        let logoClicks = 0;
+
+        // Logo click counter for admin access
+        document.querySelector('.logo').addEventListener('click', function() {
+            logoClicks++;
+            if (logoClicks >= 3) {
+                document.getElementById('adminAccess').classList.add('show');
+            }
+        });
+
+        // Tab Switching
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.form-section').forEach(f => f.classList.remove('active'));
+            
+            if (tab === 'login') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('loginForm').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('signupForm').classList.add('active');
+            }
+        }
+
+        // Password Toggle
+        function togglePassword(fieldId) {
+            const field = document.getElementById(fieldId);
+            field.type = field.type === 'password' ? 'text' : 'password';
+        }
+
+        // Handle Login
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const btn = document.getElementById('loginBtn');
+            
+            // Clear previous errors
+            clearErrors('login');
+            
+            // Basic validation
+            if (!validateEmail(email)) {
+                showError('loginEmailError', 'Please enter a valid email address');
+                return;
+            }
+            
+            // Show loading
+            btn.classList.add('loading');
+            btn.disabled = true;
+            
+            try {
+                // TODO: Replace with actual API call
+                const response = await mockLogin(email, password);
+                
+                if (response.success) {
+                    // Save token
+                    localStorage.setItem('authToken', response.token);
+                    localStorage.setItem('userEmail', email);
+                    
+                    // Show success
+                    showSuccess('loginSuccess', 'Login successful! Redirecting...');
+                    
+                    // Redirect based on user type
+                    setTimeout(() => {
+                        if (response.isAdmin) {
+                            window.location.href = 'admin.html';
+                        } else {
+                            window.location.href = 'dashboard.html';
+                        }
+                    }, 1000);
+                } else {
+                    showError('loginPasswordError', response.message || 'Invalid credentials');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('loginPasswordError', 'An error occurred. Please try again.');
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        }
+
+        // Handle Signup
+        async function handleSignup(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+            const btn = document.getElementById('signupBtn');
+            
+            // Clear previous errors
+            clearErrors('signup');
+            
+            // Validation
+            if (name.trim().length < 2) {
+                showError('signupNameError', 'Please enter your full name');
+                return;
+            }
+            
+            if (!validateEmail(email)) {
+                showError('signupEmailError', 'Please enter a valid email address');
+                return;
+            }
+            
+            if (password.length < 8) {
+                showError('signupPasswordError', 'Password must be at least 8 characters');
+                return;
+            }
+            
+            // Show loading
+            btn.classList.add('loading');
+            btn.disabled = true;
+            
+            try {
+                // TODO: Replace with actual API call
+                const response = await mockSignup(name, email, password);
+                
+                if (response.success) {
+                    showSuccess('signupSuccess', 'Account created! Redirecting to onboarding...');
+                    
+                    // Save token
+                    localStorage.setItem('authToken', response.token);
+                    localStorage.setItem('userEmail', email);
+                    localStorage.setItem('userName', name);
+                    
+                    // Redirect to onboarding
+                    setTimeout(() => {
+                        window.location.href = 'onboarding.html';
+                    }, 1500);
+                } else {
+                    showError('signupEmailError', response.message || 'Email already registered');
+                }
+            } catch (error) {
+                console.error('Signup error:', error);
+                showError('signupEmailError', 'An error occurred. Please try again.');
+            } finally {
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        }
+
+        // Google OAuth
+        function loginWithGoogle() {
+            // TODO: Implement Google OAuth flow
+            alert('Google Sign-In will be implemented with backend!\n\nFor now, use email/password.');
+        }
+
+        function signupWithGoogle() {
+            // TODO: Implement Google OAuth flow
+            alert('Google Sign-Up will be implemented with backend!\n\nFor now, use email/password.');
+        }
+
+        // Admin Login
+        function adminLogin() {
+            const email = prompt('Admin Email:');
+            const password = prompt('Admin Password:');
+            
+            if (email && password) {
+                // TODO: Implement admin authentication
+                // For now, simple check
+                if (email === 'admin@networkfollowup.com' && password === 'admin123') {
+                    localStorage.setItem('authToken', 'admin-token-temp');
+                    localStorage.setItem('isAdmin', 'true');
+                    window.location.href = 'admin.html';
+                } else {
+                    alert('Invalid admin credentials!');
+                }
+            }
+        }
+
+        // Validation Helpers
+        function validateEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        function showError(elementId, message) {
+            const errorEl = document.getElementById(elementId);
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+            
+            // Also highlight the input
+            const input = errorEl.previousElementSibling;
+            if (input && input.tagName === 'INPUT') {
+                input.classList.add('error');
+            }
+        }
+
+        function clearErrors(formType) {
+            const prefix = formType === 'login' ? 'login' : 'signup';
+            document.querySelectorAll(`#${prefix}Form .error-message`).forEach(el => {
+                el.classList.remove('show');
+            });
+            document.querySelectorAll(`#${prefix}Form input`).forEach(el => {
+                el.classList.remove('error');
+            });
+        }
+
+        function showSuccess(elementId, message) {
+            const successEl = document.getElementById(elementId);
+            successEl.textContent = message;
+            successEl.classList.add('show');
+        }
+
+        // Mock API calls (will be replaced with real API)
+        async function mockLogin(email, password) {
+            // Simulate API delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Mock response
+            if (email === 'admin@networkfollowup.com') {
+                return {
+                    success: true,
+                    token: 'mock-admin-token',
+                    isAdmin: true
+                };
+            } else if (password.length >= 6) {
+                return {
+                    success: true,
+                    token: 'mock-user-token-' + Date.now(),
+                    isAdmin: false
+                };
+            } else {
+                return {
+                    success: false,
+                    message: 'Invalid email or password'
+                };
+            }
+        }
+
+        async function mockSignup(name, email, password) {
+            // Simulate API delay
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            // Mock response
+            return {
+                success: true,
+                token: 'mock-signup-token-' + Date.now(),
+                userId: 'user-' + Date.now()
+            };
+        }
+
+        // Check if already logged in
+        window.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('authToken');
+            const isAdmin = localStorage.getItem('isAdmin');
+            
+            if (token) {
+                // Already logged in, redirect
+                if (isAdmin === 'true') {
+                    window.location.href = 'admin.html';
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
