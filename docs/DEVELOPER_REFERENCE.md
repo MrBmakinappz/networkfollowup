@@ -1,4 +1,3 @@
-[DEVELOPER_REFERENCE.md](https://github.com/user-attachments/files/24350300/DEVELOPER_REFERENCE.md)
 # 🚀 DEVELOPER QUICK REFERENCE
 ## 3 Customer Types Implementation
 
