@@ -571,7 +571,9 @@
                 }
 
                 // Store authentication data
-                localStorage.setItem('token', data.token);
+                localStorage.setItem('authToken', data.token);
+                localStorage.setItem('userEmail', data.user.email);
+                localStorage.setItem('userName', data.user.full_name);
                 localStorage.setItem('user', JSON.stringify(data.user));
                 
                 console.log('✅ Login successful!');
@@ -669,7 +671,9 @@
                 }
 
                 // Store authentication data
-                localStorage.setItem('token', data.token);
+                localStorage.setItem('authToken', data.token);
+                localStorage.setItem('userEmail', data.user.email);
+                localStorage.setItem('userName', data.user.full_name);
                 localStorage.setItem('user', JSON.stringify(data.user));
                 
                 console.log('✅ Signup successful!');
@@ -709,12 +713,13 @@
         window.addEventListener('DOMContentLoaded', () => {
             console.log('🔍 Checking existing session...');
             
-            const token = localStorage.getItem('token');
-            const userStr = localStorage.getItem('user');
-            
-            if (token && userStr) {
-                try {
-                    const user = JSON.parse(userStr);
+            const token = localStorage.getItem('authToken');
+const userEmail = localStorage.getItem('userEmail');
+
+if (token && userEmail) {
+    try {
+        const userStr = localStorage.getItem('user');
+        const user = userStr ? JSON.parse(userStr) : { email: userEmail };
                     console.log('✅ Found existing session for:', user.email);
                     
                     // Redirect to appropriate page
