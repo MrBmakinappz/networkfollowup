@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Your Account | NetworkFollowUp</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Manrope', sans-serif;
+            background: linear-gradient(135deg, #F8FAFC 0%, #FFFFFF 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+            color: white;
+            padding: 32px;
+            text-align: center;
+        }
+        
+        .logo { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .subtitle { color: #CBD5E1; font-size: 14px; }
+        
+        .progress {
+            height: 6px;
+            background: #E2E8F0;
+            position: relative;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10B981 0%, #059669 100%);
+            transition: width 0.4s ease;
+            width: 14%;
+        }
+        
+        .body {
+            padding: 48px;
+            min-height: 500px;
+        }
+        
+        .step { display: none; }
+        .step.active { display: block; animation: fadeIn 0.3s; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .step-number {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        
+        h2 {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0F172A;
+            margin-bottom: 12px;
+        }
+        
+        .description {
+            color: #64748B;
+            margin-bottom: 32px;
+            line-height: 1.6;
+        }
+        
+        .upload-area {
+            border: 3px dashed #CBD5E1;
+            border-radius: 16px;
+            padding: 60px 40px;
+            text-align: center;
+            cursor: pointer;
+            background: #F8FAFC;
+            transition: all 0.3s;
+            margin: 24px 0;
+        }
+        
+        .upload-area:hover {
+            border-color: #10B981;
+            background: #F0FDF4;
+        }
+        
+        .upload-icon { font-size: 48px; margin-bottom: 16px; }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            color: #1E293B;
+            margin: 24px 0 8px;
+        }
+        
+        select, input, textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #E2E8F0;
+            border-radius: 12px;
+            font-family: 'Manrope', sans-serif;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+        
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: #10B981;
+        }
+        
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+        
+        .info-box {
+            background: #F0F9FF;
+            border-left: 4px solid #0EA5E9;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin: 24px 0;
+        }
+        
+        .info-title {
+            font-weight: 700;
+            color: #0C4A6E;
+            margin-bottom: 8px;
+        }
+        
+        .info-text {
+            color: #075985;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .preview {
+            display: none;
+            margin-top: 16px;
+            padding: 12px 16px;
+            background: #F0FDF4;
+            border: 2px solid #10B981;
+            border-radius: 10px;
+            color: #047857;
+            font-weight: 600;
+        }
+        
+        .preview.show { display: block; }
+        
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            padding-top: 32px;
+            border-top: 2px solid #F1F5F9;
+        }
+        
+        .btn {
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            font-family: 'Manrope', sans-serif;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+        
+        .btn-back {
+            background: #F1F5F9;
+            color: #475569;
+        }
+        
+        .btn-back:hover {
+            background: #E2E8F0;
+        }
+        
+        .btn-next {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+        }
+        
+        .btn-next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        }
+        
+        .message-card {
+            padding: 24px;
+            border: 3px solid #E2E8F0;
+            border-radius: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 16px;
+        }
+        
+        .message-card:hover {
+            border-color: #10B981;
+            background: #F0FDF4;
+        }
+        
+        .message-card.active {
+            border-color: #10B981;
+            background: linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%);
+        }
+        
+        .var-btn {
+            padding: 8px 14px;
+            background: white;
+            border: 2px solid #E2E8F0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .var-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: #10B981;
+        }
+        
+        .var-btn:active {
+            transform: translateY(0);
+        }
+        
+        @media (max-width: 768px) {
+            .body { padding: 32px 24px; }
+            h2 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">NetworkFollowUp</div>
+            <div class="subtitle">Let's set up your account - 7 quick steps</div>
+        </div>
+        
+        <div class="progress">
+            <div class="progress-fill" id="progressBar"></div>
+        </div>
+        
+        <div class="body">
+            <!-- STEP 1: Upload Screenshot -->
+            <div class="step active" id="step1">
+                <div style="text-align: center;">
+                    <div class="step-number">1</div>
+                    <h2>Upload a Template Screenshot</h2>
+                    <p class="description">Upload a sample screenshot from your doTERRA back office. This helps us understand your data format.</p>
+                </div>
+                
+                <div class="info-box">
+                    <div class="info-title">💡 What we need to see clearly:</div>
+                    <div class="info-text">
+                        <strong>Required fields in your screenshot:</strong><br>
+                        ✓ Full Name (First + Last)<br>
+                        ✓ Email Address<br>
+                        ✓ Member Type (Retail/Wholesale/Advocate)<br>
+                        ✓ Country Code (e.g., USA, DEU, ITA)
+                    </div>
+                </div>
+                
+                <div class="upload-area" onclick="document.getElementById('fileInput1').click()">
+                    <div class="upload-icon">📸</div>
+                    <div style="font-size: 16px; font-weight: 600; color: #1E293B;">Click or drag to upload screenshot</div>
+                    <div style="font-size: 13px; color: #94A3B8; margin-top: 8px;">PNG, JPG • Max 10MB</div>
+                </div>
+                <input type="file" id="fileInput1" accept="image/*" style="display: none;">
+                
+                <div class="preview" id="preview1">
+                    <span id="fileName1"></span>
+                </div>
+                
+                <label>Which MLM platform do you use? *</label>
+                <select id="platform">
+                    <option value="">Select your platform...</option>
+                    <option value="doterra">doTERRA</option>
+                </select>
+            </div>
+            
+            <!-- STEP 2: Message -->
+            <div class="step" id="step2">
+                <div style="text-align: center;">
+                    <div class="step-number">2</div>
+                    <h2>Write Your Follow-Up Messages</h2>
+                    <p class="description">Create personalized messages for each type of customer</p>
+                </div>
+                
+                <div class="info-box">
+                    <div class="info-title">📝 How This Works:</div>
+                    <div class="info-text">
+                        Create 3 different message templates - one for each customer type. The system will automatically send the right message based on their registration status in your doTERRA back office.
+                    </div>
+                </div>
+                
+                <label style="margin-top: 24px;">Select Customer Type:</label>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 32px;">
+                    <div class="message-card active" onclick="selectCustomerType('retail')" id="card-retail">
+                        <div style="font-size: 32px; margin-bottom: 12px;">🛍️</div>
+                        <div style="font-weight: 700; margin-bottom: 8px;">Retail Customers</div>
+                        <div style="font-size: 13px; color: #64748B;">Not registered yet</div>
+                    </div>
+                    <div class="message-card" onclick="selectCustomerType('wholesale')" id="card-wholesale">
+                        <div style="font-size: 32px; margin-bottom: 12px;">⭐</div>
+                        <div style="font-weight: 700; margin-bottom: 8px;">Wholesale Members</div>
+                        <div style="font-size: 13px; color: #64748B;">Registered, no LRP</div>
+                    </div>
+                    <div class="message-card" onclick="selectCustomerType('advocate')" id="card-advocate">
+                        <div style="font-size: 32px; margin-bottom: 12px;">💼</div>
+                        <div style="font-weight: 700; margin-bottom: 8px;">Wellness Advocates</div>
+                        <div style="font-size: 13px; color: #64748B;">Building the business</div>
+                    </div>
+                </div>
+                
+                <!-- Strategy box for current type -->
+                <div id="strategyBox" style="background: linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%); border: 2px solid #10B981; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                    <div style="font-weight: 700; color: #065F46; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 20px;">🎯</span>
+                        <span id="strategyTitle">Goal: Get Them to Register for 25% Discount</span>
+                    </div>
+                    <div id="strategyContent" style="color: #047857; font-size: 14px; line-height: 1.7;">
+                        <strong>Why this matters:</strong> Retail customers paid full price. Show them how registering gives them:<br>
+                        • 25% automatic discount on all products<br>
+                        • Access to wholesale pricing<br>
+                        • Save hundreds per year<br>
+                        • No monthly requirements to stay registered
+                    </div>
+                </div>
+                
+                <label>Email Subject *</label>
+                <div style="background: #F0F9FF; border: 2px solid #0EA5E9; border-radius: 10px; padding: 14px; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <span style="font-size: 16px;">💡</span>
+                        <span style="font-weight: 600; color: #0C4A6E; font-size: 14px;">Subject Line Best Practices:</span>
+                    </div>
+                    <div style="font-size: 13px; color: #075985; line-height: 1.5;">
+                        Keep it simple and clear. No spam triggers. Click suggestions below!
+                    </div>
+                </div>
+                <input type="text" id="subject" placeholder="Welcome to the doTERRA Family" value="">
+                <div id="subjectSuggestions" style="display: flex; gap: 8px; margin-top: 8px; margin-bottom: 24px; flex-wrap: wrap;">
+                    <!-- Populated by JS based on customer type -->
+                </div>
+                
+                <label>Email Message *</label>
+                <div style="background: #F8FAFC; padding: 16px; border-radius: 12px; margin-bottom: 16px; border: 2px solid #E2E8F0;">
+                    <div style="font-weight: 600; margin-bottom: 12px; color: #1E293B; font-size: 14px;">Click to insert personalization:</div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px;">
+                        <button onclick="insertVar('message', '[firstname]')" class="var-btn" style="padding: 10px 14px; background: linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%); border: 2px solid #10B981; border-radius: 8px; cursor: pointer; font-family: monospace; font-size: 13px; color: #047857; font-weight: 600; transition: all 0.2s; text-align: left;">
+                            <div style="font-size: 10px; color: #10B981; margin-bottom: 2px;">FIRST NAME</div>
+                            [firstname]
+                        </button>
+                        <button onclick="insertVar('message', '[fullname]')" class="var-btn" style="padding: 10px 14px; background: linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%); border: 2px solid #10B981; border-radius: 8px; cursor: pointer; font-family: monospace; font-size: 13px; color: #047857; font-weight: 600; transition: all 0.2s; text-align: left;">
+                            <div style="font-size: 10px; color: #10B981; margin-bottom: 2px;">FULL NAME</div>
+                            [fullname]
+                        </button>
+                        <button onclick="insertVar('message', '[email]')" class="var-btn" style="padding: 10px 14px; background: linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%); border: 2px solid #10B981; border-radius: 8px; cursor: pointer; font-family: monospace; font-size: 13px; color: #047857; font-weight: 600; transition: all 0.2s; text-align: left;">
+                            <div style="font-size: 10px; color: #10B981; margin-bottom: 2px;">EMAIL</div>
+                            [email]
+                        </button>
+                        <button onclick="insertVar('message', '[country]')" class="var-btn" style="padding: 10px 14px; background: linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%); border: 2px solid #10B981; border-radius: 8px; cursor: pointer; font-family: monospace; font-size: 13px; color: #047857; font-weight: 600; transition: all 0.2s; text-align: left;">
+                            <div style="font-size: 10px; color: #10B981; margin-bottom: 2px;">COUNTRY</div>
+                            [country]
+                        </button>
+                        <button onclick="insertVar('message', '[your-name]')" class="var-btn" style="padding: 10px 14px; background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%); border: 2px solid #0EA5E9; border-radius: 8px; cursor: pointer; font-family: monospace; font-size: 13px; color: #0369A1; font-weight: 600; transition: all 0.2s; text-align: left;">
+                            <div style="font-size: 10px; color: #0EA5E9; margin-bottom: 2px;">YOUR NAME</div>
+                            [your-name]
+                        </button>
+                        <button onclick="insertVar('message', '[your-phone]')" class="var-btn" style="padding: 10px 14px; background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%); border: 2px solid #0EA5E9; border-radius: 8px; cursor: pointer; font-family: monospace; font-size: 13px; color: #0369A1; font-weight: 600; transition: all 0.2s; text-align: left;">
+                            <div style="font-size: 10px; color: #0EA5E9; margin-bottom: 2px;">YOUR PHONE</div>
+                            [your-phone]
+                        </button>
+                    </div>
+                    <div style="margin-top: 12px; font-size: 12px; color: #64748B; display: flex; gap: 16px;">
+                        <span><span style="display: inline-block; width: 8px; height: 8px; background: #10B981; border-radius: 50%; margin-right: 4px;"></span>Customer Info</span>
+                        <span><span style="display: inline-block; width: 8px; height: 8px; background: #0EA5E9; border-radius: 50%; margin-right: 4px;"></span>Your Info</span>
+                    </div>
+                </div>
+                
+                <textarea id="message" placeholder="Message template will load here..." style="font-family: 'Manrope', sans-serif; line-height: 1.6;"></textarea>
+                
+                <div id="templateButtons" style="display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap;">
+                    <!-- Populated by JS based on customer type -->
+                </div>
+                
+                <div style="background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 16px; border-radius: 8px; margin-top: 24px;">
+                    <div style="font-weight: 600; color: #92400E; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                        <span>💡</span> Pro Tips:
+                    </div>
+                    <ul id="proTips" style="color: #78350F; font-size: 13px; line-height: 1.8; margin-left: 20px;">
+                        <!-- Populated by JS based on customer type -->
+                    </ul>
+                </div>
+                
+                <button class="btn btn-next" onclick="saveMessage()" style="width: 100%; margin-top: 24px;">
+                    💾 Save This Message Template
+                </button>
+                <div class="preview" id="messageSaved" style="margin-top: 16px;"></div>
+                
+                <div style="background: #F0F9FF; border: 2px solid #0EA5E9; padding: 16px; border-radius: 10px; margin-top: 24px;">
+                    <div style="font-weight: 600; color: #0C4A6E; margin-bottom: 8px;">📊 Progress Tracker:</div>
+                    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                        <span id="status-retail" style="padding: 6px 12px; background: #FEE2E2; color: #DC2626; border-radius: 6px; font-size: 13px; font-weight: 600;">🛍️ Retail: Not Saved</span>
+                        <span id="status-wholesale" style="padding: 6px 12px; background: #FEE2E2; color: #DC2626; border-radius: 6px; font-size: 13px; font-weight: 600;">⭐ Wholesale: Not Saved</span>
+                        <span id="status-advocate" style="padding: 6px 12px; background: #FEE2E2; color: #DC2626; border-radius: 6px; font-size: 13px; font-weight: 600;">💼 Advocate: Not Saved</span>
+                    </div>
+                    <div style="margin-top: 12px; font-size: 12px; color: #075985;">
+                        You need to save all 3 message types before continuing to the next step.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- STEP 3: Profile -->
+            <div class="step" id="step3">
+                <div style="text-align: center;">
+                    <div class="step-number">3</div>
+                    <h2>Your Profile Information</h2>
+                    <p class="description">This information will be used in email signatures</p>
+                </div>
+                
+                <label>Your Full Name *</label>
+                <input type="text" id="userName" placeholder="e.g., John Smith">
+                
+                <label>Your Phone Number</label>
+                <input type="text" id="userPhone" placeholder="e.g., +1 555 123 4567">
+                
+                <label>Your Website (optional)</label>
+                <input type="url" id="userWebsite" placeholder="e.g., https://mysite.com">
+            </div>
+            
+            <!-- STEP 4: Complete -->
+            <div class="step" id="step4">
+                <div style="text-align: center;">
+                    <div class="step-number">🎉</div>
+                    <h2>Setup Complete!</h2>
+                    <p class="description">You're ready to start following up with customers</p>
+                </div>
+                
+                <div class="info-box" style="background: #F0FDF4; border-color: #10B981;">
+                    <div class="info-title" style="color: #065F46;">✓ Your NetworkFollowUp Account is Ready!</div>
+                    <div class="info-text" style="color: #047857;">
+                        Platform: <strong id="summaryPlatform"></strong><br>
+                        Message saved: <strong id="summarySubject"></strong><br>
+                        Name: <strong id="summaryName"></strong>
+                    </div>
+                </div>
+                
+                <button class="btn btn-next" onclick="goToDashboard()" style="width: 100%; margin-top: 24px;">
+                    Go to Dashboard →
+                </button>
+            </div>
+            
+            <div class="actions">
+                <button class="btn btn-back" id="backBtn" onclick="previousStep()" style="display: none;">← Back</button>
+                <div></div>
+                <button class="btn btn-next" id="nextBtn" onclick="nextStep()">Next Step →</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 4;
+        let data = {
+            file: null,
+            platform: '',
+            subject: '',
+            message: '',
+            name: '',
+            phone: '',
+            website: ''
+        };
+
+        console.log('[NFU] Script loaded');
+
+        let currentCustomerType = 'retail';
+        let savedMessages = {
+            retail: { subject: '', message: '', saved: false },
+            wholesale: { subject: '', message: '', saved: false },
+            advocate: { subject: '', message: '', saved: false }
+        };
+
+        // Customer type strategies
+        const strategies = {
+            retail: {
+                title: 'Goal: Get Them to Register for 25% Discount',
+                content: `<strong>Why this matters:</strong> Retail customers paid full price. Show them how registering gives them:<br>
+                • 25% automatic discount on all products<br>
+                • Access to wholesale pricing forever<br>
+                • Save hundreds of dollars per year<br>
+                • No monthly purchase requirements<br>
+                • One-time $35 enrollment fee pays for itself immediately`
+            },
+            wholesale: {
+                title: 'Goal: Set Up LRP (Loyalty Rewards Program)',
+                content: `<strong>Why this matters:</strong> LRP members get incredible rewards:<br>
+                • Earn up to 30% back in product credits (points)<br>
+                • Free Product of the Month<br>
+                • Free shipping on LRP orders<br>
+                • Points accumulate and never expire<br>
+                • Redeem points for free products anytime`
+            },
+            advocate: {
+                title: 'Goal: Book Strategy Call & Scale Their Business',
+                content: `<strong>Why this matters:</strong> Help them grow their doTERRA business:<br>
+                • Personalized marketing plan<br>
+                • Team duplication strategies<br>
+                • Social media & content ideas<br>
+                • Rank advancement roadmap<br>
+                • 1-on-1 coaching and accountability`
+            }
+        };
+
+        // Subject suggestions per type
+        const subjectSuggestions = {
+            retail: [
+                "Save 25% on All Your doTERRA Products",
+                "Your Special Wholesale Pricing Access",
+                "Start Saving Today with doTERRA"
+            ],
+            wholesale: [
+                "Unlock Free Products with LRP",
+                "Start Earning Rewards on Every Order",
+                "Your LRP Benefits Are Waiting"
+            ],
+            advocate: [
+                "Let's Grow Your doTERRA Business",
+                "Ready to Take Your Business to the Next Level?",
+                "Book Your Free Strategy Session"
+            ]
+        };
+
+        // Message templates
+        const templates = {
+            retail: {
+                1: `Hi [firstname],
+
+I noticed you recently purchased doTERRA products at retail price. I wanted to reach out personally because there's an amazing opportunity I think you'll love!
+
+Did you know you can get 25% OFF all your doTERRA products by becoming a Wholesale Customer? 
+
+Here's what you get:
+✓ Automatic 25% discount on everything
+✓ Wholesale pricing for life
+✓ Save hundreds per year
+✓ No monthly purchase requirements
+✓ Just a one-time $35 enrollment (pays for itself immediately!)
+
+I'd love to help you get set up. Would you like me to walk you through the simple registration process?
+
+Reply to this email or text me at [your-phone] anytime!
+
+Best,
+[your-name]
+Your doTERRA Wellness Advocate`,
+                2: `Hey [firstname]!
+
+Quick question - are you enjoying your doTERRA products? 
+
+I wanted to let you in on something that could save you A LOT of money. Right now, you're paying retail prices, but you could be getting 25% OFF every single order!
+
+All you need to do is register as a Wholesale Customer (one-time $35 fee) and you'll have wholesale pricing forever. No obligations, no monthly orders required.
+
+Most people save the $35 enrollment fee on their very first order!
+
+Want me to help you set it up? It takes 5 minutes.
+
+Text me: [your-phone]
+
+Cheers,
+[your-name]`,
+                3: `Hi [firstname],
+
+Welcome to the doTERRA family! 🎉
+
+I'm [your-name], and I'm here to help you get the most out of your wellness journey.
+
+Here's something important: You paid retail price for your order, but you can unlock 25% OFF on all future purchases by registering as a Wholesale Customer.
+
+The benefits:
+• 25% automatic discount
+• Access to exclusive products
+• Member-only promotions
+• No monthly requirements
+
+One-time $35 fee, lifetime savings. Most members save $50+ on their next order alone.
+
+Interested? Reply or call me at [your-phone].
+
+Best wishes,
+[your-name]`
+            },
+            wholesale: {
+                1: `Hi [firstname],
+
+Congrats on being a Wholesale Member! You're already saving 25% - that's awesome! 👏
+
+But I wanted to share something that could take your savings even further: the LRP (Loyalty Rewards Program).
+
+Here's what you're missing out on:
+✓ Earn up to 30% back in FREE product credits
+✓ Get a free Product of the Month
+✓ Free shipping on your monthly order
+✓ Points stack up and NEVER expire
+✓ Redeem points for products anytime
+
+It's basically like getting paid to buy the products you already love!
+
+The best part? You control everything - pause or cancel anytime, change products each month, skip months when needed.
+
+Want me to help you set it up? Takes just 5 minutes and you'll start earning points immediately.
+
+Reply or text: [your-phone]
+
+Let's maximize those benefits!
+
+[your-name]`,
+                2: `Hey [firstname]!
+
+Quick question: Are you on LRP yet?
+
+If not, you're leaving FREE PRODUCTS on the table! 🎁
+
+LRP members earn up to 30% back in product points every month. Those points turn into free doTERRA products - oils, supplements, skincare, whatever you want!
+
+Plus you get:
+• Free Product of the Month
+• Free shipping
+• Exclusive member perks
+• Points that never expire
+
+Most LRP members rack up enough points for $100-300 in free products within the first year!
+
+Setting it up takes 5 minutes. Want me to walk you through it?
+
+Text me: [your-phone]
+
+Talk soon!
+[your-name]`,
+                3: `Hi [firstname],
+
+Hope you're loving your doTERRA products! 
+
+I'm reaching out because I noticed you're not on LRP yet, and I think you'd really benefit from it.
+
+LRP (Loyalty Rewards Program) is doTERRA's monthly subscription where you earn points on every purchase - up to 30% back! Those points = FREE products.
+
+Here's the math:
+• $100 monthly LRP order = 30 points ($30 value)
+• Do that for 6 months = 180 points ($180 in FREE products!)
+• Plus free shipping every month
+• Plus free Product of the Month
+
+It's the smartest way to buy products you're already using anyway.
+
+Interested? Let's chat!
+
+[your-phone]
+
+Warmly,
+[your-name]`
+            },
+            advocate: {
+                1: `Hi [firstname],
+
+It's so great to have you as part of my doTERRA team! 💼
+
+I wanted to personally reach out and see how your business is going. Are you hitting the goals you set for yourself?
+
+I've helped dozens of Wellness Advocates grow their businesses, and I'd love to offer you a free 1-on-1 strategy session where we can:
+
+✓ Review your current marketing approach
+✓ Create a personalized growth plan
+✓ Discuss team duplication strategies
+✓ Plan your path to your next rank advancement
+✓ Answer any questions you have
+
+Whether you're just getting started or ready to scale to the next level, I'm here to support you!
+
+Want to book a 30-minute call this week?
+
+Text me your availability: [your-phone]
+
+Let's build this together!
+
+[your-name]`,
+                2: `Hey [firstname]!
+
+How's your doTERRA business going? Feeling stuck or ready to level up? 🚀
+
+I wanted to offer you something valuable: a free strategy session specifically for Wellness Advocates who want to grow faster.
+
+We'll cover:
+• What's working in your business (and what isn't)
+• Low-hanging fruit opportunities you might be missing
+• Social media content strategies that convert
+• How to build a team that duplicates
+• Your personalized roadmap to rank advancement
+
+I've helped builders go from struggling to hit 100 PV to building 6-figure businesses. The key is having the right strategy and support.
+
+No pressure, no pitch - just real, actionable advice to help you succeed.
+
+Interested? Let's chat this week.
+
+[your-phone]
+
+Ready when you are!
+[your-name]`,
+                3: `Hi [firstname],
+
+Congrats on building your doTERRA business! 🎉
+
+I love seeing Wellness Advocates take action, and I want to help you accelerate your growth.
+
+Let's jump on a quick call to discuss:
+• Your goals for the next 90 days
+• Marketing strategies that are working RIGHT NOW
+• How to recruit and support your team effectively
+• The fastest path to your next rank
+
+I've created a simple framework that's helped my team members consistently hit new ranks, and I'd love to share it with you - no cost, no strings attached.
+
+This is what I wish someone had offered me when I started!
+
+Book a time that works for you - reply or text:
+[your-phone]
+
+Excited to support your success!
+
+[your-name]`
+            }
+        };
+
+        // Pro tips per type
+        const proTips = {
+            retail: [
+                'Lead with the benefit (25% savings) not the process',
+                'Make the math clear - show them actual dollar savings',
+                'Emphasize "no obligations" to reduce hesitation',
+                'Offer to help them register (remove friction)'
+            ],
+            wholesale: [
+                'Focus on "free products" not "points" - more tangible',
+                'Show the math - make it concrete and exciting',
+                'Emphasize flexibility (pause, skip, cancel anytime)',
+                'Mention the free Product of the Month as a bonus'
+            ],
+            advocate: [
+                'Offer value first (free strategy call) before asking anything',
+                'Be specific about what you\'ll cover in the call',
+                'Share brief success stories to build credibility',
+                'Make scheduling easy - text is lower friction than email'
+            ]
+        };
+
+        // Select customer type function
+        function selectCustomerType(type) {
+            console.log('[NFU] Switching to customer type:', type);
+            
+            // Save current message before switching
+            if (currentCustomerType) {
+                savedMessages[currentCustomerType].subject = document.getElementById('subject').value;
+                savedMessages[currentCustomerType].message = document.getElementById('message').value;
+            }
+            
+            currentCustomerType = type;
+            
+            // Update card UI
+            document.querySelectorAll('.message-card').forEach(card => card.classList.remove('active'));
+            document.getElementById(`card-${type}`).classList.add('active');
+            
+            // Update strategy box
+            document.getElementById('strategyTitle').textContent = strategies[type].title;
+            document.getElementById('strategyContent').innerHTML = strategies[type].content;
+            
+            // Update subject suggestions
+            const suggestionsHTML = subjectSuggestions[type].map(subject => 
+                `<button onclick="setSubject('${subject.replace(/'/g, "\\'")}')" style="padding: 6px 12px; background: #F0F9FF; border: 1px solid #0EA5E9; border-radius: 6px; cursor: pointer; font-size: 12px; color: #0369A1; transition: all 0.2s;">✨ Use this</button>`
+            ).join('');
+            document.getElementById('subjectSuggestions').innerHTML = suggestionsHTML;
+            
+            // Update template buttons
+            const templatesHTML = [1, 2, 3].map(num => 
+                `<button onclick="useTemplate(${num})" style="flex: 1; min-width: 150px; padding: 10px; background: white; border: 2px solid #E2E8F0; border-radius: 8px; cursor: pointer; text-align: left; transition: all 0.2s;">
+                    <div style="font-weight: 600; color: #1E293B; margin-bottom: 4px; font-size: 13px;">📝 Template ${num}</div>
+                    <div style="font-size: 11px; color: #64748B;">${num === 1 ? 'Detailed & Value-focused' : num === 2 ? 'Friendly & Conversational' : 'Brief & Action-oriented'}</div>
+                </button>`
+            ).join('');
+            document.getElementById('templateButtons').innerHTML = templatesHTML;
+            
+            // Update pro tips
+            const tipsHTML = proTips[type].map(tip => `<li>${tip}</li>`).join('');
+            document.getElementById('proTips').innerHTML = tipsHTML;
+            
+            // Load saved message for this type
+            document.getElementById('subject').value = savedMessages[type].subject;
+            document.getElementById('message').value = savedMessages[type].message;
+            
+            // Update status indicators
+            updateStatusIndicators();
+        }
+
+        function updateStatusIndicators() {
+            ['retail', 'wholesale', 'advocate'].forEach(type => {
+                const indicator = document.getElementById(`status-${type}`);
+                if (savedMessages[type].saved) {
+                    indicator.style.background = '#D1FAE5';
+                    indicator.style.color = '#065F46';
+                    indicator.textContent = indicator.textContent.split(':')[0] + ': ✓ Saved';
+                } else {
+                    indicator.style.background = '#FEE2E2';
+                    indicator.style.color = '#DC2626';
+                    indicator.textContent = indicator.textContent.split(':')[0] + ': Not Saved';
+                }
+            });
+        }
+
+        function useTemplate(num) {
+            const template = templates[currentCustomerType][num];
+            document.getElementById('message').value = template;
+            console.log('[NFU] Loaded template', num, 'for', currentCustomerType);
+            
+            // Visual feedback
+            const preview = document.getElementById('messageSaved');
+            preview.textContent = '✓ Template loaded! Edit it to make it yours.';
+            preview.style.background = '#EFF6FF';
+            preview.style.color = '#0369A1';
+            preview.classList.add('show');
+            setTimeout(() => preview.classList.remove('show'), 3000);
+        }
+
+        function setSubject(text) {
+            document.getElementById('subject').value = text;
+            console.log('[NFU] Subject set:', text);
+            
+            // Visual feedback
+            const input = document.getElementById('subject');
+            input.style.borderColor = '#10B981';
+            setTimeout(() => input.style.borderColor = '#E2E8F0', 1000);
+        }
+
+        // Insert variable function
+        function insertVar(fieldId, variable) {
+            const field = document.getElementById(fieldId);
+            const cursorPos = field.selectionStart;
+            const textBefore = field.value.substring(0, cursorPos);
+            const textAfter = field.value.substring(cursorPos);
+            
+            field.value = textBefore + variable + textAfter;
+            
+            // Set cursor position after inserted variable
+            const newPos = cursorPos + variable.length;
+            field.selectionStart = newPos;
+            field.selectionEnd = newPos;
+            field.focus();
+            
+            console.log('[NFU] Inserted variable:', variable, 'into', fieldId);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            selectCustomerType('retail'); // Start with retail
+        });
+
+        // File upload
+        document.getElementById('fileInput1').addEventListener('change', function(e) {
+            console.log('[NFU] File change event');
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                console.log('[NFU] File selected:', file.name);
+                data.file = file;
+                document.getElementById('fileName1').textContent = '✓ ' + file.name;
+                document.getElementById('preview1').classList.add('show');
+            }
+        });
+
+        function nextStep() {
+            console.log('[NFU] nextStep called, current:', currentStep);
+            
+            if (!validate()) return;
+            
+            saveStep();
+            
+            if (currentStep < totalSteps) {
+                document.getElementById('step' + currentStep).classList.remove('active');
+                currentStep++;
+                document.getElementById('step' + currentStep).classList.add('active');
+                updateUI();
+                console.log('[NFU] Moved to step:', currentStep);
+                
+                if (currentStep === 4) {
+                    showSummary();
+                }
+            }
+        }
+
+        function previousStep() {
+            if (currentStep > 1) {
+                document.getElementById('step' + currentStep).classList.remove('active');
+                currentStep--;
+                document.getElementById('step' + currentStep).classList.add('active');
+                updateUI();
+            }
+        }
+
+        function validate() {
+            console.log('[NFU] Validating step:', currentStep);
+            
+            if (currentStep === 1) {
+                if (!data.file) {
+                    alert('Please upload a screenshot!');
+                    console.log('[NFU] Validation failed: no file');
+                    return false;
+                }
+                if (!document.getElementById('platform').value) {
+                    alert('Please select doTERRA!');
+                    console.log('[NFU] Validation failed: no platform');
+                    return false;
+                }
+            }
+            
+            if (currentStep === 2) {
+                // Check if all 3 customer types have been saved
+                if (!savedMessages.retail.saved || !savedMessages.wholesale.saved || !savedMessages.advocate.saved) {
+                    alert('Please save messages for all 3 customer types (Retail, Wholesale, and Wellness Advocate) before continuing!');
+                    console.log('[NFU] Validation failed: not all message types saved');
+                    return false;
+                }
+            }
+            
+            if (currentStep === 3) {
+                if (!document.getElementById('userName').value.trim()) {
+                    alert('Please enter your name!');
+                    console.log('[NFU] Validation failed: no name');
+                    return false;
+                }
+            }
+            
+            console.log('[NFU] Validation passed');
+            return true;
+        }
+
+        function saveStep() {
+            if (currentStep === 1) {
+                data.platform = document.getElementById('platform').value;
+            }
+            if (currentStep === 3) {
+                data.name = document.getElementById('userName').value;
+                data.phone = document.getElementById('userPhone').value;
+                data.website = document.getElementById('userWebsite').value;
+            }
+            console.log('[NFU] Step data saved:', data);
+        }
+
+        function saveMessage() {
+            const subject = document.getElementById('subject').value;
+            const message = document.getElementById('message').value;
+            
+            if (!subject || !message) {
+                alert('Please fill in both subject and message!');
+                return;
+            }
+            
+            // Save for current customer type
+            savedMessages[currentCustomerType].subject = subject;
+            savedMessages[currentCustomerType].message = message;
+            savedMessages[currentCustomerType].saved = true;
+            
+            data.subject = subject; // For backward compatibility
+            data.message = message;
+            
+            // Update status indicators
+            updateStatusIndicators();
+            
+            // Visual feedback
+            const customerTypeNames = {
+                retail: 'Retail',
+                wholesale: 'Wholesale',
+                advocate: 'Wellness Advocate'
+            };
+            
+            document.getElementById('messageSaved').textContent = `✓ ${customerTypeNames[currentCustomerType]} message saved successfully!`;
+            document.getElementById('messageSaved').classList.add('show');
+            
+            setTimeout(() => {
+                document.getElementById('messageSaved').classList.remove('show');
+            }, 3000);
+            
+            console.log('[NFU] Message saved for', currentCustomerType);
+            console.log('[NFU] All messages status:', savedMessages);
+        }
+
+        function showSummary() {
+            document.getElementById('summaryPlatform').textContent = data.platform;
+            document.getElementById('summarySubject').textContent = data.subject;
+            document.getElementById('summaryName').textContent = data.name;
+        }
+
+        function updateUI() {
+            const progress = (currentStep / totalSteps) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            
+            document.getElementById('backBtn').style.display = currentStep > 1 ? 'block' : 'none';
+            document.getElementById('nextBtn').style.display = currentStep === 4 ? 'none' : 'block';
+            
+            if (currentStep === totalSteps) {
+                document.getElementById('nextBtn').textContent = 'Complete Setup';
+            } else {
+                document.getElementById('nextBtn').textContent = 'Next Step →';
+            }
+        }
+
+        function goToDashboard() {
+            alert('🎉 Setup complete! In production, you would be redirected to the dashboard.');
+            console.log('[NFU] Final data:', data);
+        }
+
+        // Initialize
+        updateUI();
+    </script>
+</body>
+</html>
