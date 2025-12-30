@@ -1,4 +1,8 @@
 const express = require('express');
 const router = express.Router();
-router.post('/screenshot', (req, res) => res.json({ message: 'OCR coming soon' }));
+
+router.get('/test', (req, res) => {
+    res.json({ message: 'works' });
+});
+
 module.exports = router;

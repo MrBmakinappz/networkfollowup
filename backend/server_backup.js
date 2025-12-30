@@ -1,5 +1,5 @@
 // server.js
-// NetworkFollowUp Backend - Complete Server with OAuth and Admin
+// NetworkFollowUp Backend - Complete Server
 
 require('dotenv').config();
 const express = require('express');
@@ -47,10 +47,7 @@ const authMiddleware = require('./middleware/auth');
 
 // Public routes (no auth required)
 const authRoutes = require('./routes/auth');
-const oauthRoutes = require('./routes/oauth');
-
 app.use('/api/auth', authRoutes);
-app.use('/api/oauth', oauthRoutes);
 
 // Protected routes (auth required)
 const uploadsRoutes = require('./routes/uploads');
@@ -65,10 +62,6 @@ app.use('/api/emails', authMiddleware, emailsRoutes);
 app.use('/api/users', authMiddleware, statsRoutes);
 app.use('/api/billing', authMiddleware, billingRoutes);
 
-// Admin routes (admin auth required)
-const adminRoutes = require('./routes/admin');
-app.use('/api/admin', adminRoutes); // Admin auth is inside admin routes
-
 // ============================================
 // API INFO ENDPOINT
 // ============================================
@@ -81,8 +74,6 @@ app.get('/api', (req, res) => {
       public: [
         'POST /api/auth/signup',
         'POST /api/auth/login',
-        'GET /api/oauth/google',
-        'POST /api/oauth/google/callback',
         'GET /health'
       ],
       protected: [
@@ -101,16 +92,7 @@ app.get('/api', (req, res) => {
         'GET /api/users/stats',
         'GET /api/users/billing',
         'POST /api/billing/create-checkout',
-        'POST /api/billing/portal',
-        'POST /api/billing/webhook'
-      ],
-      admin: [
-        'GET /api/admin/stats',
-        'GET /api/admin/users',
-        'GET /api/admin/users/:id',
-        'PUT /api/admin/users/:id/subscription',
-        'DELETE /api/admin/users/:id',
-        'GET /api/admin/revenue'
+        'POST /api/billing/portal'
       ]
     },
     documentation: 'https://networkfollowup.netlify.app/docs'

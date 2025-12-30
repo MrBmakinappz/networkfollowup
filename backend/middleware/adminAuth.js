@@ -1,9 +1,9 @@
-// middleware/auth.js
-// JWT Authentication Middleware
+// middleware/adminAuth.js
+// Admin authentication middleware
 
 const jwt = require('jsonwebtoken');
 
-const authMiddleware = (req, res, next) => {
+const adminAuth = (req, res, next) => {
     try {
         // Get token from header
         const authHeader = req.headers.authorization;
@@ -11,20 +11,29 @@ const authMiddleware = (req, res, next) => {
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
             return res.status(401).json({ 
                 error: 'No token provided',
-                message: 'Authorization header missing or invalid'
+                message: 'Authorization required'
             });
         }
 
         // Extract token
-        const token = authHeader.substring(7); // Remove 'Bearer '
+        const token = authHeader.substring(7);
 
         // Verify token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+        // Check if user is admin
+        if (decoded.email !== process.env.ADMIN_EMAIL) {
+            return res.status(403).json({ 
+                error: 'Access denied',
+                message: 'Admin privileges required'
+            });
+        }
+
         // Add user info to request
         req.user = {
             userId: decoded.userId,
-            email: decoded.email
+            email: decoded.email,
+            isAdmin: true
         };
 
         next();
@@ -50,4 +59,4 @@ const authMiddleware = (req, res, next) => {
     }
 };
 
-module.exports = authMiddleware;
+module.exports = adminAuth;
