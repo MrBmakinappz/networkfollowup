@@ -6,31 +6,26 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../config/database');
+const { validateSignup, validateLogin } = require('../middleware/validation');
+const { log, error } = require('../utils/logger');
 
 /**
  * POST /api/auth/signup
  * Create new user account
  */
-router.post('/signup', async (req, res) => {
+router.post('/signup', validateSignup, async (req, res) => {
     try {
         const { email, password, full_name } = req.body;
 
-        // Validation
-        if (!email || !password || !full_name) {
-            return res.status(400).json({ 
-                error: 'Missing required fields',
-                message: 'Email, password, and full name are required'
-            });
-        }
-
         // Check if user exists
         const existingUser = await db.query(
-            'SELECT * FROM users WHERE email = $1',
+            'SELECT * FROM public.users WHERE email = $1',
             [email.toLowerCase()]
         );
 
         if (existingUser.rows.length > 0) {
             return res.status(400).json({ 
+                success: false,
                 error: 'User already exists',
                 message: 'An account with this email already exists'
             });
@@ -41,24 +36,24 @@ router.post('/signup', async (req, res) => {
 
         // Create user
         const result = await db.query(
-            `INSERT INTO users (email, password_hash, full_name, subscription_plan) 
+            `INSERT INTO public.users (email, password_hash, full_name, subscription_tier) 
              VALUES ($1, $2, $3, $4) 
-             RETURNING id, email, full_name, subscription_plan, created_at`,
-            [email.toLowerCase(), hashedPassword, full_name, 'free']
+             RETURNING id, email, full_name, subscription_tier, created_at`,
+            [email.toLowerCase(), hashedPassword, full_name, 'starter']
         );
 
         const user = result.rows[0];
 
-        // Initialize usage tracking
+        // Initialize usage tracking - use public schema
         await db.query(
-            `INSERT INTO usage_tracking (user_id) VALUES ($1)
+            `INSERT INTO public.usage_tracking (user_id) VALUES ($1)
              ON CONFLICT (user_id) DO NOTHING`,
             [user.id]
         );
 
-        // Initialize user preferences
+        // Initialize user preferences - use public schema
         await db.query(
-            `INSERT INTO user_preferences (user_id) VALUES ($1)
+            `INSERT INTO public.user_preferences (user_id) VALUES ($1)
              ON CONFLICT (user_id) DO NOTHING`,
             [user.id]
         );
@@ -78,14 +73,15 @@ router.post('/signup', async (req, res) => {
                 id: user.id,
                 email: user.email,
                 full_name: user.full_name,
-                subscription_plan: user.subscription_plan
+                subscription_tier: user.subscription_tier || user.subscription_plan || 'starter'
             }
         });
-    } catch (error) {
-        console.error('Signup error:', error);
+    } catch (err) {
+        error('Signup error:', err);
         res.status(500).json({ 
+            success: false,
             error: 'Signup failed',
-            message: error.message
+            message: err.message
         });
     }
 });
@@ -94,26 +90,28 @@ router.post('/signup', async (req, res) => {
  * POST /api/auth/login
  * Login existing user
  */
-router.post('/login', async (req, res) => {
+router.post('/login', validateLogin, async (req, res) => {
     try {
         const { email, password } = req.body;
 
         // Validation
         if (!email || !password) {
             return res.status(400).json({ 
+                success: false,
                 error: 'Missing credentials',
                 message: 'Email and password are required'
             });
         }
 
-        // Find user
+        // Find user - use public schema
         const result = await db.query(
-            'SELECT * FROM users WHERE email = $1',
+            'SELECT * FROM public.users WHERE email = $1',
             [email.toLowerCase()]
         );
 
         if (result.rows.length === 0) {
             return res.status(401).json({ 
+                success: false,
                 error: 'Invalid credentials',
                 message: 'Email or password is incorrect'
             });
@@ -126,6 +124,7 @@ router.post('/login', async (req, res) => {
 
         if (!isValidPassword) {
             return res.status(401).json({ 
+                success: false,
                 error: 'Invalid credentials',
                 message: 'Email or password is incorrect'
             });
@@ -146,14 +145,15 @@ router.post('/login', async (req, res) => {
                 id: user.id,
                 email: user.email,
                 full_name: user.full_name,
-                subscription_plan: user.subscription_plan
+                subscription_tier: user.subscription_tier || user.subscription_plan || 'starter'
             }
         });
-    } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({ 
+    } catch (err) {
+        error('Login error:', err);
+        res.status(500).json({
+            success: false,
             error: 'Login failed',
-            message: error.message
+            message: err.message
         });
     }
 });

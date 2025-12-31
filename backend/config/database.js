@@ -1,40 +1,57 @@
 // Database Configuration
 // PostgreSQL connection using pg library
+// Simple connection without tenant logic
 
 const { Pool } = require('pg');
+const { log, error } = require('../utils/logger');
+
+// Validate DATABASE_URL
+if (!process.env.DATABASE_URL) {
+    error('❌ DATABASE_URL is not set in environment variables');
+    throw new Error('DATABASE_URL is required');
+}
 
 // Create PostgreSQL connection pool
+// Optimized for production performance
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production' ? {
         rejectUnauthorized: false
     } : false,
-    max: 20, // Maximum number of clients in pool
+    max: 30, // Increased for better concurrency
+    min: 5, // Keep minimum connections alive
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    connectionTimeoutMillis: 5000, // Increased timeout
+    allowExitOnIdle: false, // Keep pool alive
+    // Ensure we use the public schema (default)
+    // No tenant switching or schema manipulation
 });
 
 // Test connection
 pool.on('connect', () => {
-    console.log('✅ Database connected successfully');
+    log('✅ Database connected successfully');
 });
 
 pool.on('error', (err) => {
-    console.error('❌ Unexpected database error:', err);
+    error('❌ Unexpected database error:', err);
     process.exit(-1);
 });
 
 // Helper function to execute queries
+// Simple queries without tenant logic - uses public schema by default
 const query = async (text, params) => {
     const start = Date.now();
     try {
+        // Ensure we're using public schema (default)
+        // No SET search_path or tenant switching
         const res = await pool.query(text, params);
         const duration = Date.now() - start;
-        console.log('Executed query', { text, duration, rows: res.rowCount });
+        log('Executed query', { text: text.substring(0, 100), duration, rows: res.rowCount });
         return res;
-    } catch (error) {
-        console.error('Database query error:', error);
-        throw error;
+    } catch (err) {
+        error('Database query error:', err.message);
+        error('Query:', text.substring(0, 200));
+        throw err;
     }
 };
 
@@ -46,7 +63,7 @@ const getClient = async () => {
     
     // Set a timeout of 5 seconds
     const timeout = setTimeout(() => {
-        console.error('A client has been checked out for more than 5 seconds!');
+        error('A client has been checked out for more than 5 seconds!');
     }, 5000);
     
     // Monkey patch the query method to keep track of the last query executed

@@ -3,6 +3,18 @@
 
 const { google } = require('googleapis');
 const nodemailer = require('nodemailer');
+const { log, error } = require('./logger');
+
+// Validate environment variables
+if (!process.env.GOOGLE_CLIENT_ID) {
+    error('❌ GOOGLE_CLIENT_ID is not set in environment variables');
+}
+if (!process.env.GOOGLE_CLIENT_SECRET) {
+    error('❌ GOOGLE_CLIENT_SECRET is not set in environment variables');
+}
+if (!process.env.GOOGLE_REDIRECT_URI) {
+    error('❌ GOOGLE_REDIRECT_URI is not set in environment variables');
+}
 
 const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
@@ -10,21 +22,40 @@ const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_REDIRECT_URI
 );
 
+log('✅ OAuth2 client initialized');
+log('   Client ID:', process.env.GOOGLE_CLIENT_ID ? 'Set ✓' : 'Missing ✗');
+log('   Client Secret:', process.env.GOOGLE_CLIENT_SECRET ? 'Set ✓' : 'Missing ✗');
+log('   Redirect URI:', process.env.GOOGLE_REDIRECT_URI || 'Not set ✗');
+
 /**
  * Generate Gmail OAuth URL
  */
 function getAuthUrl() {
-    const scopes = [
-        'https://www.googleapis.com/auth/gmail.send',
-        'https://www.googleapis.com/auth/gmail.readonly',
-        'https://www.googleapis.com/auth/userinfo.email'
-    ];
+    try {
+        if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_REDIRECT_URI) {
+            throw new Error('Google OAuth credentials are not configured. Please check your .env file.');
+        }
 
-    return oauth2Client.generateAuthUrl({
-        access_type: 'offline',
-        scope: scopes,
-        prompt: 'consent' // Force consent to get refresh token
-    });
+        const scopes = [
+            'https://www.googleapis.com/auth/gmail.send',
+            'https://www.googleapis.com/auth/gmail.readonly',
+            'https://www.googleapis.com/auth/userinfo.email',
+            'https://www.googleapis.com/auth/userinfo.profile'
+        ];
+
+        log('🔵 Generating OAuth URL with scopes:', scopes);
+        const authUrl = oauth2Client.generateAuthUrl({
+            access_type: 'offline',
+            scope: scopes,
+            prompt: 'consent' // Force consent to get refresh token
+        });
+        
+        log('✅ OAuth URL generated successfully');
+        return authUrl;
+    } catch (err) {
+        error('❌ Error generating OAuth URL:', err);
+        throw err;
+    }
 }
 
 /**
@@ -34,8 +65,8 @@ async function getTokensFromCode(code) {
     try {
         const { tokens } = await oauth2Client.getToken(code);
         return tokens;
-    } catch (error) {
-        console.error('Error getting tokens:', error);
+    } catch (err) {
+        error('Error getting tokens:', err);
         throw new Error('Failed to exchange authorization code');
     }
 }
@@ -51,9 +82,30 @@ async function getGmailAddress(accessToken) {
         const { data } = await oauth2.userinfo.get();
         
         return data.email;
-    } catch (error) {
-        console.error('Error getting Gmail address:', error);
+    } catch (err) {
+        error('Error getting Gmail address:', err);
         throw new Error('Failed to get Gmail address');
+    }
+}
+
+/**
+ * Get full user info from Google OAuth
+ */
+async function getGoogleUserInfo(accessToken) {
+    try {
+        oauth2Client.setCredentials({ access_token: accessToken });
+        
+        const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
+        const { data } = await oauth2.userinfo.get();
+        
+        return {
+            email: data.email,
+            name: data.name || data.email.split('@')[0],
+            picture: data.picture
+        };
+    } catch (err) {
+        error('Error getting Google user info:', err);
+        throw new Error('Failed to get user info from Google');
     }
 }
 
@@ -68,8 +120,8 @@ async function refreshAccessToken(refreshToken) {
 
         const { credentials } = await oauth2Client.refreshAccessToken();
         return credentials;
-    } catch (error) {
-        console.error('Error refreshing token:', error);
+    } catch (err) {
+        error('Error refreshing token:', err);
         throw new Error('Failed to refresh access token');
     }
 }
@@ -104,8 +156,8 @@ async function createGmailTransporter(accessToken, refreshToken) {
             transporter,
             accessToken: tokenInfo.token
         };
-    } catch (error) {
-        console.error('Error creating transporter:', error);
+    } catch (err) {
+        error('Error creating transporter:', err);
         throw new Error('Failed to create email transporter');
     }
 }
@@ -125,14 +177,14 @@ async function sendEmail(transporter, fromEmail, toEmail, subject, body) {
 
         const result = await transporter.sendMail(mailOptions);
         
-        console.log(`Email sent to ${toEmail}:`, result.messageId);
+        log(`Email sent to ${toEmail}:`, result.messageId);
         
         return {
             success: true,
             messageId: result.messageId
         };
-    } catch (error) {
-        console.error(`Failed to send email to ${toEmail}:`, error);
+    } catch (err) {
+        error(`Failed to send email to ${toEmail}:`, err);
         
         return {
             success: false,
@@ -210,6 +262,7 @@ module.exports = {
     getAuthUrl,
     getTokensFromCode,
     getGmailAddress,
+    getGoogleUserInfo,
     refreshAccessToken,
     createGmailTransporter,
     sendEmail,

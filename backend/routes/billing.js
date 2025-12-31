@@ -4,6 +4,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const { log, error } = require('../utils/logger');
 const {
     createCheckoutSession,
     createPortalSession,
@@ -26,7 +27,7 @@ router.post('/create-checkout', async (req, res) => {
 
         // Get user email
         const userResult = await db.query(
-            'SELECT email FROM users WHERE id = $1',
+            'SELECT email FROM public.users WHERE id = $1',
             [userId]
         );
 
@@ -44,9 +45,9 @@ router.post('/create-checkout', async (req, res) => {
             sessionId: session.id,
             url: session.url
         });
-    } catch (error) {
-        console.error('Create checkout error:', error);
-        res.status(500).json({ error: 'Failed to create checkout session', message: error.message });
+    } catch (err) {
+        error('Create checkout error:', err);
+        res.status(500).json({ error: 'Failed to create checkout session', message: err.message });
     }
 });
 
@@ -77,8 +78,8 @@ router.post('/portal', async (req, res) => {
             success: true,
             url: session.url
         });
-    } catch (error) {
-        console.error('Create portal error:', error);
+    } catch (err) {
+        error('Create portal error:', err);
         res.status(500).json({ error: 'Failed to create portal session' });
     }
 });
@@ -94,7 +95,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         // Verify webhook signature
         const event = verifyWebhookSignature(req.body, signature);
 
-        console.log('Stripe webhook event:', event.type);
+        log('Stripe webhook event:', event.type);
 
         // Handle different event types
         switch (event.type) {
@@ -119,25 +120,25 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
             case 'invoice.payment_succeeded': {
                 const invoice = event.data.object;
-                console.log('Payment succeeded:', invoice.id);
+                log('Payment succeeded:', invoice.id);
                 break;
             }
 
             case 'invoice.payment_failed': {
                 const invoice = event.data.object;
-                console.log('Payment failed:', invoice.id);
+                log('Payment failed:', invoice.id);
                 // TODO: Send email notification
                 break;
             }
 
             default:
-                console.log(`Unhandled event type: ${event.type}`);
+                log(`Unhandled event type: ${event.type}`);
         }
 
         res.json({ received: true });
-    } catch (error) {
-        console.error('Webhook error:', error);
-        res.status(400).json({ error: 'Webhook error', message: error.message });
+    } catch (err) {
+        error('Webhook error:', err);
+        res.status(400).json({ error: 'Webhook error', message: err.message });
     }
 });
 
@@ -150,7 +151,7 @@ async function handleCheckoutComplete(session) {
         const customerId = session.customer;
         const subscriptionId = session.subscription;
 
-        console.log('Checkout completed for user:', userId);
+        log('Checkout completed for user:', userId);
 
         // Get subscription details
         const subscription = await getSubscription(subscriptionId);
@@ -159,7 +160,7 @@ async function handleCheckoutComplete(session) {
 
         // Store in database
         await db.query(
-            `INSERT INTO stripe_customers (user_id, stripe_customer_id, stripe_subscription_id, subscription_status, current_period_start, current_period_end)
+            `INSERT INTO public.stripe_customers (user_id, stripe_customer_id, stripe_subscription_id, subscription_status, current_period_start, current_period_end)
              VALUES ($1, $2, $3, $4, to_timestamp($5), to_timestamp($6))
              ON CONFLICT (user_id) DO UPDATE SET
                 stripe_subscription_id = EXCLUDED.stripe_subscription_id,
@@ -172,13 +173,13 @@ async function handleCheckoutComplete(session) {
 
         // Update user subscription plan
         await db.query(
-            'UPDATE users SET subscription_plan = $1 WHERE id = $2',
+            'UPDATE public.users SET subscription_tier = $1 WHERE id = $2',
             [plan, userId]
         );
 
-        console.log(`User ${userId} upgraded to ${plan}`);
-    } catch (error) {
-        console.error('Handle checkout complete error:', error);
+        log(`User ${userId} upgraded to ${plan}`);
+    } catch (err) {
+        error('Handle checkout complete error:', err);
     }
 }
 
@@ -210,14 +211,14 @@ async function handleSubscriptionUpdate(subscription) {
             
             // Update user plan
             await db.query(
-                'UPDATE users SET subscription_plan = $1 WHERE id = $2',
+                'UPDATE public.users SET subscription_tier = $1 WHERE id = $2',
                 [plan, userId]
             );
 
-            console.log(`Subscription updated for user ${userId}: ${plan}`);
+            log(`Subscription updated for user ${userId}: ${plan}`);
         }
-    } catch (error) {
-        console.error('Handle subscription update error:', error);
+    } catch (err) {
+        error('Handle subscription update error:', err);
     }
 }
 
@@ -242,14 +243,14 @@ async function handleSubscriptionCanceled(subscription) {
             
             // Downgrade to free
             await db.query(
-                'UPDATE users SET subscription_plan = $1 WHERE id = $2',
+                'UPDATE public.users SET subscription_tier = $1 WHERE id = $2',
                 ['free', userId]
             );
 
-            console.log(`Subscription canceled for user ${userId}`);
+            log(`Subscription canceled for user ${userId}`);
         }
-    } catch (error) {
-        console.error('Handle subscription canceled error:', error);
+    } catch (err) {
+        error('Handle subscription canceled error:', err);
     }
 }
 
