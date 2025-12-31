@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log In - NetworkFollowUp</title>
+    <title>Sign Up - NetworkFollowUp</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * {
@@ -138,20 +138,20 @@
             to { transform: rotate(360deg); }
         }
 
-        .signup-link {
+        .login-link {
             text-align: center;
             margin-top: 24px;
             color: #64748B;
             font-size: 14px;
         }
 
-        .signup-link a {
+        .login-link a {
             color: #10B981;
             text-decoration: none;
             font-weight: 600;
         }
 
-        .signup-link a:hover {
+        .login-link a:hover {
             text-decoration: underline;
         }
 
@@ -214,9 +214,15 @@
 <body>
     <div class="container">
         <div class="logo">NFU</div>
-        <p class="subtitle">Welcome back! Please log in to continue</p>
+        <p class="subtitle">Create your account to get started</p>
 
-        <form id="loginForm">
+        <form id="signupForm">
+            <div class="form-group">
+                <label for="fullName">Full Name</label>
+                <input type="text" id="fullName" name="fullName" required>
+                <div class="error-message" id="fullNameError"></div>
+            </div>
+
             <div class="form-group">
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email" required>
@@ -225,12 +231,18 @@
 
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
+                <input type="password" id="password" name="password" required minlength="6">
                 <div class="error-message" id="passwordError"></div>
             </div>
 
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required>
+                <div class="error-message" id="confirmPasswordError"></div>
+            </div>
+
             <button type="submit" class="btn btn-primary" id="submitBtn">
-                <span>Log In</span>
+                <span>Create Account</span>
             </button>
         </form>
 
@@ -246,11 +258,11 @@
                 <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.951H.957C.348 6.173 0 7.55 0 9s.348 2.827.957 4.049l3.007-2.342z"/>
                 <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.951L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"/>
             </svg>
-            <span>Sign in with Google</span>
+            <span>Sign up with Google</span>
         </button>
 
-        <div class="signup-link">
-            Don't have an account? <a href="signup.html">Sign up</a>
+        <div class="login-link">
+            Already have an account? <a href="login.html">Log in</a>
         </div>
     </div>
 
@@ -265,7 +277,7 @@
         console.log('Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT');
         console.log('API URL:', API_URL);
         
-        const form = document.getElementById('loginForm');
+        const form = document.getElementById('signupForm');
         const submitBtn = document.getElementById('submitBtn');
         const toast = document.getElementById('toast');
 
@@ -296,10 +308,18 @@
             let isValid = true;
 
             // Clear previous errors
-            ['email', 'password'].forEach(clearError);
+            ['fullName', 'email', 'password', 'confirmPassword'].forEach(clearError);
 
+            const fullName = document.getElementById('fullName').value.trim();
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            // Validate full name
+            if (!fullName || fullName.length < 2) {
+                showError('fullName', 'Please enter your full name');
+                isValid = false;
+            }
 
             // Validate email
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -309,8 +329,14 @@
             }
 
             // Validate password
-            if (!password) {
-                showError('password', 'Please enter your password');
+            if (!password || password.length < 6) {
+                showError('password', 'Password must be at least 6 characters');
+                isValid = false;
+            }
+
+            // Validate confirm password
+            if (password !== confirmPassword) {
+                showError('confirmPassword', 'Passwords do not match');
                 isValid = false;
             }
 
@@ -326,15 +352,16 @@
 
             // Disable button and show loading
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="spinner"></span> Logging in...';
+            submitBtn.innerHTML = '<span class="spinner"></span> Creating account...';
 
             try {
-                const response = await fetch(`${API_URL}/auth/login`, {
+                const response = await fetch(`${API_URL}/auth/signup`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
+                        full_name: document.getElementById('fullName').value.trim(),
                         email: document.getElementById('email').value.trim(),
                         password: document.getElementById('password').value
                     })
@@ -349,7 +376,7 @@
                     localStorage.setItem('userEmail', data.user.email);
                     localStorage.setItem('userId', data.user.id);
 
-                    showToast('Login successful! Redirecting...', 'success');
+                    showToast('Account created successfully! Redirecting...', 'success');
                     
                     // Redirect to dashboard
                     setTimeout(() => {
@@ -361,28 +388,27 @@
                     }, 1000);
                 } else {
                     // Show error
-                    const errorMessage = data.message || data.error || 'Login failed';
+                    const errorMessage = data.message || data.error || 'Signup failed';
                     showToast(errorMessage, 'error');
                     
-                    // Show field-specific errors
-                    if (data.error === 'Invalid credentials') {
-                        showError('email', 'Email or password is incorrect');
-                        showError('password', 'Email or password is incorrect');
+                    // Show field-specific errors if available
+                    if (data.error === 'User already exists') {
+                        showError('email', 'An account with this email already exists');
                     }
 
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<span>Log In</span>';
+                    submitBtn.innerHTML = '<span>Create Account</span>';
                 }
             } catch (error) {
-                console.error('Login error:', error);
+                console.error('Signup error:', error);
                 showToast('Network error. Please try again.', 'error');
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<span>Log In</span>';
+                submitBtn.innerHTML = '<span>Create Account</span>';
             }
         });
 
         // Clear errors on input
-        ['email', 'password'].forEach(id => {
+        ['fullName', 'email', 'password', 'confirmPassword'].forEach(id => {
             document.getElementById(id).addEventListener('input', () => {
                 clearError(id);
             });
@@ -413,22 +439,13 @@
                 const btn = document.getElementById('googleSignInBtn');
                 if (btn) {
                     btn.disabled = false;
-                    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 18 18" style="margin-right: 8px;"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.96-2.184l-2.908-2.258c-.806.54-1.837.86-3.052.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.951H.957C.348 6.173 0 7.55 0 9s.348 2.827.957 4.049l3.007-2.342z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.951L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"/></svg><span>Sign in with Google</span>';
+                    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 18 18" style="margin-right: 8px;"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.96-2.184l-2.908-2.258c-.806.54-1.837.86-3.052.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/><path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.951H.957C.348 6.173 0 7.55 0 9s.348 2.827.957 4.049l3.007-2.342z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.951L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"/></svg><span>Sign up with Google</span>';
                 }
             }
         }
         
         // Make function globally accessible
         window.signInWithGoogle = signInWithGoogle;
-
-        // Check if already logged in
-        if (localStorage.getItem('authToken')) {
-            if (isProduction) {
-                window.location.href = 'https://networkfollowup.netlify.app/dashboard.html';
-            } else {
-                window.location.href = 'dashboard.html';
-            }
-        }
     </script>
 </body>
 </html>

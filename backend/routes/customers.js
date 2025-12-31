@@ -4,17 +4,19 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const { validateCustomer, validateUUID, validatePaginationParams } = require('../middleware/validation');
+const { log, error } = require('../utils/logger');
 
 /**
  * GET /api/customers
  * Get all customers for user with optional filters
  */
-router.get('/', async (req, res) => {
+router.get('/', validatePaginationParams, async (req, res) => {
     try {
         const userId = req.user.userId;
-        const { type, country, email_sent, search, limit = 100, offset = 0 } = req.query;
+        const { type, country, email_sent, search, limit = 20, offset = 0 } = req.query; // Default 20 per page
 
-        let query = 'SELECT * FROM customers WHERE user_id = $1';
+        let query = 'SELECT * FROM public.customers WHERE user_id = $1';
         const params = [userId];
         let paramCount = 1;
 
@@ -55,8 +57,8 @@ router.get('/', async (req, res) => {
 
         const result = await db.query(query, params);
 
-        // Get total count
-        let countQuery = 'SELECT COUNT(*) FROM customers WHERE user_id = $1';
+        // Get total count - use public schema
+        let countQuery = 'SELECT COUNT(*) FROM public.customers WHERE user_id = $1';
         const countResult = await db.query(countQuery, [userId]);
 
         res.json({
@@ -68,9 +70,13 @@ router.get('/', async (req, res) => {
                 offset: parseInt(offset)
             }
         });
-    } catch (error) {
-        console.error('Get customers error:', error);
-        res.status(500).json({ error: 'Failed to fetch customers' });
+    } catch (err) {
+        error('Get customers error:', err);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to fetch customers',
+            message: err.message
+        });
     }
 });
 
@@ -92,7 +98,7 @@ router.get('/stats', async (req, res) => {
                 COUNT(CASE WHEN email_sent = TRUE THEN 1 END) as contacted,
                 COUNT(CASE WHEN email_sent = FALSE THEN 1 END) as pending,
                 COUNT(DISTINCT country_code) as countries
-             FROM customers
+             FROM public.customers
              WHERE user_id = $1`,
             [userId]
         );
@@ -100,7 +106,7 @@ router.get('/stats', async (req, res) => {
         // Country breakdown
         const countryResult = await db.query(
             `SELECT country_code, COUNT(*) as count
-             FROM customers
+             FROM public.customers
              WHERE user_id = $1
              GROUP BY country_code
              ORDER BY count DESC`,
@@ -126,7 +132,7 @@ router.get('/stats', async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Customer stats error:', error);
+        error('Customer stats error:', err);
         res.status(500).json({ error: 'Failed to fetch customer statistics' });
     }
 });
@@ -135,13 +141,13 @@ router.get('/stats', async (req, res) => {
  * GET /api/customers/:id
  * Get single customer
  */
-router.get('/:id', async (req, res) => {
+router.get('/:id', validateUUID, async (req, res) => {
     try {
         const userId = req.user.userId;
         const { id } = req.params;
 
         const result = await db.query(
-            'SELECT * FROM customers WHERE id = $1 AND user_id = $2',
+            'SELECT * FROM public.customers WHERE id = $1 AND user_id = $2',
             [id, userId]
         );
 
@@ -154,7 +160,7 @@ router.get('/:id', async (req, res) => {
             data: result.rows[0]
         });
     } catch (error) {
-        console.error('Get customer error:', error);
+        error('Get customer error:', err);
         res.status(500).json({ error: 'Failed to fetch customer' });
     }
 });
@@ -163,7 +169,7 @@ router.get('/:id', async (req, res) => {
  * POST /api/customers
  * Create new customer manually
  */
-router.post('/', async (req, res) => {
+router.post('/', validateCustomer, async (req, res) => {
     try {
         const userId = req.user.userId;
         const { full_name, email, customer_type, country_code, language, notes } = req.body;
@@ -179,17 +185,15 @@ router.post('/', async (req, res) => {
         }
 
         const result = await db.query(
-            `INSERT INTO customers (user_id, full_name, email, customer_type, country_code, language, notes)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)
+            `INSERT INTO public.customers (user_id, full_name, email, member_type, country_code)
+             VALUES ($1, $2, $3, $4, $5)
              ON CONFLICT (user_id, email) DO UPDATE SET
                 full_name = EXCLUDED.full_name,
-                customer_type = EXCLUDED.customer_type,
+                member_type = EXCLUDED.member_type,
                 country_code = EXCLUDED.country_code,
-                language = EXCLUDED.language,
-                notes = EXCLUDED.notes,
                 updated_at = NOW()
              RETURNING *`,
-            [userId, full_name, email.toLowerCase(), customer_type, country_code || 'USA', language || 'en', notes || null]
+            [userId, full_name, email.toLowerCase(), customer_type, country_code || 'USA']
         );
 
         res.status(201).json({
@@ -198,7 +202,7 @@ router.post('/', async (req, res) => {
             data: result.rows[0]
         });
     } catch (error) {
-        console.error('Create customer error:', error);
+        error('Create customer error:', err);
         res.status(500).json({ error: 'Failed to create customer' });
     }
 });
@@ -207,7 +211,7 @@ router.post('/', async (req, res) => {
  * PUT /api/customers/:id
  * Update customer
  */
-router.put('/:id', async (req, res) => {
+router.put('/:id', validateUUID, validateCustomer, async (req, res) => {
     try {
         const userId = req.user.userId;
         const { id } = req.params;
@@ -215,7 +219,7 @@ router.put('/:id', async (req, res) => {
 
         // Check if customer exists and belongs to user
         const checkResult = await db.query(
-            'SELECT * FROM customers WHERE id = $1 AND user_id = $2',
+            'SELECT * FROM public.customers WHERE id = $1 AND user_id = $2',
             [id, userId]
         );
 
@@ -224,17 +228,15 @@ router.put('/:id', async (req, res) => {
         }
 
         const result = await db.query(
-            `UPDATE customers 
+            `UPDATE public.customers 
              SET full_name = COALESCE($1, full_name),
                  email = COALESCE($2, email),
-                 customer_type = COALESCE($3, customer_type),
+                 member_type = COALESCE($3, member_type),
                  country_code = COALESCE($4, country_code),
-                 language = COALESCE($5, language),
-                 notes = COALESCE($6, notes),
                  updated_at = NOW()
-             WHERE id = $7 AND user_id = $8
+             WHERE id = $5 AND user_id = $6
              RETURNING *`,
-            [full_name, email, customer_type, country_code, language, notes, id, userId]
+            [full_name, email, customer_type, country_code, id, userId]
         );
 
         res.json({
@@ -243,7 +245,7 @@ router.put('/:id', async (req, res) => {
             data: result.rows[0]
         });
     } catch (error) {
-        console.error('Update customer error:', error);
+        error('Update customer error:', err);
         res.status(500).json({ error: 'Failed to update customer' });
     }
 });
@@ -258,7 +260,7 @@ router.delete('/:id', async (req, res) => {
         const { id } = req.params;
 
         const result = await db.query(
-            'DELETE FROM customers WHERE id = $1 AND user_id = $2 RETURNING *',
+            'DELETE FROM public.customers WHERE id = $1 AND user_id = $2 RETURNING *',
             [id, userId]
         );
 
@@ -271,7 +273,7 @@ router.delete('/:id', async (req, res) => {
             message: 'Customer deleted successfully'
         });
     } catch (error) {
-        console.error('Delete customer error:', error);
+        error('Delete customer error:', err);
         res.status(500).json({ error: 'Failed to delete customer' });
     }
 });
@@ -293,7 +295,7 @@ router.delete('/', async (req, res) => {
         }
 
         const result = await db.query(
-            'DELETE FROM customers WHERE user_id = $1',
+            'DELETE FROM public.customers WHERE user_id = $1',
             [userId]
         );
 
@@ -302,7 +304,7 @@ router.delete('/', async (req, res) => {
             message: `Deleted ${result.rowCount} customers`
         });
     } catch (error) {
-        console.error('Delete all customers error:', error);
+        error('Delete all customers error:', err);
         res.status(500).json({ error: 'Failed to delete customers' });
     }
 });

@@ -4,6 +4,8 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const { validateEmailSend } = require('../middleware/validation');
+const { log, error } = require('../utils/logger');
 const {
     getAuthUrl,
     getTokensFromCode,
@@ -25,7 +27,7 @@ router.get('/gmail-auth', (req, res) => {
             authUrl: authUrl
         });
     } catch (error) {
-        console.error('Gmail auth error:', error);
+        error('Gmail auth error:', err);
         res.status(500).json({ error: 'Failed to generate authorization URL' });
     }
 });
@@ -125,7 +127,7 @@ router.get('/gmail-callback', async (req, res) => {
             </html>
         `);
     } catch (error) {
-        console.error('Gmail callback error:', error);
+        error('Gmail callback error:', err);
         res.status(500).send(`
             <!DOCTYPE html>
             <html>
@@ -155,13 +157,13 @@ router.post('/connect-gmail', async (req, res) => {
         const tokenExpiry = new Date(Date.now() + (tokens.expiry_date || 3600 * 1000));
 
         await db.query(
-            `INSERT INTO gmail_connections (user_id, gmail_email, access_token, refresh_token, token_expiry)
+            `INSERT INTO public.gmail_connections (user_id, gmail_email, access_token, refresh_token, token_expires_at)
              VALUES ($1, $2, $3, $4, $5)
              ON CONFLICT (user_id) DO UPDATE SET
                 gmail_email = EXCLUDED.gmail_email,
                 access_token = EXCLUDED.access_token,
                 refresh_token = EXCLUDED.refresh_token,
-                token_expiry = EXCLUDED.token_expiry,
+                token_expires_at = EXCLUDED.token_expires_at,
                 updated_at = NOW()`,
             [userId, gmailEmail, tokens.access_token, tokens.refresh_token, tokenExpiry]
         );
@@ -172,7 +174,7 @@ router.post('/connect-gmail', async (req, res) => {
             email: gmailEmail
         });
     } catch (error) {
-        console.error('Connect Gmail error:', error);
+        error('Connect Gmail error:', err);
         res.status(500).json({ error: 'Failed to connect Gmail' });
     }
 });
@@ -186,7 +188,7 @@ router.get('/gmail-status', async (req, res) => {
         const userId = req.user.userId;
 
         const result = await db.query(
-            'SELECT gmail_email, connected_at FROM gmail_connections WHERE user_id = $1',
+            'SELECT gmail_email, connected_at FROM public.gmail_connections WHERE user_id = $1',
             [userId]
         );
 
@@ -204,7 +206,7 @@ router.get('/gmail-status', async (req, res) => {
             connectedAt: result.rows[0].connected_at
         });
     } catch (error) {
-        console.error('Gmail status error:', error);
+        error('Gmail status error:', err);
         res.status(500).json({ error: 'Failed to check Gmail status' });
     }
 });
@@ -218,7 +220,7 @@ router.delete('/disconnect-gmail', async (req, res) => {
         const userId = req.user.userId;
 
         await db.query(
-            'DELETE FROM gmail_connections WHERE user_id = $1',
+            'DELETE FROM public.gmail_connections WHERE user_id = $1',
             [userId]
         );
 
@@ -227,8 +229,222 @@ router.delete('/disconnect-gmail', async (req, res) => {
             message: 'Gmail disconnected successfully'
         });
     } catch (error) {
-        console.error('Disconnect Gmail error:', error);
+        error('Disconnect Gmail error:', err);
         res.status(500).json({ error: 'Failed to disconnect Gmail' });
+    }
+});
+
+/**
+ * POST /api/emails/send
+ * Send emails to selected customers using templates (by type+language)
+ */
+router.post('/send', validateEmailSend, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { customer_ids, template_type, language, subject, body } = req.body;
+
+        if (!customer_ids || customer_ids.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'No customers selected',
+                message: 'Please select at least one customer'
+            });
+        }
+
+        if (!template_type) {
+            return res.status(400).json({
+                success: false,
+                error: 'Template type required',
+                message: 'Please specify template type (retail, wholesale, or advocates)'
+            });
+        }
+
+        // Check Gmail connection
+        const gmailResult = await db.query(
+            'SELECT * FROM public.gmail_connections WHERE user_id = $1',
+            [userId]
+        );
+
+        if (gmailResult.rows.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Gmail not connected',
+                message: 'Please connect your Gmail account first'
+            });
+        }
+
+        const gmailConnection = gmailResult.rows[0];
+
+        // Get customers
+        const customersResult = await db.query(
+            'SELECT * FROM public.customers WHERE id = ANY($1) AND user_id = $2',
+            [customer_ids, userId]
+        );
+
+        if (customersResult.rows.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'No valid customers found',
+                message: 'Selected customers not found'
+            });
+        }
+
+        const customers = customersResult.rows;
+        const results = [];
+        let successCount = 0;
+        let failedCount = 0;
+
+        // Create Gmail transporter (with auto-refresh)
+        const { transporter, accessToken } = await createGmailTransporter(
+            gmailConnection.access_token,
+            gmailConnection.refresh_token
+        );
+
+        // Update access token if refreshed
+        if (accessToken !== gmailConnection.access_token) {
+            await db.query(
+                'UPDATE public.gmail_connections SET access_token = $1, updated_at = NOW() WHERE user_id = $2',
+                [accessToken, userId]
+            );
+        }
+
+        // Get user info for personalization
+        const userResult = await db.query(
+            'SELECT full_name, email FROM public.users WHERE id = $1',
+            [userId]
+        );
+        const user = userResult.rows[0];
+
+        // Send emails to each customer
+        for (const customer of customers) {
+            try {
+                // Get template by type and language (or use provided subject/body)
+                let emailSubject, emailBody;
+
+                if (subject && body) {
+                    // Use provided subject and body
+                    emailSubject = subject;
+                    emailBody = body;
+                } else {
+                    // Get template from database
+                    const customerLanguage = language || customer.language || 'en';
+                    const customerType = template_type || customer.member_type || 'retail';
+
+                    const templateResult = await db.query(
+                        `SELECT subject, body 
+                         FROM public.email_templates 
+                         WHERE user_id = $1 
+                           AND customer_type = $2 
+                           AND language = $3
+                         LIMIT 1`,
+                        [userId, customerType, customerLanguage]
+                    );
+
+                    if (templateResult.rows.length > 0) {
+                        emailSubject = templateResult.rows[0].subject;
+                        emailBody = templateResult.rows[0].body;
+                    } else {
+                        // Fallback to default template
+                        emailSubject = `Your doTERRA 25% Discount is Waiting!`;
+                        emailBody = `Hi {{firstname}},
+
+I'm {{your-name}}, your official doTERRA Wellness Advocate...
+
+Best regards,
+{{your-name}}`;
+                    }
+                }
+
+                // Personalize template with customer data
+                const firstName = customer.full_name.split(' ')[0];
+                const personalizedSubject = emailSubject
+                    .replace(/\{\{firstname\}\}/g, firstName)
+                    .replace(/\{\{fullname\}\}/g, customer.full_name)
+                    .replace(/\{\{email\}\}/g, customer.email)
+                    .replace(/\{\{country\}\}/g, customer.country_code || '')
+                    .replace(/\{\{your-name\}\}/g, user.full_name || 'Your Advocate')
+                    .replace(/\{\{your-phone\}\}/g, ''); // Could be retrieved from user profile
+
+                const personalizedBody = emailBody
+                    .replace(/\{\{firstname\}\}/g, firstName)
+                    .replace(/\{\{fullname\}\}/g, customer.full_name)
+                    .replace(/\{\{email\}\}/g, customer.email)
+                    .replace(/\{\{country\}\}/g, customer.country_code || '')
+                    .replace(/\{\{your-name\}\}/g, user.full_name || 'Your Advocate')
+                    .replace(/\{\{your-phone\}\}/g, ''); // Could be retrieved from user profile
+
+                // Send email via Gmail
+                const { sendEmail } = require('../utils/gmail');
+                const sendResult = await sendEmail(
+                    transporter,
+                    gmailConnection.gmail_email,
+                    customer.email,
+                    personalizedSubject,
+                    personalizedBody
+                );
+
+                const status = sendResult.success ? 'sent' : 'failed';
+                const errorMessage = sendResult.error || null;
+
+                // Track in email_sends
+                await db.query(
+                    `INSERT INTO public.email_sends (user_id, customer_id, message_type, subject_line, email_body, status, sent_at, error_message)
+                     VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)`,
+                    [userId, customer.id, customerType, personalizedSubject, personalizedBody, status, errorMessage]
+                );
+
+                // Update customer
+                if (sendResult.success) {
+                    await db.query(
+                        `UPDATE public.customers 
+                         SET last_contacted_at = NOW(), 
+                             total_emails_sent = COALESCE(total_emails_sent, 0) + 1
+                         WHERE id = $1`,
+                        [customer.id]
+                    );
+                    successCount++;
+                } else {
+                    failedCount++;
+                }
+
+                results.push({
+                    customer_id: customer.id,
+                    email: customer.email,
+                    success: sendResult.success,
+                    error: errorMessage
+                });
+
+                // Small delay between emails
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            } catch (error) {
+                error(`Error sending email to ${customer.email}:`, err);
+                failedCount++;
+                results.push({
+                    customer_id: customer.id,
+                    email: customer.email,
+                    success: false,
+                    error: error.message
+                });
+            }
+        }
+
+        res.json({
+            success: true,
+            message: `Sent ${successCount} emails successfully${failedCount > 0 ? `, ${failedCount} failed` : ''}`,
+            data: {
+                total: customers.length,
+                success: successCount,
+                failed: failedCount,
+                results
+            }
+        });
+    } catch (error) {
+        error('Send emails error:', err);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to send emails',
+            message: error.message
+        });
     }
 });
 
@@ -236,7 +452,7 @@ router.delete('/disconnect-gmail', async (req, res) => {
  * POST /api/emails/send-batch
  * Send batch emails to selected customers
  */
-router.post('/send-batch', async (req, res) => {
+router.post('/send-batch', validateEmailSend, async (req, res) => {
     try {
         const userId = req.user.userId;
         const { customer_ids, subject, body, template_type } = req.body;
@@ -251,7 +467,7 @@ router.post('/send-batch', async (req, res) => {
 
         // Check Gmail connection
         const gmailResult = await db.query(
-            'SELECT * FROM gmail_connections WHERE user_id = $1',
+            'SELECT * FROM public.gmail_connections WHERE user_id = $1',
             [userId]
         );
 
@@ -263,21 +479,21 @@ router.post('/send-batch', async (req, res) => {
 
         // Check usage limits
         const usageResult = await db.query(
-            `SELECT ut.*, u.subscription_plan 
-             FROM usage_tracking ut
-             JOIN users u ON u.id = ut.user_id
+            `SELECT ut.*, u.subscription_tier 
+             FROM public.usage_tracking ut
+             JOIN public.users u ON u.id = ut.user_id
              WHERE ut.user_id = $1`,
             [userId]
         );
 
         let emailsSentToday = 0;
         let emailsSentThisHour = 0;
-        let subscriptionPlan = 'free';
+        let subscriptionPlan = 'starter';
 
         if (usageResult.rows.length > 0) {
             emailsSentToday = usageResult.rows[0].emails_sent_today || 0;
             emailsSentThisHour = usageResult.rows[0].emails_sent_this_hour || 0;
-            subscriptionPlan = usageResult.rows[0].subscription_plan || 'free';
+            subscriptionPlan = usageResult.rows[0].subscription_tier || usageResult.rows[0].subscription_plan || 'starter';
         }
 
         // Check limits
@@ -309,7 +525,7 @@ router.post('/send-batch', async (req, res) => {
 
         // Get customers
         const customersResult = await db.query(
-            'SELECT * FROM customers WHERE id = ANY($1) AND user_id = $2',
+            'SELECT * FROM public.customers WHERE id = ANY($1) AND user_id = $2',
             [customer_ids, userId]
         );
 
@@ -326,7 +542,7 @@ router.post('/send-batch', async (req, res) => {
         // Update access token if refreshed
         if (accessToken !== gmailConnection.access_token) {
             await db.query(
-                'UPDATE gmail_connections SET access_token = $1, updated_at = NOW() WHERE user_id = $2',
+                'UPDATE public.gmail_connections SET access_token = $1, updated_at = NOW() WHERE user_id = $2',
                 [accessToken, userId]
             );
         }
@@ -351,14 +567,14 @@ router.post('/send-batch', async (req, res) => {
             const errorMessage = result.error || null;
 
             await db.query(
-                'INSERT INTO email_sends (user_id, customer_id, subject, body, status, error_message) VALUES ($1, $2, $3, $4, $5, $6)',
+                'INSERT INTO public.email_sends (user_id, customer_id, subject, body, status, error_message) VALUES ($1, $2, $3, $4, $5, $6)',
                 [userId, result.customer_id, subject, body, status, errorMessage]
             );
 
             // Update customer email_sent status
             if (result.success) {
                 await db.query(
-                    'UPDATE customers SET email_sent = TRUE, last_email_sent_at = NOW() WHERE id = $1',
+                    'UPDATE public.customers SET last_contacted_at = NOW() WHERE id = $1',
                     [result.customer_id]
                 );
             }
@@ -366,7 +582,7 @@ router.post('/send-batch', async (req, res) => {
 
         // Update usage tracking
         await db.query(
-            `INSERT INTO usage_tracking (user_id, emails_sent_today, emails_sent_this_hour, emails_sent_this_month, last_email_sent_at)
+            `INSERT INTO public.usage_tracking (user_id, emails_sent_today, emails_sent_this_hour, emails_sent_this_month, last_email_sent_at)
              VALUES ($1, $2, $2, $2, NOW())
              ON CONFLICT (user_id) DO UPDATE SET
                 emails_sent_today = usage_tracking.emails_sent_today + $2,
@@ -383,8 +599,12 @@ router.post('/send-batch', async (req, res) => {
             data: sendResults
         });
     } catch (error) {
-        console.error('Send batch error:', error);
-        res.status(500).json({ error: 'Failed to send emails', message: error.message });
+        error('Send batch error:', err);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to send emails', 
+            message: error.message 
+        });
     }
 });
 
@@ -399,8 +619,8 @@ router.get('/history', async (req, res) => {
 
         const result = await db.query(
             `SELECT es.*, c.full_name, c.email as customer_email
-             FROM email_sends es
-             JOIN customers c ON c.id = es.customer_id
+             FROM public.email_sends es
+             JOIN public.customers c ON c.id = es.customer_id
              WHERE es.user_id = $1
              ORDER BY es.sent_at DESC
              LIMIT $2 OFFSET $3`,
@@ -412,8 +632,12 @@ router.get('/history', async (req, res) => {
             data: result.rows
         });
     } catch (error) {
-        console.error('Email history error:', error);
-        res.status(500).json({ error: 'Failed to fetch email history' });
+        error('Email history error:', err);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to fetch email history',
+            message: error.message
+        });
     }
 });
 

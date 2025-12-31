@@ -750,7 +750,10 @@
             <div id="users" class="view">
                 <div class="header">
                     <h1>User Management</h1>
-                    <button class="btn btn-primary" onclick="openAddUserModal()">+ Add User</button>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn btn-secondary" onclick="exportUsersToCSV()">📥 Export CSV</button>
+                        <button class="btn btn-primary" onclick="openAddUserModal()">+ Add User</button>
+                    </div>
                 </div>
 
                 <div class="filters">
@@ -1237,7 +1240,13 @@
     </div>
 
     <script>
-        const API_URL = 'https://networkfollowup-backend.vercel.app/api';
+        // Auto-detect environment: production or development
+        const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+        const API_URL = isProduction 
+            ? 'https://networkfollowup-backend-hm12cqp9v-brondors-projects.vercel.app/api'
+            : 'http://localhost:5000/api';
+        console.log('Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT');
+        console.log('API URL:', API_URL);
         
         // Mock data store
         let users = [
@@ -1399,6 +1408,83 @@
             `;
             
             document.getElementById('usersTable').innerHTML = html;
+        }
+
+        /**
+         * Export users to CSV
+         * Client-side export - no backend cost
+         */
+        function exportUsersToCSV() {
+            try {
+                // Get current users (filtered or all)
+                const searchTerm = document.getElementById('userSearch')?.value.toLowerCase() || '';
+                const planFilter = document.getElementById('planFilter')?.value || 'all';
+                const statusFilter = document.getElementById('statusFilter')?.value || 'all';
+
+                let usersToExport = users;
+
+                // Apply filters (same as filterUsers)
+                if (searchTerm) {
+                    usersToExport = usersToExport.filter(u => 
+                        u.name.toLowerCase().includes(searchTerm) || 
+                        u.email.toLowerCase().includes(searchTerm)
+                    );
+                }
+                if (planFilter !== 'all') {
+                    usersToExport = usersToExport.filter(u => u.plan === planFilter);
+                }
+                if (statusFilter !== 'all') {
+                    usersToExport = usersToExport.filter(u => u.status === statusFilter);
+                }
+
+                // Create CSV content
+                const headers = ['Name', 'Email', 'Plan', 'Status', 'API Usage', 'Limit', 'Emails Sent', 'Joined Date'];
+                const rows = usersToExport.map(user => [
+                    user.name,
+                    user.email,
+                    user.plan,
+                    user.status,
+                    user.apiUsage,
+                    user.limit === 999999 ? 'Unlimited' : user.limit,
+                    user.emailsSent || 0,
+                    user.joined
+                ]);
+
+                // Escape CSV values (handle commas, quotes, newlines)
+                const escapeCSV = (value) => {
+                    if (value === null || value === undefined) return '';
+                    const stringValue = String(value);
+                    if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+                        return `"${stringValue.replace(/"/g, '""')}"`;
+                    }
+                    return stringValue;
+                };
+
+                // Build CSV content
+                const csvContent = [
+                    headers.map(escapeCSV).join(','),
+                    ...rows.map(row => row.map(escapeCSV).join(','))
+                ].join('\n');
+
+                // Create blob and download
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                
+                link.setAttribute('href', url);
+                link.setAttribute('download', `users_export_${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Show success message
+                alert(`✅ Exported ${usersToExport.length} users to CSV`);
+            } catch (err) {
+                console.error('CSV export error:', err);
+                alert('❌ Failed to export CSV. Please try again.');
+            }
         }
 
         function filterUsers() {
