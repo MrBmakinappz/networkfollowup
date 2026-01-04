@@ -153,3 +153,4 @@
 
 **Note**: CSRF protection can be added if needed, but with JWT tokens and same-origin policy, it's less critical. Consider adding for extra security.
 
+
