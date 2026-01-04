@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NetworkFollowUp - AI-Powered Follow-Up Automation</title>
     <meta name="description" content="Transform doTERRA customer screenshots into personalized follow-up emails in 30 seconds. AI-powered OCR, automated email sending, and smart analytics.">
+    <meta property="og:title" content="NetworkFollowUp - AI-Powered Follow-Up Automation">
+    <meta property="og:description" content="Transform doTERRA customer screenshots into personalized follow-up emails in 30 seconds.">
+    <meta property="og:type" content="website">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -19,199 +22,376 @@
             background: linear-gradient(135deg, #10B981 0%, #059669 100%);
             min-height: 100vh;
             color: #1E293B;
+            overflow-x: hidden;
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 40px 20px;
+            padding: 0 20px;
         }
 
         /* Header */
         header {
             text-align: center;
-            padding: 60px 20px 80px;
+            padding: 80px 20px 100px;
             color: white;
+            position: relative;
         }
 
         .logo {
-            font-size: 48px;
+            font-size: 56px;
             font-weight: 800;
-            margin-bottom: 16px;
-            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+            text-shadow: 0 2px 30px rgba(0, 0, 0, 0.3);
+            letter-spacing: -1px;
         }
 
         .tagline {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 32px;
-            opacity: 0.95;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            opacity: 0.98;
         }
 
         .subtitle {
-            font-size: 18px;
-            opacity: 0.9;
-            max-width: 700px;
-            margin: 0 auto 48px;
-            line-height: 1.6;
+            font-size: 20px;
+            opacity: 0.95;
+            max-width: 750px;
+            margin: 0 auto 56px;
+            line-height: 1.7;
+            font-weight: 400;
         }
 
         .cta-buttons {
             display: flex;
-            gap: 20px;
+            gap: 24px;
             justify-content: center;
             flex-wrap: wrap;
         }
 
         .btn {
-            padding: 16px 32px;
-            border-radius: 12px;
+            padding: 18px 40px;
+            border-radius: 14px;
             font-weight: 700;
-            font-size: 16px;
+            font-size: 17px;
             border: none;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
             text-decoration: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             font-family: 'Manrope', sans-serif;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         }
 
         .btn-primary {
             background: white;
             color: #10B981;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 30px rgba(0, 0, 0, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
         }
 
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.15);
             color: white;
-            border: 2px solid white;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
         }
 
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
+            background: rgba(255, 255, 255, 0.25);
+            border-color: white;
+            transform: translateY(-3px);
         }
 
         /* Features Section */
         .features {
             background: white;
-            border-radius: 24px;
-            padding: 60px 40px;
-            margin: -40px 20px 60px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            border-radius: 32px;
+            padding: 80px 40px;
+            margin: -60px 20px 80px;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.2);
+        }
+
+        .section-title {
+            font-size: 42px;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 16px;
+            color: #1E293B;
+            letter-spacing: -1px;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            font-size: 18px;
+            color: #64748B;
+            margin-bottom: 60px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 40px;
-            margin-top: 40px;
+            margin-top: 50px;
         }
 
         .feature {
             text-align: center;
+            padding: 32px 24px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            background: #F8FAFC;
+        }
+
+        .feature:hover {
+            transform: translateY(-5px);
+            background: #F1F5F9;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
 
         .feature-icon {
-            font-size: 48px;
-            margin-bottom: 20px;
+            font-size: 56px;
+            margin-bottom: 24px;
+            display: block;
         }
 
         .feature-title {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 700;
             margin-bottom: 12px;
             color: #1E293B;
         }
 
         .feature-description {
-            font-size: 15px;
+            font-size: 16px;
             color: #64748B;
-            line-height: 1.6;
+            line-height: 1.7;
+        }
+
+        /* Pricing Section */
+        .pricing {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 80px 40px;
+            margin: 80px 20px;
+            color: white;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 32px;
+            max-width: 1000px;
+            margin: 60px auto 0;
+        }
+
+        .pricing-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            padding: 40px 32px;
+            text-align: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .pricing-card.featured {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: white;
+            transform: scale(1.05);
+        }
+
+        .pricing-card.featured:hover {
+            transform: scale(1.05) translateY(-8px);
+        }
+
+        .plan-name {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .plan-price {
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .plan-period {
+            font-size: 16px;
+            opacity: 0.8;
+            margin-bottom: 24px;
+        }
+
+        .plan-features {
+            list-style: none;
+            margin-bottom: 32px;
+            text-align: left;
+        }
+
+        .plan-features li {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 15px;
+        }
+
+        .plan-features li:last-child {
+            border-bottom: none;
+        }
+
+        .plan-features li:before {
+            content: "✓ ";
+            font-weight: 700;
+            margin-right: 12px;
+            color: #10B981;
+        }
+
+        .plan-button {
+            width: 100%;
+            padding: 16px;
+            background: white;
+            color: #10B981;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .plan-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .plan-button.featured {
+            background: #10B981;
+            color: white;
         }
 
         /* How It Works */
         .how-it-works {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 24px;
-            padding: 60px 40px;
-            margin: 60px 20px;
-            color: white;
-        }
-
-        .section-title {
-            font-size: 36px;
-            font-weight: 800;
-            text-align: center;
-            margin-bottom: 48px;
+            background: white;
+            border-radius: 32px;
+            padding: 80px 40px;
+            margin: 80px 20px;
         }
 
         .steps {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 32px;
-            max-width: 1000px;
-            margin: 0 auto;
+            gap: 40px;
+            max-width: 1100px;
+            margin: 60px auto 0;
         }
 
         .step {
             text-align: center;
-            padding: 32px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            backdrop-filter: blur(5px);
+            padding: 40px 32px;
+            background: #F8FAFC;
+            border-radius: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .step:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
         }
 
         .step-number {
-            font-size: 48px;
+            font-size: 64px;
             font-weight: 800;
-            margin-bottom: 16px;
-            opacity: 0.8;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .step-title {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 700;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
+            color: #1E293B;
         }
 
         .step-description {
-            font-size: 15px;
-            opacity: 0.9;
-            line-height: 1.6;
+            font-size: 16px;
+            color: #64748B;
+            line-height: 1.7;
+        }
+
+        /* Final CTA */
+        .final-cta {
+            text-align: center;
+            padding: 100px 20px;
+            color: white;
+        }
+
+        .final-cta h2 {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 24px;
+        }
+
+        .final-cta p {
+            font-size: 20px;
+            opacity: 0.95;
+            margin-bottom: 48px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         /* Footer */
         footer {
             text-align: center;
-            padding: 40px 20px;
+            padding: 60px 20px;
             color: white;
             opacity: 0.8;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         /* Responsive */
         @media (max-width: 768px) {
             .logo {
-                font-size: 36px;
+                font-size: 40px;
             }
 
             .tagline {
-                font-size: 20px;
+                font-size: 22px;
             }
 
-            .features {
-                padding: 40px 24px;
+            .subtitle {
+                font-size: 17px;
+            }
+
+            .features, .pricing, .how-it-works {
+                padding: 50px 24px;
             }
 
             .section-title {
-                font-size: 28px;
+                font-size: 32px;
+            }
+
+            .pricing-card.featured {
+                transform: scale(1);
             }
         }
     </style>
@@ -226,7 +406,7 @@
                 AI-powered platform for doTERRA distributors. Upload a screenshot, extract customer data with OCR, and send personalized follow-up emails automatically.
             </div>
             <div class="cta-buttons">
-                <a href="signup.html" class="btn btn-primary">Get Started Free</a>
+                <a href="signup.html" class="btn btn-primary">🚀 Get Started Free</a>
                 <a href="login.html" class="btn btn-secondary">Sign In</a>
             </div>
         </div>
@@ -235,45 +415,46 @@
     <!-- Features -->
     <div class="container">
         <div class="features">
-            <h2 class="section-title" style="color: #1E293B; margin-bottom: 48px;">✨ Key Features</h2>
+            <h2 class="section-title">✨ Key Features</h2>
+            <p class="section-subtitle">Everything you need to automate your customer follow-ups</p>
             <div class="features-grid">
                 <div class="feature">
-                    <div class="feature-icon">🤖</div>
+                    <span class="feature-icon">🤖</span>
                     <div class="feature-title">AI-Powered OCR</div>
                     <div class="feature-description">
                         Extract customer data from screenshots with 95%+ accuracy using Claude Vision API
                     </div>
                 </div>
                 <div class="feature">
-                    <div class="feature-icon">🎯</div>
+                    <span class="feature-icon">🎯</span>
                     <div class="feature-title">3 Message Types</div>
                     <div class="feature-description">
                         Different strategies for Retail, Wholesale, and Wellness Advocates
                     </div>
                 </div>
                 <div class="feature">
-                    <div class="feature-icon">🌍</div>
+                    <span class="feature-icon">🌍</span>
                     <div class="feature-title">9 Languages</div>
                     <div class="feature-description">
                         Auto-translate to English, Italian, German, French, Polish, Bulgarian, Czech, Romanian, Slovak
                     </div>
                 </div>
                 <div class="feature">
-                    <div class="feature-icon">✉️</div>
+                    <span class="feature-icon">✉️</span>
                     <div class="feature-title">Gmail Integration</div>
                     <div class="feature-description">
                         Send from your personal Gmail account with OAuth 2.0 security
                     </div>
                 </div>
                 <div class="feature">
-                    <div class="feature-icon">📊</div>
+                    <span class="feature-icon">📊</span>
                     <div class="feature-title">Smart Analytics</div>
                     <div class="feature-description">
                         Track open rates, clicks, and conversions by customer type
                     </div>
                 </div>
                 <div class="feature">
-                    <div class="feature-icon">⚡</div>
+                    <span class="feature-icon">⚡</span>
                     <div class="feature-title">Fast & Secure</div>
                     <div class="feature-description">
                         Rate limiting, input validation, and enterprise-grade security
@@ -283,10 +464,65 @@
         </div>
     </div>
 
+    <!-- Pricing -->
+    <div class="container">
+        <div class="pricing">
+            <h2 class="section-title">💰 Simple, Transparent Pricing</h2>
+            <p class="section-subtitle" style="color: rgba(255,255,255,0.9);">Choose the plan that fits your business</p>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <div class="plan-name">Starter</div>
+                    <div class="plan-price">$29</div>
+                    <div class="plan-period">per month</div>
+                    <ul class="plan-features">
+                        <li>100 emails/month</li>
+                        <li>AI-powered OCR</li>
+                        <li>3 message types</li>
+                        <li>9 languages</li>
+                        <li>Gmail integration</li>
+                        <li>Basic analytics</li>
+                    </ul>
+                    <a href="signup.html" class="plan-button">Get Started</a>
+                </div>
+                <div class="pricing-card featured">
+                    <div class="plan-name">Professional</div>
+                    <div class="plan-price">$79</div>
+                    <div class="plan-period">per month</div>
+                    <ul class="plan-features">
+                        <li>500 emails/month</li>
+                        <li>AI-powered OCR</li>
+                        <li>3 message types</li>
+                        <li>9 languages</li>
+                        <li>Gmail integration</li>
+                        <li>Advanced analytics</li>
+                        <li>Priority support</li>
+                    </ul>
+                    <a href="signup.html" class="plan-button featured">Most Popular</a>
+                </div>
+                <div class="pricing-card">
+                    <div class="plan-name">Enterprise</div>
+                    <div class="plan-price">$199</div>
+                    <div class="plan-period">per month</div>
+                    <ul class="plan-features">
+                        <li>Unlimited emails</li>
+                        <li>AI-powered OCR</li>
+                        <li>3 message types</li>
+                        <li>9 languages</li>
+                        <li>Gmail integration</li>
+                        <li>Full analytics suite</li>
+                        <li>Dedicated support</li>
+                    </ul>
+                    <a href="signup.html" class="plan-button">Contact Us</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- How It Works -->
     <div class="container">
         <div class="how-it-works">
             <h2 class="section-title">🚀 How It Works</h2>
+            <p class="section-subtitle">Get started in minutes, not hours</p>
             <div class="steps">
                 <div class="step">
                     <div class="step-number">1</div>
@@ -299,7 +535,7 @@
                     <div class="step-number">2</div>
                     <div class="step-title">AI Extracts Data</div>
                     <div class="step-description">
-                        Claude Vision API extracts names, emails, member types, and country codes
+                        Claude Vision API extracts names, emails, member types, and country codes automatically
                     </div>
                 </div>
                 <div class="step">
@@ -313,9 +549,21 @@
                     <div class="step-number">4</div>
                     <div class="step-title">Track Results</div>
                     <div class="step-description">
-                        Monitor open rates, clicks, conversions, and optimize your follow-ups
+                        Monitor open rates, clicks, conversions, and optimize your follow-ups for better results
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Final CTA -->
+    <div class="container">
+        <div class="final-cta">
+            <h2>Ready to automate your follow-ups?</h2>
+            <p>Join doTERRA distributors who are saving hours every week with NetworkFollowUp</p>
+            <div class="cta-buttons">
+                <a href="signup.html" class="btn btn-primary">🚀 Start Free Trial</a>
+                <a href="login.html" class="btn btn-secondary">Sign In</a>
             </div>
         </div>
     </div>
@@ -333,4 +581,3 @@
     </script>
 </body>
 </html>
-
