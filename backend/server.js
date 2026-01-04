@@ -145,6 +145,14 @@ app.use('/api/auth', authRoutes);
 app.use('/api/oauth', oauthRoutes);
 log('✅ Routes registered: /api/auth, /api/oauth');
 
+// Debug: Test OAuth route registration
+app.get('/api/oauth/test', (req, res) => {
+  res.json({ 
+    message: 'OAuth route is accessible',
+    routes: oauthRoutes.stack ? oauthRoutes.stack.map(r => r.route?.path) : 'No stack'
+  });
+});
+
 // Protected routes (auth required)
 const uploadsRoutes = require('./routes/uploads');
 const customersRoutes = require('./routes/customers');
