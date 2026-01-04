@@ -9,7 +9,7 @@
     <meta property="og:description" content="Transform doTERRA customer screenshots into personalized follow-up emails in 30 seconds.">
     <meta property="og:type" content="website">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -17,149 +17,234 @@
             box-sizing: border-box;
         }
 
-        body {
-            font-family: 'Manrope', sans-serif;
-            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-            min-height: 100vh;
-            color: #1E293B;
-            overflow-x: hidden;
+        :root {
+            --primary: #10B981;
+            --primary-dark: #059669;
+            --text-primary: #1F2937;
+            --text-secondary: #6B7280;
+            --bg-white: #FFFFFF;
+            --bg-gray: #F9FAFB;
+            --border: #E5E7EB;
         }
 
-        .container {
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: var(--text-primary);
+            background: var(--bg-white);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+            padding: 20px 0;
+        }
+
+        .nav-container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        /* Header */
-        header {
-            text-align: center;
-            padding: 80px 20px 100px;
-            color: white;
-            position: relative;
+            padding: 0 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .logo {
-            font-size: 56px;
-            font-weight: 800;
-            margin-bottom: 20px;
-            text-shadow: 0 2px 30px rgba(0, 0, 0, 0.3);
-            letter-spacing: -1px;
-        }
-
-        .tagline {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 24px;
-            opacity: 0.98;
-        }
-
-        .subtitle {
             font-size: 20px;
-            opacity: 0.95;
-            max-width: 750px;
-            margin: 0 auto 56px;
-            line-height: 1.7;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-button {
+            background: var(--text-primary);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-button:hover {
+            background: #111827;
+            transform: translateY(-1px);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 180px 40px 120px;
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: var(--bg-gray);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+
+        .hero-title {
+            font-size: 72px;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -2px;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+        }
+
+        .hero-subtitle {
+            font-size: 22px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 48px;
             font-weight: 400;
         }
 
-        .cta-buttons {
+        .hero-cta {
             display: flex;
-            gap: 24px;
+            gap: 16px;
             justify-content: center;
             flex-wrap: wrap;
         }
 
-        .btn {
-            padding: 18px 40px;
-            border-radius: 14px;
-            font-weight: 700;
-            font-size: 17px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 12px;
             text-decoration: none;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.2s;
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            font-family: 'Manrope', sans-serif;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        }
-
-        .btn-primary {
-            background: white;
-            color: #10B981;
+            border: none;
+            cursor: pointer;
         }
 
         .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
         }
 
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            backdrop-filter: blur(10px);
+            background: var(--bg-white);
+            color: var(--text-primary);
+            padding: 16px 32px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid var(--border);
         }
 
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.25);
-            border-color: white;
-            transform: translateY(-3px);
+            background: var(--bg-gray);
+            border-color: var(--text-primary);
         }
 
-        /* Features Section */
-        .features {
-            background: white;
-            border-radius: 32px;
-            padding: 80px 40px;
-            margin: -60px 20px 80px;
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.2);
+        /* Section */
+        .section {
+            padding: 120px 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .section-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
         }
 
         .section-title {
-            font-size: 42px;
+            font-size: 48px;
             font-weight: 800;
-            text-align: center;
-            margin-bottom: 16px;
-            color: #1E293B;
-            letter-spacing: -1px;
+            line-height: 1.2;
+            letter-spacing: -1.5px;
+            margin-bottom: 20px;
+            color: var(--text-primary);
         }
 
-        .section-subtitle {
-            text-align: center;
-            font-size: 18px;
-            color: #64748B;
-            margin-bottom: 60px;
+        .section-description {
+            font-size: 20px;
+            color: var(--text-secondary);
             max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
+            margin: 0 auto;
         }
 
+        /* Features Grid */
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 40px;
-            margin-top: 50px;
         }
 
-        .feature {
-            text-align: center;
-            padding: 32px 24px;
-            border-radius: 20px;
-            transition: all 0.3s ease;
-            background: #F8FAFC;
+        .feature-card {
+            padding: 40px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+            background: var(--bg-white);
         }
 
-        .feature:hover {
-            transform: translateY(-5px);
-            background: #F1F5F9;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        .feature-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+            transform: translateY(-4px);
         }
 
         .feature-icon {
-            font-size: 56px;
+            font-size: 40px;
             margin-bottom: 24px;
             display: block;
         }
@@ -168,87 +253,92 @@
             font-size: 22px;
             font-weight: 700;
             margin-bottom: 12px;
-            color: #1E293B;
+            color: var(--text-primary);
         }
 
         .feature-description {
             font-size: 16px;
-            color: #64748B;
+            color: var(--text-secondary);
             line-height: 1.7;
         }
 
-        /* Pricing Section */
-        .pricing {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(20px);
-            border-radius: 32px;
-            padding: 80px 40px;
-            margin: 80px 20px;
-            color: white;
-        }
-
+        /* Pricing */
         .pricing-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 32px;
             max-width: 1000px;
-            margin: 60px auto 0;
+            margin: 0 auto;
         }
 
         .pricing-card {
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            border-radius: 24px;
-            padding: 40px 32px;
-            text-align: center;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .pricing-card:hover {
-            transform: translateY(-8px);
-            border-color: rgba(255, 255, 255, 0.4);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            padding: 48px 40px;
+            border-radius: 20px;
+            border: 2px solid var(--border);
+            background: var(--bg-white);
+            transition: all 0.3s;
+            position: relative;
         }
 
         .pricing-card.featured {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: white;
+            border-color: var(--primary);
+            background: linear-gradient(to bottom, var(--bg-white) 0%, var(--bg-gray) 100%);
             transform: scale(1.05);
+        }
+
+        .pricing-card:hover {
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            transform: translateY(-8px);
         }
 
         .pricing-card.featured:hover {
             transform: scale(1.05) translateY(-8px);
         }
 
+        .pricing-badge {
+            position: absolute;
+            top: -12px;
+            right: 32px;
+            background: var(--primary);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
         .plan-name {
             font-size: 24px;
             font-weight: 700;
             margin-bottom: 16px;
+            color: var(--text-primary);
         }
 
         .plan-price {
-            font-size: 48px;
+            font-size: 56px;
             font-weight: 800;
+            line-height: 1;
             margin-bottom: 8px;
+            color: var(--text-primary);
+            letter-spacing: -2px;
         }
 
         .plan-period {
             font-size: 16px;
-            opacity: 0.8;
-            margin-bottom: 24px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
         }
 
         .plan-features {
             list-style: none;
-            margin-bottom: 32px;
-            text-align: left;
+            margin-bottom: 40px;
         }
 
         .plan-features li {
             padding: 12px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 15px;
+            font-size: 16px;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border);
         }
 
         .plan-features li:last-child {
@@ -256,101 +346,89 @@
         }
 
         .plan-features li:before {
-            content: "✓ ";
+            content: "✓";
+            color: var(--primary);
             font-weight: 700;
             margin-right: 12px;
-            color: #10B981;
         }
 
         .plan-button {
             width: 100%;
             padding: 16px;
-            background: white;
-            color: #10B981;
+            background: var(--text-primary);
+            color: white;
             border: none;
             border-radius: 12px;
-            font-weight: 700;
             font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s;
         }
 
         .plan-button:hover {
+            background: #111827;
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
         }
 
-        .plan-button.featured {
-            background: #10B981;
-            color: white;
+        .pricing-card.featured .plan-button {
+            background: var(--primary);
         }
 
-        /* How It Works */
-        .how-it-works {
-            background: white;
-            border-radius: 32px;
-            padding: 80px 40px;
-            margin: 80px 20px;
+        .pricing-card.featured .plan-button:hover {
+            background: var(--primary-dark);
         }
 
-        .steps {
+        /* Stats Section */
+        .stats-section {
+            background: var(--bg-gray);
+            padding: 120px 40px;
+            text-align: center;
+        }
+
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 40px;
-            max-width: 1100px;
-            margin: 60px auto 0;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 60px;
+            max-width: 900px;
+            margin: 0 auto;
         }
 
-        .step {
+        .stat-item {
             text-align: center;
-            padding: 40px 32px;
-            background: #F8FAFC;
-            border-radius: 24px;
-            transition: all 0.3s ease;
         }
 
-        .step:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
-        }
-
-        .step-number {
-            font-size: 64px;
+        .stat-number {
+            font-size: 56px;
             font-weight: 800;
-            margin-bottom: 20px;
-            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--primary);
+            margin-bottom: 12px;
+            letter-spacing: -2px;
         }
 
-        .step-title {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 16px;
-            color: #1E293B;
-        }
-
-        .step-description {
+        .stat-label {
             font-size: 16px;
-            color: #64748B;
-            line-height: 1.7;
+            color: var(--text-secondary);
+            font-weight: 500;
         }
 
-        /* Final CTA */
-        .final-cta {
-            text-align: center;
-            padding: 100px 20px;
+        /* CTA Section */
+        .cta-section {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
+            padding: 120px 40px;
+            text-align: center;
+            border-radius: 24px;
+            margin: 120px 40px;
         }
 
-        .final-cta h2 {
-            font-size: 42px;
+        .cta-title {
+            font-size: 48px;
             font-weight: 800;
             margin-bottom: 24px;
+            letter-spacing: -1.5px;
         }
 
-        .final-cta p {
+        .cta-description {
             font-size: 20px;
             opacity: 0.95;
             margin-bottom: 48px;
@@ -359,225 +437,227 @@
             margin-right: auto;
         }
 
+        .cta-section .btn-primary {
+            background: white;
+            color: var(--primary);
+        }
+
+        .cta-section .btn-primary:hover {
+            background: var(--bg-gray);
+            transform: translateY(-2px);
+        }
+
         /* Footer */
         footer {
+            border-top: 1px solid var(--border);
+            padding: 60px 40px;
             text-align: center;
-            padding: 60px 20px;
-            color: white;
-            opacity: 0.8;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-secondary);
         }
 
         /* Responsive */
         @media (max-width: 768px) {
-            .logo {
-                font-size: 40px;
+            .hero-title {
+                font-size: 48px;
             }
 
-            .tagline {
-                font-size: 22px;
-            }
-
-            .subtitle {
-                font-size: 17px;
-            }
-
-            .features, .pricing, .how-it-works {
-                padding: 50px 24px;
+            .hero-subtitle {
+                font-size: 18px;
             }
 
             .section-title {
-                font-size: 32px;
+                font-size: 36px;
+            }
+
+            .nav-container {
+                padding: 0 20px;
+            }
+
+            .nav-links {
+                gap: 20px;
+            }
+
+            .nav-link {
+                display: none;
+            }
+
+            .section {
+                padding: 80px 20px;
+            }
+
+            .features-grid,
+            .pricing-grid {
+                grid-template-columns: 1fr;
             }
 
             .pricing-card.featured {
                 transform: scale(1);
             }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 40px;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <header>
-        <div class="container">
-            <div class="logo">NetworkFollowUp</div>
-            <div class="tagline">Transform screenshots into personalized emails in 30 seconds</div>
-            <div class="subtitle">
-                AI-powered platform for doTERRA distributors. Upload a screenshot, extract customer data with OCR, and send personalized follow-up emails automatically.
-            </div>
-            <div class="cta-buttons">
-                <a href="signup.html" class="btn btn-primary">🚀 Get Started Free</a>
-                <a href="login.html" class="btn btn-secondary">Sign In</a>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="/" class="logo">NetworkFollowUp</a>
+            <div class="nav-links">
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#pricing" class="nav-link">Pricing</a>
+                <a href="login.html" class="nav-link">Sign In</a>
+                <a href="signup.html" class="nav-button">Get Started</a>
             </div>
         </div>
-    </header>
+    </nav>
 
-    <!-- Features -->
-    <div class="container">
-        <div class="features">
-            <h2 class="section-title">✨ Key Features</h2>
-            <p class="section-subtitle">Everything you need to automate your customer follow-ups</p>
-            <div class="features-grid">
-                <div class="feature">
-                    <span class="feature-icon">🤖</span>
-                    <div class="feature-title">AI-Powered OCR</div>
-                    <div class="feature-description">
-                        Extract customer data from screenshots with 95%+ accuracy using Claude Vision API
-                    </div>
-                </div>
-                <div class="feature">
-                    <span class="feature-icon">🎯</span>
-                    <div class="feature-title">3 Message Types</div>
-                    <div class="feature-description">
-                        Different strategies for Retail, Wholesale, and Wellness Advocates
-                    </div>
-                </div>
-                <div class="feature">
-                    <span class="feature-icon">🌍</span>
-                    <div class="feature-title">9 Languages</div>
-                    <div class="feature-description">
-                        Auto-translate to English, Italian, German, French, Polish, Bulgarian, Czech, Romanian, Slovak
-                    </div>
-                </div>
-                <div class="feature">
-                    <span class="feature-icon">✉️</span>
-                    <div class="feature-title">Gmail Integration</div>
-                    <div class="feature-description">
-                        Send from your personal Gmail account with OAuth 2.0 security
-                    </div>
-                </div>
-                <div class="feature">
-                    <span class="feature-icon">📊</span>
-                    <div class="feature-title">Smart Analytics</div>
-                    <div class="feature-description">
-                        Track open rates, clicks, and conversions by customer type
-                    </div>
-                </div>
-                <div class="feature">
-                    <span class="feature-icon">⚡</span>
-                    <div class="feature-title">Fast & Secure</div>
-                    <div class="feature-description">
-                        Rate limiting, input validation, and enterprise-grade security
-                    </div>
-                </div>
-            </div>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-badge">AI-Powered Automation</div>
+        <h1 class="hero-title">Transform screenshots into personalized emails in 30 seconds</h1>
+        <p class="hero-subtitle">The smartest way for doTERRA distributors to automate customer follow-ups. Upload a screenshot, extract data with AI, and send personalized emails automatically.</p>
+        <div class="hero-cta">
+            <a href="signup.html" class="btn-primary">Get Started Free</a>
+            <a href="#features" class="btn-secondary">Learn More</a>
         </div>
-    </div>
+    </section>
 
-    <!-- Pricing -->
-    <div class="container">
-        <div class="pricing">
-            <h2 class="section-title">💰 Simple, Transparent Pricing</h2>
-            <p class="section-subtitle" style="color: rgba(255,255,255,0.9);">Choose the plan that fits your business</p>
-            <div class="pricing-grid">
-                <div class="pricing-card">
-                    <div class="plan-name">Starter</div>
-                    <div class="plan-price">$29</div>
-                    <div class="plan-period">per month</div>
-                    <ul class="plan-features">
-                        <li>100 emails/month</li>
-                        <li>AI-powered OCR</li>
-                        <li>3 message types</li>
-                        <li>9 languages</li>
-                        <li>Gmail integration</li>
-                        <li>Basic analytics</li>
-                    </ul>
-                    <a href="signup.html" class="plan-button">Get Started</a>
-                </div>
-                <div class="pricing-card featured">
-                    <div class="plan-name">Professional</div>
-                    <div class="plan-price">$79</div>
-                    <div class="plan-period">per month</div>
-                    <ul class="plan-features">
-                        <li>500 emails/month</li>
-                        <li>AI-powered OCR</li>
-                        <li>3 message types</li>
-                        <li>9 languages</li>
-                        <li>Gmail integration</li>
-                        <li>Advanced analytics</li>
-                        <li>Priority support</li>
-                    </ul>
-                    <a href="signup.html" class="plan-button featured">Most Popular</a>
-                </div>
-                <div class="pricing-card">
-                    <div class="plan-name">Enterprise</div>
-                    <div class="plan-price">$199</div>
-                    <div class="plan-period">per month</div>
-                    <ul class="plan-features">
-                        <li>Unlimited emails</li>
-                        <li>AI-powered OCR</li>
-                        <li>3 message types</li>
-                        <li>9 languages</li>
-                        <li>Gmail integration</li>
-                        <li>Full analytics suite</li>
-                        <li>Dedicated support</li>
-                    </ul>
-                    <a href="signup.html" class="plan-button">Contact Us</a>
-                </div>
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number">95%+</div>
+                <div class="stat-label">OCR Accuracy</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">30s</div>
+                <div class="stat-label">Average Processing</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">9</div>
+                <div class="stat-label">Languages Supported</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">3</div>
+                <div class="stat-label">Message Strategies</div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- How It Works -->
-    <div class="container">
-        <div class="how-it-works">
-            <h2 class="section-title">🚀 How It Works</h2>
-            <p class="section-subtitle">Get started in minutes, not hours</p>
-            <div class="steps">
-                <div class="step">
-                    <div class="step-number">1</div>
-                    <div class="step-title">Upload Screenshot</div>
-                    <div class="step-description">
-                        Upload a screenshot from your doTERRA back office showing customer list
-                    </div>
-                </div>
-                <div class="step">
-                    <div class="step-number">2</div>
-                    <div class="step-title">AI Extracts Data</div>
-                    <div class="step-description">
-                        Claude Vision API extracts names, emails, member types, and country codes automatically
-                    </div>
-                </div>
-                <div class="step">
-                    <div class="step-number">3</div>
-                    <div class="step-title">Personalized Emails</div>
-                    <div class="step-description">
-                        System sends appropriate template based on customer type (Retail/Wholesale/Advocate)
-                    </div>
-                </div>
-                <div class="step">
-                    <div class="step-number">4</div>
-                    <div class="step-title">Track Results</div>
-                    <div class="step-description">
-                        Monitor open rates, clicks, conversions, and optimize your follow-ups for better results
-                    </div>
-                </div>
+    <!-- Features Section -->
+    <section class="section" id="features">
+        <div class="section-header">
+            <div class="section-label">Features</div>
+            <h2 class="section-title">Everything you need to automate follow-ups</h2>
+            <p class="section-description">Powerful features designed to save you time and increase conversions</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <span class="feature-icon">🤖</span>
+                <h3 class="feature-title">AI-Powered OCR</h3>
+                <p class="feature-description">Extract customer data from screenshots with 95%+ accuracy using Claude Vision API. No manual data entry required.</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">🎯</span>
+                <h3 class="feature-title">3 Message Strategies</h3>
+                <p class="feature-description">Different approaches for Retail, Wholesale, and Wellness Advocates. Each optimized for maximum conversion.</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">🌍</span>
+                <h3 class="feature-title">9 Languages</h3>
+                <p class="feature-description">Auto-translate to English, Italian, German, French, Polish, Bulgarian, Czech, Romanian, and Slovak.</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">✉️</span>
+                <h3 class="feature-title">Gmail Integration</h3>
+                <p class="feature-description">Send from your personal Gmail account with OAuth 2.0 security. No third-party email service needed.</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">📊</span>
+                <h3 class="feature-title">Smart Analytics</h3>
+                <p class="feature-description">Track open rates, clicks, and conversions by customer type. Make data-driven decisions.</p>
+            </div>
+            <div class="feature-card">
+                <span class="feature-icon">⚡</span>
+                <h3 class="feature-title">Enterprise Security</h3>
+                <p class="feature-description">Rate limiting, input validation, and enterprise-grade security. Your data is always safe.</p>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Final CTA -->
-    <div class="container">
-        <div class="final-cta">
-            <h2>Ready to automate your follow-ups?</h2>
-            <p>Join doTERRA distributors who are saving hours every week with NetworkFollowUp</p>
-            <div class="cta-buttons">
-                <a href="signup.html" class="btn btn-primary">🚀 Start Free Trial</a>
-                <a href="login.html" class="btn btn-secondary">Sign In</a>
+    <!-- Pricing Section -->
+    <section class="section" id="pricing">
+        <div class="section-header">
+            <div class="section-label">Pricing</div>
+            <h2 class="section-title">Simple, transparent pricing</h2>
+            <p class="section-description">Choose the plan that fits your business needs</p>
+        </div>
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <div class="plan-name">Starter</div>
+                <div class="plan-price">$29</div>
+                <div class="plan-period">per month</div>
+                <ul class="plan-features">
+                    <li>100 emails/month</li>
+                    <li>AI-powered OCR</li>
+                    <li>3 message types</li>
+                    <li>9 languages</li>
+                    <li>Gmail integration</li>
+                    <li>Basic analytics</li>
+                </ul>
+                <a href="signup.html" class="plan-button">Get Started</a>
+            </div>
+            <div class="pricing-card featured">
+                <div class="pricing-badge">Most Popular</div>
+                <div class="plan-name">Professional</div>
+                <div class="plan-price">$79</div>
+                <div class="plan-period">per month</div>
+                <ul class="plan-features">
+                    <li>500 emails/month</li>
+                    <li>AI-powered OCR</li>
+                    <li>3 message types</li>
+                    <li>9 languages</li>
+                    <li>Gmail integration</li>
+                    <li>Advanced analytics</li>
+                    <li>Priority support</li>
+                </ul>
+                <a href="signup.html" class="plan-button">Get Started</a>
+            </div>
+            <div class="pricing-card">
+                <div class="plan-name">Enterprise</div>
+                <div class="plan-price">$199</div>
+                <div class="plan-period">per month</div>
+                <ul class="plan-features">
+                    <li>Unlimited emails</li>
+                    <li>AI-powered OCR</li>
+                    <li>3 message types</li>
+                    <li>9 languages</li>
+                    <li>Gmail integration</li>
+                    <li>Full analytics suite</li>
+                    <li>Dedicated support</li>
+                </ul>
+                <a href="signup.html" class="plan-button">Contact Us</a>
             </div>
         </div>
-    </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <h2 class="cta-title">Ready to automate your follow-ups?</h2>
+        <p class="cta-description">Join doTERRA distributors who are saving hours every week with NetworkFollowUp</p>
+        <div class="hero-cta">
+            <a href="signup.html" class="btn-primary">Start Free Trial</a>
+            <a href="login.html" class="btn-secondary" style="color: white; border-color: rgba(255,255,255,0.3);">Sign In</a>
+        </div>
+    </section>
 
     <!-- Footer -->
     <footer>
-        <div class="container">
-            <p>&copy; 2024 NetworkFollowUp. All rights reserved.</p>
-        </div>
+        <p>&copy; 2024 NetworkFollowUp. All rights reserved.</p>
     </footer>
-
-    <script>
-        // Auto-detect environment for API calls (if needed on landing page)
-        const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-    </script>
 </body>
 </html>
