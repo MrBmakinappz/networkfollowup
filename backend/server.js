@@ -41,11 +41,9 @@ app.set('trust proxy', 1);
 app.use(cors({
   origin: [
     'https://networkfollowup.netlify.app',
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://127.0.0.1:3000'
+    'http://localhost:3000'
   ],
-  credentials: false,
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
