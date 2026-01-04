@@ -29,3 +29,4 @@ CREATE INDEX IF NOT EXISTS idx_claude_usage_date ON public.claude_usage(usage_da
 -- Add comment
 COMMENT ON TABLE public.claude_usage IS 'Tracks Claude API usage and costs per user per day';
 
+
