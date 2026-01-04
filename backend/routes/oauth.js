@@ -106,14 +106,14 @@ router.get('/google/callback', async (req, res) => {
 
         // Check if user exists by email
         // Simple query - no tenant logic, uses public schema
-        console.log('🔵 Checking if user exists:', gmailEmail.toLowerCase());
+        log('🔵 Checking if user exists:', gmailEmail.toLowerCase());
         let existingUser;
         try {
             existingUser = await db.query(
                 'SELECT * FROM public.users WHERE email = $1',
                 [gmailEmail.toLowerCase()]
             );
-            console.log('🔵 User lookup result:', existingUser.rows.length > 0 ? 'Found' : 'Not found');
+            log('🔵 User lookup result:', existingUser.rows.length > 0 ? 'Found' : 'Not found');
         } catch (dbError) {
             error('❌ Database error checking user:', dbError.message);
             error('❌ Error code:', dbError.code);
@@ -135,7 +135,7 @@ router.get('/google/callback', async (req, res) => {
             const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
             // Create new user - simple query, no tenant logic
-            console.log('🔵 Creating new user:', gmailEmail.toLowerCase());
+            log('🔵 Creating new user:', gmailEmail.toLowerCase());
             let result;
             try {
                 result = await db.query(
