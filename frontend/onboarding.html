@@ -1039,23 +1039,33 @@ Excited to support your success!
 
         async function completeOnboarding() {
             try {
+                console.log('🔵 Starting onboarding completion...');
+                
                 const token = localStorage.getItem('authToken');
                 if (!token) {
+                    console.error('❌ No auth token found');
                     alert('Please log in first');
-                    window.location.href = '/login.html';
+                    const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+                    window.location.href = isProduction 
+                        ? 'https://networkfollowup.netlify.app/login.html'
+                        : '/login.html';
                     return;
                 }
 
                 // Show loading
                 const nextBtn = document.getElementById('nextBtn');
-                nextBtn.disabled = true;
-                nextBtn.textContent = 'Completing...';
+                if (nextBtn) {
+                    nextBtn.disabled = true;
+                    nextBtn.textContent = 'Completing...';
+                }
 
                 // Call API to complete onboarding
                 const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
                 const API_URL = isProduction 
                     ? 'https://networkfollowup-production.up.railway.app/api'
                     : 'http://localhost:5000/api';
+
+                console.log('🔵 Calling API:', `${API_URL}/users/complete-onboarding`);
 
                 const response = await fetch(`${API_URL}/users/complete-onboarding`, {
                     method: 'POST',
@@ -1065,30 +1075,68 @@ Excited to support your success!
                     }
                 });
 
-                const result = await response.json();
+                console.log('🔵 API response status:', response.status);
 
-                if (response.ok && result.success) {
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('❌ API error response:', errorText);
+                    let errorData;
+                    try {
+                        errorData = JSON.parse(errorText);
+                    } catch (e) {
+                        errorData = { message: errorText || 'Failed to complete onboarding' };
+                    }
+                    throw new Error(errorData.message || errorData.error || 'Failed to complete onboarding');
+                }
+
+                const result = await response.json();
+                console.log('✅ API response:', result);
+
+                if (result.success) {
                     // Update localStorage
                     localStorage.setItem('onboardingCompleted', 'true');
+                    console.log('✅ Onboarding completed, redirecting to dashboard...');
                     
-                    // Redirect to dashboard
-                    window.location.href = '/dashboard.html';
+                    // Wait a moment to ensure localStorage is saved
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Verify the update was successful by checking the response
+                    if (result.data && result.data.onboarding_completed === true) {
+                        console.log('✅ Backend confirmed onboarding_completed = true');
+                    }
+                    
+                    // Redirect to dashboard (use full URL in production)
+                    const frontendUrl = isProduction 
+                        ? 'https://networkfollowup.netlify.app'
+                        : '';
+                    
+                    // Use replace to prevent back button issues
+                    window.location.replace(`${frontendUrl}/dashboard.html`);
                 } else {
-                    throw new Error(result.message || 'Failed to complete onboarding');
+                    throw new Error(result.message || result.error || 'Failed to complete onboarding');
                 }
             } catch (error) {
-                console.error('Onboarding completion error:', error);
-                alert('Failed to complete onboarding: ' + error.message);
+                console.error('❌ Onboarding completion error:', error);
+                console.error('Error stack:', error.stack);
+                
+                // Show user-friendly error
+                const errorMessage = error.message || 'An unexpected error occurred. Please try again.';
+                alert('Failed to complete onboarding: ' + errorMessage);
+                
+                // Re-enable button
                 const nextBtn = document.getElementById('nextBtn');
-                nextBtn.disabled = false;
-                nextBtn.textContent = 'Complete Setup';
+                if (nextBtn) {
+                    nextBtn.disabled = false;
+                    nextBtn.textContent = 'Complete Setup';
+                }
             }
         }
 
         function goToDashboard() {
-            // Always redirect to dashboard
-            localStorage.setItem('onboardingCompleted', 'true');
-            window.location.href = '/dashboard.html';
+            // This function is called from step 4 (summary)
+            // It should call completeOnboarding() to ensure backend is updated
+            console.log('🔵 goToDashboard() called - completing onboarding...');
+            completeOnboarding();
         }
 
         // Initialize

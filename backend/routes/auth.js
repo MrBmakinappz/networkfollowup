@@ -137,6 +137,8 @@ router.post('/login', validateLogin, async (req, res) => {
             { expiresIn: '30d' }
         );
 
+        log(`User ${user.id} logged in successfully. Onboarding completed: ${user.onboarding_completed || false}`);
+
         res.json({
             success: true,
             message: 'Login successful',
@@ -145,7 +147,8 @@ router.post('/login', validateLogin, async (req, res) => {
                 id: user.id,
                 email: user.email,
                 full_name: user.full_name,
-                subscription_tier: user.subscription_tier || user.subscription_plan || 'starter'
+                subscription_tier: user.subscription_tier || user.subscription_plan || 'starter',
+                onboarding_completed: user.onboarding_completed || false
             }
         });
     } catch (err) {

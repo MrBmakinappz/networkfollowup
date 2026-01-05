@@ -232,6 +232,11 @@
             <button type="submit" class="btn btn-primary" id="submitBtn">
                 <span>Log In</span>
             </button>
+            
+            <!-- Complete Onboarding Button (shown if user has incomplete onboarding) -->
+            <button type="button" id="completeOnboardingBtn" class="btn" style="display: none; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); margin-top: 12px;" onclick="goToOnboarding()">
+                <span>✨ Complete Onboarding</span>
+            </button>
         </form>
 
         <div style="margin: 24px 0; text-align: center; position: relative;">
@@ -348,15 +353,22 @@
                     localStorage.setItem('userName', data.user.full_name);
                     localStorage.setItem('userEmail', data.user.email);
                     localStorage.setItem('userId', data.user.id);
+                    
+                    // Save onboarding status
+                    const onboardingCompleted = data.user.onboarding_completed || false;
+                    localStorage.setItem('onboardingCompleted', onboardingCompleted ? 'true' : 'false');
+
+                    console.log('✅ Login successful. Onboarding completed:', onboardingCompleted);
 
                     showToast('Login successful! Redirecting...', 'success');
                     
-                    // Redirect to dashboard
+                    // Redirect based on onboarding status
                     setTimeout(() => {
+                        const redirectPath = onboardingCompleted ? '/dashboard.html' : '/onboarding.html';
                         if (isProduction) {
-                            window.location.href = 'https://networkfollowup.netlify.app/dashboard.html';
+                            window.location.href = `https://networkfollowup.netlify.app${redirectPath}`;
                         } else {
-                            window.location.href = 'dashboard.html';
+                            window.location.href = redirectPath;
                         }
                     }, 1000);
                 } else {
@@ -421,13 +433,103 @@
         // Make function globally accessible
         window.signInWithGoogle = signInWithGoogle;
 
-        // Check if already logged in
-        if (localStorage.getItem('authToken')) {
+        function goToOnboarding() {
+            // Redirect to onboarding page
             if (isProduction) {
-                window.location.href = 'https://networkfollowup.netlify.app/dashboard.html';
+                window.location.href = 'https://networkfollowup.netlify.app/onboarding.html';
             } else {
-                window.location.href = 'dashboard.html';
+                window.location.href = 'onboarding.html';
             }
+        }
+
+        // Check if user needs to complete onboarding and show button
+        async function checkOnboardingStatus() {
+            const token = localStorage.getItem('authToken');
+            if (!token) return;
+
+            try {
+                const API_URL = isProduction 
+                    ? 'https://networkfollowup-production.up.railway.app/api'
+                    : 'http://localhost:5000/api';
+
+                const response = await fetch(`${API_URL}/users/onboarding/status`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data) {
+                        const onboardingCompleted = data.data.onboarding_completed;
+                        const completeBtn = document.getElementById('completeOnboardingBtn');
+                        if (completeBtn) {
+                            if (!onboardingCompleted) {
+                                completeBtn.style.display = 'block';
+                            } else {
+                                completeBtn.style.display = 'none';
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking onboarding status:', error);
+            }
+        }
+
+        // Check existing session on page load
+        async function checkExistingSession() {
+            const token = localStorage.getItem('authToken');
+            if (!token) return;
+
+            // Check onboarding status from API
+            try {
+                const API_URL = isProduction 
+                    ? 'https://networkfollowup-production.up.railway.app/api'
+                    : 'http://localhost:5000/api';
+
+                const response = await fetch(`${API_URL}/users/onboarding/status`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data) {
+                        const onboardingCompleted = data.data.onboarding_completed;
+                        localStorage.setItem('onboardingCompleted', onboardingCompleted ? 'true' : 'false');
+                        
+                        const redirectPath = onboardingCompleted ? '/dashboard.html' : '/onboarding.html';
+                        if (isProduction) {
+                            window.location.href = `https://networkfollowup.netlify.app${redirectPath}`;
+                        } else {
+                            window.location.href = redirectPath;
+                        }
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking session:', error);
+                // If API check fails, use localStorage
+                const onboardingCompleted = localStorage.getItem('onboardingCompleted') === 'true';
+                const redirectPath = onboardingCompleted ? '/dashboard.html' : '/onboarding.html';
+                if (isProduction) {
+                    window.location.href = `https://networkfollowup.netlify.app${redirectPath}`;
+                } else {
+                    window.location.href = redirectPath;
+                }
+            }
+        }
+
+        // Check existing session on page load
+        checkExistingSession();
+        
+        // Check onboarding status if user is logged in
+        if (localStorage.getItem('authToken')) {
+            checkOnboardingStatus();
         }
     </script>
 </body>
