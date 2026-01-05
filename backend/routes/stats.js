@@ -209,6 +209,42 @@ router.get('/billing', async (req, res) => {
 });
 
 /**
+ * GET /api/users/onboarding/status
+ * Get onboarding status for current user
+ */
+router.get('/onboarding/status', async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        const result = await db.query(
+            'SELECT onboarding_completed FROM public.users WHERE id = $1',
+            [userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'User not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: {
+                onboarding_completed: result.rows[0].onboarding_completed || false
+            }
+        });
+    } catch (err) {
+        error('Get onboarding status error:', err);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get onboarding status',
+            message: err.message
+        });
+    }
+});
+
+/**
  * POST /api/users/complete-onboarding
  * Mark onboarding as completed for user
  */
@@ -216,21 +252,36 @@ router.post('/complete-onboarding', async (req, res) => {
     try {
         const userId = req.user.userId;
 
+        log(`🔵 Completing onboarding for user ${userId}...`);
+
         // Update user onboarding status
-        await db.query(
-            'UPDATE public.users SET onboarding_completed = TRUE WHERE id = $1',
+        const updateResult = await db.query(
+            'UPDATE public.users SET onboarding_completed = TRUE WHERE id = $1 RETURNING id, onboarding_completed',
             [userId]
         );
 
-        log(`User ${userId} completed onboarding`);
+        if (updateResult.rows.length === 0) {
+            error(`❌ User ${userId} not found`);
+            return res.status(404).json({
+                success: false,
+                error: 'User not found',
+                message: 'User account not found'
+            });
+        }
+
+        log(`✅ User ${userId} completed onboarding successfully`);
 
         res.json({
             success: true,
             message: 'Onboarding completed successfully',
-            redirectTo: '/dashboard.html'
+            redirectTo: '/dashboard.html',
+            data: {
+                onboarding_completed: true
+            }
         });
     } catch (err) {
-        error('Complete onboarding error:', err);
+        error('❌ Complete onboarding error:', err);
+        error('Error stack:', err.stack);
         res.status(500).json({
             success: false,
             error: 'Failed to complete onboarding',

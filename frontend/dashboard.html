@@ -710,6 +710,11 @@
                 <span class="nav-icon">⚙️</span>
                 <span>Settings</span>
             </a>
+            <!-- Complete Onboarding Button (shown when onboarding incomplete) -->
+            <a class="nav-item" id="completeOnboardingBtn" onclick="goToOnboarding()" style="display: none; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: white;">
+                <span class="nav-icon">✨</span>
+                <span>Complete Onboarding</span>
+            </a>
         </nav>
 
         <div class="user-section">
@@ -1738,9 +1743,55 @@ Variables: {{firstname}}, {{fullname}}, {{country}}, {{your-name}}, {{your-phone
             document.getElementById('welcomeName').textContent = userName.split(' ')[0];
             document.getElementById('userAvatar').textContent = userName.charAt(0).toUpperCase();
 
+            // Check onboarding status and show button if needed
+            await checkOnboardingStatus();
+
             await checkGmailStatus();
             await loadDashboardStats();
             await loadCustomers();
+        }
+
+        async function checkOnboardingStatus() {
+            try {
+                const token = localStorage.getItem('authToken');
+                if (!token) return;
+
+                const response = await fetch(`${API_URL}/users/onboarding/status`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data) {
+                        const onboardingCompleted = data.data.onboarding_completed;
+                        
+                        // Update localStorage
+                        localStorage.setItem('onboardingCompleted', onboardingCompleted ? 'true' : 'false');
+                        
+                        // Show/hide "Complete Onboarding" button
+                        const completeBtn = document.getElementById('completeOnboardingBtn');
+                        if (completeBtn) {
+                            if (!onboardingCompleted) {
+                                completeBtn.style.display = 'flex';
+                            } else {
+                                completeBtn.style.display = 'none';
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking onboarding status:', error);
+                // Don't block dashboard load if this fails
+            }
+        }
+
+        function goToOnboarding() {
+            // Redirect to onboarding page
+            if (isProduction) {
+                window.location.href = 'https://networkfollowup.netlify.app/onboarding.html';
+            } else {
+                window.location.href = 'onboarding.html';
+            }
         }
 
         // Chart instances
@@ -2125,6 +2176,28 @@ Variables: {{firstname}}, {{fullname}}, {{country}}, {{your-name}}, {{your-phone
 
                 const data = await response.json();
 
+                // Check if error is due to incomplete onboarding
+                if (response.status === 403 && data.requiresOnboarding) {
+                    console.error('❌ Onboarding not completed');
+                    showToast('Please complete onboarding first. Click "Complete Onboarding" in the sidebar.', 'error', 8000);
+                    
+                    // Show the onboarding button if hidden
+                    const completeBtn = document.getElementById('completeOnboardingBtn');
+                    if (completeBtn) {
+                        completeBtn.style.display = 'flex';
+                        // Scroll to button or highlight it
+                        completeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                    
+                    // Reset to step 1
+                    document.getElementById('machineStep2').style.display = 'none';
+                    document.getElementById('machineStep1').style.display = 'block';
+                    document.getElementById('step1').classList.remove('completed');
+                    document.getElementById('step1').classList.add('active');
+                    document.getElementById('step2').classList.remove('active');
+                    return;
+                }
+
                 if (response.ok && data.success) {
                     // Convert API response to extractedData format
                     extractedData = data.data.customers.map(c => ({
@@ -2147,7 +2220,17 @@ Variables: {{firstname}}, {{fullname}}, {{country}}, {{your-name}}, {{your-phone
                 }
             } catch (error) {
                 console.error('Upload error:', error);
-                showToast(error.message || 'Failed to upload screenshot. Please try again.', 'error');
+                
+                // Check if it's an onboarding error
+                if (error.message && error.message.includes('onboarding')) {
+                    showToast('Please complete onboarding first. Click "Complete Onboarding" in the sidebar.', 'error', 8000);
+                    const completeBtn = document.getElementById('completeOnboardingBtn');
+                    if (completeBtn) {
+                        completeBtn.style.display = 'flex';
+                    }
+                } else {
+                    showToast(error.message || 'Failed to upload screenshot. Please try again.', 'error');
+                }
                 
                 // Reset to step 1
                 document.getElementById('machineStep2').style.display = 'none';
