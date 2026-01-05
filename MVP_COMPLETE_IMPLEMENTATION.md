@@ -139,3 +139,4 @@
 - **Frontend**: Netlify (static HTML/JS)
 - **Templates**: Must be created per user (schema requirement)
 
+

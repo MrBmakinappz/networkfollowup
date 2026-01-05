@@ -77,3 +77,4 @@ After migration:
 2. Test email sending: Templates should be found and used
 3. Check email content: Variables should be replaced correctly
 
+

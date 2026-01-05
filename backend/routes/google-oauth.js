@@ -23,8 +23,21 @@ const oauth2Client = new google.auth.OAuth2(
 router.get('/google', (req, res) => {
   try {
     log('🔵 Google OAuth route called');
+    log('🔵 Request URL:', req.url);
+    log('🔵 Request method:', req.method);
+    log('🔵 Environment check:', {
+      hasClientId: !!process.env.GOOGLE_CLIENT_ID,
+      hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+      hasRedirectUri: !!process.env.GOOGLE_REDIRECT_URI,
+      redirectUri: process.env.GOOGLE_REDIRECT_URI
+    });
     
     if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_REDIRECT_URI) {
+      error('❌ Missing OAuth credentials:', {
+        GOOGLE_CLIENT_ID: !!process.env.GOOGLE_CLIENT_ID,
+        GOOGLE_CLIENT_SECRET: !!process.env.GOOGLE_CLIENT_SECRET,
+        GOOGLE_REDIRECT_URI: !!process.env.GOOGLE_REDIRECT_URI
+      });
       throw new Error('Google OAuth credentials not configured');
     }
 
@@ -39,13 +52,16 @@ router.get('/google', (req, res) => {
       prompt: 'consent'
     });
     
-    log('✅ OAuth URL generated, redirecting to Google');
+    log('✅ OAuth URL generated:', authUrl.substring(0, 100) + '...');
+    log('✅ Redirecting to Google');
     res.redirect(authUrl);
   } catch (err) {
     error('❌ OAuth URL generation error:', err);
+    error('❌ Error stack:', err.stack);
     res.status(500).json({
       error: 'OAuth Error',
-      message: err.message || 'Failed to generate authorization URL'
+      message: err.message || 'Failed to generate authorization URL',
+      details: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
   }
 });

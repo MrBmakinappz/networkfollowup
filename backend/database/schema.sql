@@ -74,10 +74,14 @@ CREATE TABLE IF NOT EXISTS upload_history (
     customers_extracted INTEGER DEFAULT 0,
     extraction_status VARCHAR(50) DEFAULT 'success' CHECK (extraction_status IN ('success', 'failed', 'partial')),
     error_message TEXT,
+    file_hash VARCHAR(64),
+    ocr_result JSONB,
     uploaded_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_upload_history_user_id ON upload_history(user_id);
+CREATE INDEX IF NOT EXISTS idx_upload_history_file_hash ON upload_history(file_hash);
+CREATE INDEX IF NOT EXISTS idx_upload_history_user_hash ON upload_history(user_id, file_hash);
 
 -- ============================================
 -- EMAIL TEMPLATES TABLE (Global Templates)
