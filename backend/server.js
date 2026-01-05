@@ -254,8 +254,9 @@ app.use((err, req, res, next) => {
 // START SERVER
 // ============================================
 
-// Seed email templates on startup
-const { seedTemplates } = require('./utils/seed-templates');
+// Seed email templates on startup - DISABLED
+// Templates can be added manually via SQL if needed
+// const { seedTemplates } = require('./utils/seed-templates');
 
 app.listen(PORT, async () => {
   log(`
@@ -273,15 +274,14 @@ app.listen(PORT, async () => {
 ╚══════════════════════════════════════════════════════════╝
   `);
   
-  // Seed email templates after server starts (non-critical)
-  try {
-    await seedTemplates();
-    log('✅ Email templates seeded successfully');
-  } catch (err) {
-    error('Template seeding failed (non-critical):', err.message);
-    // Continue anyway - app still works without templates
-    // Templates can be seeded manually later if needed
-  }
+  // Template seeding disabled - app will start without templates
+  // Templates can be added manually via SQL if needed
+  // try {
+  //   await seedTemplates();
+  //   log('✅ Email templates seeded successfully');
+  // } catch (err) {
+  //   error('Template seeding failed (non-critical):', err.message);
+  // }
 });
 
 // Graceful shutdown
