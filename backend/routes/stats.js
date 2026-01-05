@@ -299,7 +299,8 @@ router.post('/complete-onboarding', async (req, res) => {
             });
         }
 
-        res.json({
+        // Return success response with clear structure
+        const responseData = {
             success: true,
             message: 'Onboarding completed successfully',
             redirectTo: '/dashboard.html',
@@ -307,7 +308,10 @@ router.post('/complete-onboarding', async (req, res) => {
                 onboarding_completed: true,
                 user_id: userId
             }
-        });
+        };
+
+        log(`✅ Sending success response:`, JSON.stringify(responseData));
+        res.status(200).json(responseData);
     } catch (err) {
         error('❌ Complete onboarding error:', err);
         error('Error stack:', err.stack);
