@@ -1,14 +1,26 @@
 // server.js
 // NetworkFollowUp Backend - Complete Server
 
+console.log('🔵 Starting server...');
+console.log('🔵 NODE_ENV:', process.env.NODE_ENV || 'not set');
+console.log('🔵 PORT:', process.env.PORT || 'not set');
+
 require('dotenv').config();
+console.log('✅ dotenv loaded');
+
 const express = require('express');
+console.log('✅ express loaded');
 const cors = require('cors');
+console.log('✅ cors loaded');
 const helmet = require('helmet');
+console.log('✅ helmet loaded');
 const rateLimit = require('express-rate-limit');
+console.log('✅ express-rate-limit loaded');
 const { log, error } = require('./utils/logger');
+console.log('✅ logger loaded');
 
 const app = express();
+console.log('✅ Express app created');
 
 // Trust proxy (important for Vercel)
 app.set('trust proxy', 1);
@@ -126,38 +138,60 @@ app.get('/health', (req, res) => {
 });
 
 // Auth middleware
+console.log('🔵 Loading auth middleware...');
 const authMiddleware = require('./middleware/auth');
+console.log('✅ Auth middleware loaded');
 
 // Public routes (no auth required)
+console.log('🔵 Loading auth routes...');
 const authRoutes = require('./routes/auth');
-log('✅ Auth routes loaded');
+console.log('✅ Auth routes loaded');
 
 // OAuth routes (MUST be registered FIRST for Vercel routing)
+console.log('🔵 Loading OAuth routes...');
 const googleOAuthRoutes = require('./routes/google-oauth');
+console.log('✅ Google OAuth routes loaded');
 const gmailOAuthRoutes = require('./routes/gmail-oauth');
-log('✅ OAuth routes loaded');
+console.log('✅ Gmail OAuth routes loaded');
 
 // Register OAuth routes FIRST (before other routes)
+console.log('🔵 Registering OAuth routes...');
 app.use('/api/oauth', googleOAuthRoutes);
+console.log('✅ /api/oauth registered');
 app.use('/api/oauth/gmail', gmailOAuthRoutes);
+console.log('✅ /api/oauth/gmail registered');
 app.use('/api/auth', authRoutes);
-log('✅ Routes registered: /api/auth, /api/oauth');
+console.log('✅ /api/auth registered');
 
 // Onboarding middleware
+console.log('🔵 Loading onboarding middleware...');
 const checkOnboarding = require('./middleware/onboarding');
+console.log('✅ Onboarding middleware loaded');
 
 // Protected routes (auth + onboarding required)
+console.log('🔵 Loading protected routes...');
 const uploadsRoutes = require('./routes/uploads');
+console.log('✅ Uploads routes loaded');
 const customersRoutes = require('./routes/customers');
+console.log('✅ Customers routes loaded');
 const emailsRoutes = require('./routes/emails');
+console.log('✅ Emails routes loaded');
 const statsRoutes = require('./routes/stats');
+console.log('✅ Stats routes loaded');
 const billingRoutes = require('./routes/billing');
+console.log('✅ Billing routes loaded');
 
+console.log('🔵 Registering protected routes...');
 app.use('/api/uploads', authMiddleware, checkOnboarding, uploadsRoutes);
+console.log('✅ /api/uploads registered');
 app.use('/api/customers', authMiddleware, checkOnboarding, customersRoutes);
+console.log('✅ /api/customers registered');
 app.use('/api/emails', authMiddleware, checkOnboarding, emailsRoutes);
+console.log('✅ /api/emails registered');
 app.use('/api/users', authMiddleware, checkOnboarding, statsRoutes);
+console.log('✅ /api/users registered');
 app.use('/api/billing', authMiddleware, checkOnboarding, billingRoutes);
+console.log('✅ /api/billing registered');
 
 // ============================================
 // API INFO ENDPOINT
@@ -258,7 +292,11 @@ app.use((err, req, res, next) => {
 // Templates can be added manually via SQL if needed
 // const { seedTemplates } = require('./utils/seed-templates');
 
-app.listen(PORT, async () => {
+console.log('🔵 Starting server on port', PORT);
+console.log('🔵 About to call app.listen()...');
+
+const server = app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
   log(`
 ╔══════════════════════════════════════════════════════════╗
 ║                                                          ║
@@ -283,6 +321,8 @@ app.listen(PORT, async () => {
   //   error('Template seeding failed (non-critical):', err.message);
   // }
 });
+
+console.log('🔵 app.listen() called, waiting for callback...');
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
