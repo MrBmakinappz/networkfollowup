@@ -214,6 +214,8 @@ const statsRoutes = require('./routes/stats');
 console.log('✅ Stats routes loaded');
 const billingRoutes = require('./routes/billing');
 console.log('✅ Billing routes loaded');
+const templateRoutes = require('./routes/templates');
+console.log('✅ Templates routes loaded');
 
 console.log('🔵 Registering protected routes...');
 app.use('/api/uploads', authMiddleware, checkOnboarding, uploadsRoutes);
@@ -226,6 +228,8 @@ app.use('/api/users', authMiddleware, checkOnboarding, statsRoutes);
 console.log('✅ /api/users registered');
 app.use('/api/billing', authMiddleware, checkOnboarding, billingRoutes);
 console.log('✅ /api/billing registered');
+app.use('/api/templates', authMiddleware, templateRoutes);
+console.log('✅ /api/templates registered');
 
 // ============================================
 // API INFO ENDPOINT

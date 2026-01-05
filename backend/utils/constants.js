@@ -1,146 +1,180 @@
 /**
  * Application Constants
- * Centralized constants to avoid magic numbers and strings
+ * Country-Language mappings and other constants
  */
 
-// Rate Limiting
-const RATE_LIMITS = {
-    API: {
-        windowMs: 15 * 60 * 1000, // 15 minutes
-        max: 100
-    },
-    AUTH: {
-        windowMs: 15 * 60 * 1000, // 15 minutes
-        max: 5
-    },
-    EMAIL: {
-        windowMs: 60 * 60 * 1000, // 1 hour
-        max: 50
-    }
+/**
+ * Complete country code to language code mapping
+ * Based on ISO 639-1 language codes
+ */
+const COUNTRY_LANGUAGE_MAP = {
+  // English-speaking countries
+  'USA': 'en',  // United States
+  'GBR': 'en',  // United Kingdom
+  'CAN': 'en',  // Canada
+  'AUS': 'en',  // Australia
+  'NZL': 'en',  // New Zealand
+  'IRL': 'en',  // Ireland
+  'ZAF': 'en',  // South Africa
+  
+  // Romance languages
+  'ITA': 'it',  // Italy
+  'FRA': 'fr',  // France
+  'ESP': 'es',  // Spain
+  'PRT': 'pt',  // Portugal
+  'BEL': 'fr',  // Belgium (French)
+  'CHE': 'fr',  // Switzerland (French)
+  'MEX': 'es',  // Mexico
+  'ARG': 'es',  // Argentina
+  'COL': 'es',  // Colombia
+  'CHL': 'es',  // Chile
+  'PER': 'es',  // Peru
+  'VEN': 'es',  // Venezuela
+  'BRA': 'pt',  // Brazil
+  
+  // Germanic languages
+  'DEU': 'de',  // Germany
+  'AUT': 'de',  // Austria
+  'CHE': 'de',  // Switzerland (German)
+  'NLD': 'nl',  // Netherlands
+  'BEL': 'nl',  // Belgium (Dutch)
+  
+  // Slavic languages
+  'POL': 'pl',  // Poland → Polish
+  'BGR': 'bg',  // Bulgaria → Bulgarian
+  'HUN': 'hu',  // Hungary → Hungarian
+  'CZE': 'cs',  // Czech Republic
+  'SVK': 'sk',  // Slovakia
+  'HRV': 'hr',  // Croatia
+  'SRB': 'sr',  // Serbia
+  'SVN': 'sl',  // Slovenia
+  'RUS': 'ru',  // Russia
+  'UKR': 'uk',  // Ukraine
+  'BLR': 'be',  // Belarus
+  
+  // Nordic languages
+  'SWE': 'sv',  // Sweden
+  'NOR': 'no',  // Norway
+  'DNK': 'da',  // Denmark
+  'FIN': 'fi',  // Finland
+  'ISL': 'is',  // Iceland
+  
+  // Asian languages
+  'CHN': 'zh',  // China
+  'JPN': 'ja',  // Japan
+  'KOR': 'ko',  // South Korea
+  'THA': 'th',  // Thailand
+  'VNM': 'vi',  // Vietnam
+  'IDN': 'id',  // Indonesia
+  'PHL': 'tl',  // Philippines
+  'MYS': 'ms',  // Malaysia
+  'SGP': 'en',  // Singapore (English)
+  
+  // Middle East
+  'TUR': 'tr',  // Turkey
+  'SAU': 'ar',  // Saudi Arabia
+  'ARE': 'ar',  // UAE
+  'ISR': 'he',  // Israel
+  
+  // Default fallback
+  'DEFAULT': 'en'
 };
 
-// Password Requirements
-const PASSWORD = {
-    MIN_LENGTH: 8,
-    MAX_LENGTH: 128,
-    REQUIRE_UPPERCASE: true,
-    REQUIRE_LOWERCASE: true,
-    REQUIRE_NUMBER: true,
-    REQUIRE_SPECIAL: true
+/**
+ * Language code to display name mapping
+ */
+const LANGUAGE_NAMES = {
+  'en': 'English',
+  'it': 'Italian',
+  'fr': 'French',
+  'es': 'Spanish',
+  'pt': 'Portuguese',
+  'de': 'German',
+  'nl': 'Dutch',
+  'pl': 'Polish',
+  'bg': 'Bulgarian',
+  'hu': 'Hungarian',
+  'cs': 'Czech',
+  'sk': 'Slovak',
+  'hr': 'Croatian',
+  'sr': 'Serbian',
+  'sl': 'Slovenian',
+  'ru': 'Russian',
+  'uk': 'Ukrainian',
+  'sv': 'Swedish',
+  'no': 'Norwegian',
+  'da': 'Danish',
+  'fi': 'Finnish',
+  'zh': 'Chinese',
+  'ja': 'Japanese',
+  'ko': 'Korean',
+  'th': 'Thai',
+  'vi': 'Vietnamese',
+  'id': 'Indonesian',
+  'tl': 'Tagalog',
+  'ms': 'Malay',
+  'tr': 'Turkish',
+  'ar': 'Arabic',
+  'he': 'Hebrew'
 };
 
-// File Upload Limits
-const UPLOAD = {
-    MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
-    ALLOWED_TYPES: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
-    MAX_DIMENSION: 5000 // pixels
+/**
+ * Get language code from country code
+ * @param {string} countryCode - 3-letter ISO country code (e.g., 'POL', 'BGR')
+ * @returns {string} - 2-letter ISO language code (e.g., 'pl', 'bg')
+ */
+function getLanguageFromCountry(countryCode) {
+  if (!countryCode) return 'en';
+  
+  const code = countryCode.toUpperCase().trim();
+  return COUNTRY_LANGUAGE_MAP[code] || COUNTRY_LANGUAGE_MAP.DEFAULT;
+}
+
+/**
+ * Get language display name from language code
+ * @param {string} langCode - 2-letter ISO language code (e.g., 'pl', 'bg')
+ * @returns {string} - Display name (e.g., 'Polish', 'Bulgarian')
+ */
+function getLanguageName(langCode) {
+  if (!langCode) return 'English';
+  return LANGUAGE_NAMES[langCode.toLowerCase()] || 'English';
+}
+
+/**
+ * Get all available languages for template creation
+ * @returns {Array} - Array of {code, name} objects
+ */
+function getAvailableLanguages() {
+  return Object.entries(LANGUAGE_NAMES).map(([code, name]) => ({
+    code,
+    name
+  })).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * Customer type display names
+ */
+const CUSTOMER_TYPE_NAMES = {
+  'retail': 'Retail Customer',
+  'wholesale': 'Wholesale Customer',
+  'advocates': 'Wellness Advocate'
 };
 
-// Pagination
-const PAGINATION = {
-    DEFAULT_LIMIT: 50,
-    MAX_LIMIT: 1000,
-    DEFAULT_OFFSET: 0
-};
-
-// Customer Types
-const CUSTOMER_TYPES = {
-    RETAIL: 'retail',
-    WHOLESALE: 'wholesale',
-    ADVOCATES: 'advocates'
-};
-
-// Supported Languages
-const LANGUAGES = {
-    ENGLISH: 'en',
-    ITALIAN: 'it',
-    GERMAN: 'de',
-    FRENCH: 'fr',
-    POLISH: 'pl',
-    BULGARIAN: 'bg',
-    CZECH: 'cs',
-    ROMANIAN: 'ro',
-    SLOVAK: 'sk'
-};
-
-// Subscription Tiers
-const SUBSCRIPTION_TIERS = {
-    STARTER: 'starter',
-    PROFESSIONAL: 'pro',
-    ENTERPRISE: 'enterprise'
-};
-
-// Email Status
-const EMAIL_STATUS = {
-    SENT: 'sent',
-    FAILED: 'failed',
-    PENDING: 'pending'
-};
-
-// JWT Configuration
-const JWT = {
-    EXPIRES_IN: '30d',
-    ALGORITHM: 'HS256'
-};
-
-// Database Query Timeouts
-const DB_TIMEOUT = {
-    CONNECTION: 2000, // 2 seconds
-    QUERY: 30000 // 30 seconds
-};
-
-// API Response Messages
-const MESSAGES = {
-    SUCCESS: {
-        USER_CREATED: 'User created successfully',
-        LOGIN_SUCCESS: 'Login successful',
-        CUSTOMER_CREATED: 'Customer created successfully',
-        CUSTOMER_UPDATED: 'Customer updated successfully',
-        CUSTOMER_DELETED: 'Customer deleted successfully',
-        EMAIL_SENT: 'Email sent successfully',
-        GMAIL_CONNECTED: 'Gmail connected successfully'
-    },
-    ERROR: {
-        VALIDATION_FAILED: 'Validation failed',
-        UNAUTHORIZED: 'Unauthorized access',
-        NOT_FOUND: 'Resource not found',
-        SERVER_ERROR: 'Internal server error',
-        RATE_LIMIT_EXCEEDED: 'Rate limit exceeded',
-        INVALID_CREDENTIALS: 'Invalid email or password',
-        USER_EXISTS: 'User already exists',
-        GMAIL_NOT_CONNECTED: 'Gmail not connected'
-    }
-};
-
-// HTTP Status Codes
-const STATUS_CODES = {
-    OK: 200,
-    CREATED: 201,
-    BAD_REQUEST: 400,
-    UNAUTHORIZED: 401,
-    FORBIDDEN: 403,
-    NOT_FOUND: 404,
-    CONFLICT: 409,
-    RATE_LIMIT: 429,
-    SERVER_ERROR: 500
-};
+/**
+ * Get customer type display name
+ * @param {string} type - Customer type code
+ * @returns {string} - Display name
+ */
+function getCustomerTypeName(type) {
+  return CUSTOMER_TYPE_NAMES[type] || type;
+}
 
 module.exports = {
-    RATE_LIMITS,
-    PASSWORD,
-    UPLOAD,
-    PAGINATION,
-    CUSTOMER_TYPES,
-    LANGUAGES,
-    SUBSCRIPTION_TIERS,
-    EMAIL_STATUS,
-    JWT,
-    DB_TIMEOUT,
-    MESSAGES,
-    STATUS_CODES
+  COUNTRY_LANGUAGE_MAP,
+  LANGUAGE_NAMES,
+  CUSTOMER_TYPE_NAMES,
+  getLanguageFromCountry,
+  getLanguageName,
+  getAvailableLanguages,
+  getCustomerTypeName
 };
-
-
-
-
-
