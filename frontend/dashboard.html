@@ -310,6 +310,139 @@
         }
 
         /* FOLLOW-UP MACHINE STYLES */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .machine-step {
+            animation: fadeIn 0.3s ease;
+        }
+
+        .email-preview-card {
+            animation: slideIn 0.3s ease;
+            transition: all 0.3s ease;
+        }
+
+        .email-preview-card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important;
+            transform: translateY(-2px);
+        }
+
+        .extracted-customers-table tbody tr {
+            transition: background 0.2s ease;
+        }
+
+        .extracted-customers-table tbody tr:hover {
+            background: #F8FAFC;
+        }
+
+        .spinner {
+            border: 3px solid rgba(16, 185, 129, 0.2);
+            border-top: 3px solid #10B981;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .type-badge.type-retail {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .type-badge.type-wholesale {
+            background: #DBEAFE;
+            color: #1E40AF;
+        }
+
+        .type-badge.type-advocates {
+            background: #E9D5FF;
+            color: #6B21A8;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #10B981;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Professional button styles */
+        .btn-primary {
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #64748B;
+            border: 2px solid #E2E8F0;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: #F8FAFC;
+            border-color: #10B981;
+            color: #10B981;
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+
+        /* Smooth scroll */
+        html {
+            scroll-behavior: smooth;
+        }
         .wizard-steps {
             display: flex;
             justify-content: space-between;
@@ -881,81 +1014,172 @@
                     </div>
                 </div>
 
-                <!-- Step 2: Extract (hidden initially) -->
+                <!-- Step 2: Extract & Display (hidden initially) -->
                 <div id="machineStep2" class="machine-step" style="display: none;">
-                    <h3 style="margin-bottom: 20px; color: #1E293B;">Step 2: Extracting Data...</h3>
-                    <div style="text-align: center; padding: 40px;">
-                        <div style="font-size: 64px; margin-bottom: 16px;">🤖</div>
-                        <div style="font-size: 18px; font-weight: 600; color: #1E293B; margin-bottom: 8px;">
+                    <!-- Loading State -->
+                    <div id="step2Loading" style="text-align: center; padding: 60px 20px;">
+                        <div style="font-size: 64px; margin-bottom: 24px; animation: pulse 2s infinite;">🤖</div>
+                        <div style="font-size: 20px; font-weight: 600; color: #1E293B; margin-bottom: 12px;">
                             AI is analyzing your screenshot
                         </div>
-                        <div style="font-size: 14px; color: #64748B;">
+                        <div style="font-size: 14px; color: #64748B; margin-bottom: 24px;">
                             Extracting customer names, emails, types, and countries...
                         </div>
+                        <div class="spinner" style="width: 40px; height: 40px; margin: 0 auto;"></div>
+                    </div>
+
+                    <!-- Results State -->
+                    <div id="step2Results" style="display: none;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                            <h3 style="margin: 0; color: #1E293B;">
+                                ✅ Extracted <span id="extractCount" style="color: #10B981; font-weight: 700;">0</span> Customers
+                            </h3>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn btn-sm btn-secondary" onclick="selectAllExtracted()">Select All</button>
+                                <button class="btn btn-sm btn-secondary" onclick="deselectAllExtracted()">Deselect All</button>
+                            </div>
+                        </div>
+
+                        <div class="extracted-customers-table" style="background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <thead style="background: #F8FAFC;">
+                                    <tr>
+                                        <th style="width: 50px; padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">
+                                            <input type="checkbox" id="selectAllExtracted" onchange="toggleSelectAllExtracted(this)" style="cursor: pointer;">
+                                        </th>
+                                        <th style="padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Name</th>
+                                        <th style="padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Email</th>
+                                        <th style="padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Type</th>
+                                        <th style="padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Country</th>
+                                        <th style="padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Language</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="extractedCustomersBody" style="font-size: 14px;">
+                                    <!-- Populated via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center; padding: 20px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); border-radius: 16px; color: white;">
+                            <div>
+                                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;">Ready to continue</div>
+                                <div style="font-size: 18px; font-weight: 700;">
+                                    <span id="selectedCountStep2">0</span> customer<span id="selectedCountPlural">s</span> selected
+                                </div>
+                            </div>
+                            <button id="continueToReview" class="btn btn-primary" onclick="proceedToReview()" style="background: white; color: #10B981; font-weight: 600; padding: 12px 32px; border: none;">
+                                Continue to Review →
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Step 3: Review (hidden initially) -->
+                <!-- Step 3: Review & Preview (hidden initially) -->
                 <div id="machineStep3" class="machine-step" style="display: none;">
-                    <h3 style="margin-bottom: 20px; color: #1E293B;">Step 3: Review & Select Customers</h3>
-                    <div style="margin-bottom: 16px;">
-                        <button class="btn btn-sm btn-secondary" onclick="selectAllCustomers()">Select All</button>
-                        <button class="btn btn-sm btn-secondary" onclick="deselectAllCustomers()">Deselect All</button>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <h3 style="margin: 0; color: #1E293B;">📧 Review & Customize Emails</h3>
+                        <button class="btn btn-sm btn-secondary" onclick="goBackToStep2()">← Back</button>
                     </div>
-                    <div id="extractedCustomers">
-                        <!-- Dynamic customer list -->
+
+                    <div class="bulk-actions" style="background: white; padding: 20px; border-radius: 16px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                            <label style="font-weight: 600; color: #1E293B; font-size: 14px;">Apply template to all:</label>
+                            <select id="bulkTemplateSelect" style="flex: 1; min-width: 200px; padding: 10px 16px; border: 2px solid #E2E8F0; border-radius: 8px; font-size: 14px; background: white;">
+                                <option value="">Select template...</option>
+                                <option value="retail-en">Retail - English</option>
+                                <option value="retail-it">Retail - Italian</option>
+                                <option value="retail-de">Retail - German</option>
+                                <option value="retail-fr">Retail - French</option>
+                                <option value="retail-es">Retail - Spanish</option>
+                                <option value="wholesale-en">Wholesale - English</option>
+                                <option value="wholesale-it">Wholesale - Italian</option>
+                                <option value="wholesale-de">Wholesale - German</option>
+                                <option value="wholesale-fr">Wholesale - French</option>
+                                <option value="wholesale-es">Wholesale - Spanish</option>
+                                <option value="advocates-en">Advocates - English</option>
+                                <option value="advocates-it">Advocates - Italian</option>
+                                <option value="advocates-de">Advocates - German</option>
+                                <option value="advocates-fr">Advocates - French</option>
+                                <option value="advocates-es">Advocates - Spanish</option>
+                            </select>
+                            <button id="applyBulkTemplate" class="btn btn-secondary" onclick="applyBulkTemplate()" style="padding: 10px 20px;">
+                                Apply to All
+                            </button>
+                        </div>
                     </div>
-                    <div style="margin-top: 24px;">
-                        <button class="btn btn-primary" onclick="proceedToSend()">Continue to Send →</button>
+
+                    <div id="emailPreviews" style="display: flex; flex-direction: column; gap: 20px;">
+                        <!-- Populated via JS -->
+                    </div>
+
+                    <div style="margin-top: 32px; display: flex; justify-content: space-between; align-items: center; padding: 24px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); border-radius: 16px; color: white;">
+                        <div>
+                            <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;">Ready to send</div>
+                            <div style="font-size: 18px; font-weight: 700;">
+                                <span id="approvedCount">0</span> email<span id="approvedCountPlural">s</span> approved
+                            </div>
+                        </div>
+                        <button id="approveAndSend" class="btn btn-primary" onclick="proceedToSend()" style="background: white; color: #10B981; font-weight: 600; padding: 12px 32px; border: none;">
+                            Approve & Send →
+                        </button>
                     </div>
                 </div>
 
-                <!-- Step 4: Send (hidden initially) -->
+                <!-- Step 4: Send Confirmation & Progress (hidden initially) -->
                 <div id="machineStep4" class="machine-step" style="display: none;">
-                    <h3 style="margin-bottom: 20px; color: #1E293B;">Step 4: Choose Template & Send</h3>
-                    
-                    <div class="customer-type-selector">
-                        <div class="type-option selected" onclick="selectTemplateType('retail')">
-                            <div class="type-icon">🛍️</div>
-                            <div class="type-title">RETAIL</div>
-                            <div class="type-description">For one-time buyers</div>
+                    <!-- Send Summary -->
+                    <div id="sendSummary" style="background: white; padding: 32px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px;">
+                        <h3 style="margin: 0 0 8px 0; color: #1E293B;">🚀 Ready to Send</h3>
+                        <p style="color: #64748B; margin-bottom: 24px;">Review your send details before proceeding</p>
+                        
+                        <div style="background: #F8FAFC; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                            <div style="font-size: 16px; font-weight: 600; color: #1E293B; margin-bottom: 12px;">
+                                You're about to send <strong style="color: #10B981;"><span id="totalEmails">0</span> emails</strong>
+                            </div>
+                            <ul id="recipientList" style="list-style: none; padding: 0; margin: 0; max-height: 200px; overflow-y: auto;">
+                                <!-- Populated via JS -->
+                            </ul>
                         </div>
-                        <div class="type-option" onclick="selectTemplateType('wholesale')">
-                            <div class="type-icon">💼</div>
-                            <div class="type-title">WHOLESALE</div>
-                            <div class="type-description">For discount members</div>
+
+                        <div style="display: flex; gap: 12px;">
+                            <button id="sendNowBtn" class="btn btn-primary" onclick="sendEmailsNow()" style="flex: 1; padding: 14px 24px; font-weight: 600;">
+                                ✉️ Send Now
+                            </button>
+                            <button id="scheduleBtn" class="btn btn-secondary" onclick="scheduleEmails()" style="flex: 1; padding: 14px 24px;">
+                                ⏰ Schedule for Later
+                            </button>
                         </div>
-                        <div class="type-option" onclick="selectTemplateType('advocates')">
-                            <div class="type-icon">⭐</div>
-                            <div class="type-title">ADVOCATES</div>
-                            <div class="type-description">For team builders</div>
+                    </div>
+
+                    <!-- Send Progress -->
+                    <div id="sendProgress" style="display: none; background: white; padding: 32px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px;">
+                        <h3 style="margin: 0 0 24px 0; color: #1E293B;">Sending Emails...</h3>
+                        
+                        <div style="background: #F8FAFC; height: 12px; border-radius: 6px; overflow: hidden; margin-bottom: 16px;">
+                            <div id="progressFill" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); height: 100%; width: 0%; transition: width 0.3s ease; border-radius: 6px;"></div>
+                        </div>
+                        
+                        <p style="text-align: center; color: #64748B; font-size: 14px;">
+                            Sending <strong style="color: #1E293B;"><span id="currentEmail">1</span></strong> of <strong style="color: #1E293B;"><span id="totalEmailsProgress">10</span></strong>...
+                        </p>
+                    </div>
+
+                    <!-- Send Success -->
+                    <div id="sendSuccess" style="display: none; background: white; padding: 40px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center;">
+                        <div style="font-size: 64px; margin-bottom: 16px;">✅</div>
+                        <h3 style="margin: 0 0 8px 0; color: #1E293B;">Success!</h3>
+                        <p style="color: #64748B; margin-bottom: 24px; font-size: 16px;">
+                            <strong style="color: #10B981; font-size: 20px;"><span id="sentCount">0</span> emails</strong> sent successfully!
+                        </p>
+                        <div style="display: flex; gap: 12px; justify-content: center;">
+                            <button id="viewHistory" class="btn btn-secondary" onclick="showSection('history', event)" style="padding: 12px 24px;">
+                                📜 View Email History
+                            </button>
+                            <button id="sendMore" class="btn btn-primary" onclick="resetMachineFlow()" style="padding: 12px 24px; font-weight: 600;">
+                                🚀 Send More Follow-Ups
+                            </button>
                         </div>
                     </div>
-
-                    <div class="form-group">
-                        <label>Email Subject</label>
-                        <input type="text" id="sendSubject" value="Your doTERRA 25% Discount is Waiting!">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Email Body</label>
-                        <textarea id="sendBody">Hi {{firstname}},
-
-I'm {{your-name}}, your official doTERRA Wellness Advocate...
-
-Variables: {{firstname}}, {{fullname}}, {{country}}, {{your-name}}, {{your-phone}}</textarea>
-                    </div>
-
-                    <div style="background: rgba(102, 126, 234, 0.1); padding: 16px; border-radius: 12px; margin-bottom: 24px;">
-                        <strong style="color: #10B981;">📧 Ready to send to <span id="selectedCount">0</span> customers</strong>
-                    </div>
-
-                    <button class="btn btn-secondary" onclick="previewEmail()" style="margin-right: 12px;">
-                        👁️ Preview Email
-                    </button>
-                    <button class="btn btn-primary btn-success" onclick="sendEmails()">
-                        ✉️ Send Follow-Up Emails
-                    </button>
                 </div>
             </div>
         </div>
@@ -2203,22 +2427,35 @@ Variables: {{firstname}}, {{fullname}}, {{country}}, {{your-name}}, {{your-phone
                 }
 
                 if (response.ok && data.success) {
+                    // Use customers from response (prioritize top-level customers array)
+                    const customers = data.customers || data.data?.customers || [];
+                    
+                    if (customers.length === 0) {
+                        throw new Error('No customers extracted from screenshot. Please ensure the image contains customer data.');
+                    }
+
                     // Convert API response to extractedData format
-                    extractedData = data.data.customers.map(c => ({
+                    extractedData = customers.map(c => ({
                         id: c.id,
-                        name: c.full_name,
+                        name: c.full_name || c.name,
                         email: c.email,
-                        type: c.member_type || c.customer_type,
-                        country: c.country_code,
+                        type: c.customer_type || c.member_type || 'retail',
+                        country: c.country_code || c.country || 'USA',
+                        language: c.language || mapCountryToLanguage(c.country_code || c.country || 'USA'),
+                        phone: c.phone || null,
                         selected: true
                     }));
 
-                    showToast(`✅ Extracted ${extractedData.length} customers from screenshot!`, 'success');
+                    console.log('✅ Extracted customers:', extractedData);
+                    console.log('   Count:', extractedData.length);
                     
-                    // Auto-refresh customer list and show customers section
-                    await loadCustomers();
-                    showSection('customers', event);
-                    showToast(`✅ ${extractedData.length} customers added to list!`, 'success');
+                    // Show Step 2 results (extracted customers table)
+                    showStep2Results(extractedData);
+                    
+                    // Refresh customer list in background (don't redirect)
+                    loadCustomers().catch(err => console.error('Background customer refresh failed:', err));
+                    
+                    showToast(`✅ Extracted ${extractedData.length} customers!`, 'success');
                 } else {
                     throw new Error(data.message || data.error || 'Failed to extract customers');
                 }
@@ -2245,25 +2482,433 @@ Variables: {{firstname}}, {{fullname}}, {{country}}, {{your-name}}, {{your-phone
             }
         }
 
-        function showExtractedCustomers() {
+        // Country to Language mapping
+        function mapCountryToLanguage(countryCode) {
+            const countryToLanguage = {
+                'USA': 'en', 'GBR': 'en', 'CAN': 'en', 'AUS': 'en',
+                'DEU': 'de', 'AUT': 'de', 'CHE': 'de',
+                'ITA': 'it',
+                'ESP': 'es', 'MEX': 'es', 'ARG': 'es',
+                'FRA': 'fr', 'BEL': 'fr'
+            };
+            return countryToLanguage[countryCode?.toUpperCase()] || 'en';
+        }
+
+        // Language name mapping
+        function getLanguageName(langCode) {
+            const langNames = {
+                'en': 'English', 'it': 'Italian', 'de': 'German', 'fr': 'French', 'es': 'Spanish'
+            };
+            return langNames[langCode] || 'English';
+        }
+
+        // Show Step 2 results (extracted customers table)
+        function showStep2Results(customers) {
+            // Hide loading, show results
+            document.getElementById('step2Loading').style.display = 'none';
+            document.getElementById('step2Results').style.display = 'block';
+            
+            // Update count
+            document.getElementById('extractCount').textContent = customers.length;
+            
+            // Build table rows
+            const tbody = document.getElementById('extractedCustomersBody');
+            tbody.innerHTML = customers.map((c, i) => `
+                <tr style="border-bottom: 1px solid #E2E8F0;">
+                    <td style="padding: 16px;">
+                        <input type="checkbox" class="extracted-customer-checkbox" checked data-index="${i}" onchange="updateSelectedCountStep2()" style="cursor: pointer;">
+                    </td>
+                    <td style="padding: 16px; font-weight: 600; color: #1E293B;">${c.name || 'N/A'}</td>
+                    <td style="padding: 16px; color: #64748B;">${c.email || 'N/A'}</td>
+                    <td style="padding: 16px;">
+                        <span class="type-badge type-${c.type}" style="padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase;">
+                            ${c.type === 'retail' ? 'RETAIL' : c.type === 'wholesale' ? 'WHOLESALE' : 'ADVOCATES'}
+                        </span>
+                    </td>
+                    <td style="padding: 16px; color: #64748B;">${c.country || 'N/A'}</td>
+                    <td style="padding: 16px; color: #64748B;">${getLanguageName(c.language)}</td>
+                </tr>
+            `).join('');
+            
+            // Update selected count
+            updateSelectedCountStep2();
+        }
+
+        // Update selected count in Step 2
+        function updateSelectedCountStep2() {
+            const selected = Array.from(document.querySelectorAll('.extracted-customer-checkbox:checked')).length;
+            document.getElementById('selectedCountStep2').textContent = selected;
+            document.getElementById('selectedCountPlural').textContent = selected === 1 ? '' : 's';
+            document.getElementById('continueToReview').disabled = selected === 0;
+        }
+
+        // Select/Deselect all in Step 2
+        function selectAllExtracted() {
+            document.querySelectorAll('.extracted-customer-checkbox').forEach(cb => cb.checked = true);
+            updateSelectedCountStep2();
+        }
+
+        function deselectAllExtracted() {
+            document.querySelectorAll('.extracted-customer-checkbox').forEach(cb => cb.checked = false);
+            updateSelectedCountStep2();
+        }
+
+        function toggleSelectAllExtracted(checkbox) {
+            const allChecked = checkbox.checked;
+            document.querySelectorAll('.extracted-customer-checkbox').forEach(cb => cb.checked = allChecked);
+            updateSelectedCountStep2();
+        }
+
+        // Proceed to Step 3 (Review & Preview)
+        async function proceedToReview() {
+            const selectedCheckboxes = Array.from(document.querySelectorAll('.extracted-customer-checkbox:checked'));
+            const selectedIndices = selectedCheckboxes.map(cb => parseInt(cb.dataset.index));
+            const selectedCustomers = selectedIndices.map(i => extractedData[i]).filter(c => c);
+            
+            if (selectedCustomers.length === 0) {
+                showToast('Please select at least one customer', 'error');
+                return;
+            }
+            
+            // Update extractedData to only include selected customers
+            extractedData = selectedCustomers.map(c => ({ ...c, selected: true }));
+            
+            // Hide Step 2, show Step 3
             document.getElementById('machineStep2').style.display = 'none';
             document.getElementById('machineStep3').style.display = 'block';
             document.getElementById('step2').classList.remove('active');
             document.getElementById('step2').classList.add('completed');
             document.getElementById('step3').classList.add('active');
-
-            const html = extractedData.map((c, i) => `
-                <div class="customer-preview">
-                    <input type="checkbox" class="customer-checkbox" checked data-index="${i}">
-                    <div class="customer-info">
-                        <div class="customer-name">${c.name}</div>
-                        <div class="customer-details">${c.email} • <span class="type-badge type-${c.type}">${c.type.toUpperCase()}</span> • ${c.country}</div>
-                    </div>
-                </div>
-            `).join('');
-
-            document.getElementById('extractedCustomers').innerHTML = html;
+            
+            // Load email previews for each customer
+            await loadEmailPreviews(extractedData);
         }
+
+        // Load email previews with templates
+        async function loadEmailPreviews(customers) {
+            const container = document.getElementById('emailPreviews');
+            container.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="spinner" style="width: 40px; height: 40px; margin: 0 auto;"></div><p style="color: #64748B; margin-top: 16px;">Loading email templates...</p></div>';
+            
+            const previews = [];
+            
+            for (const customer of customers) {
+                try {
+                    // Fetch template for this customer
+                    const templateKey = `${customer.type}-${customer.language}`;
+                    const template = await fetchEmailTemplate(customer.type, customer.language);
+                    
+                    // Personalize template
+                    const firstName = customer.name.split(' ')[0];
+                    const personalizedSubject = (template?.subject || 'Follow-up from doTERRA').replace(/\{\{firstname\}\}/g, firstName).replace(/\{\{fullname\}\}/g, customer.name);
+                    const personalizedBody = (template?.body || 'Hello!').replace(/\{\{firstname\}\}/g, firstName).replace(/\{\{fullname\}\}/g, customer.name).replace(/\{\{country\}\}/g, customer.country || '');
+                    
+                    previews.push({
+                        customer,
+                        template,
+                        subject: personalizedSubject,
+                        body: personalizedBody,
+                        templateKey
+                    });
+                } catch (err) {
+                    console.error(`Error loading template for ${customer.email}:`, err);
+                    // Use default template
+                    previews.push({
+                        customer,
+                        template: null,
+                        subject: `Hello ${customer.name.split(' ')[0]}!`,
+                        body: `Hi ${customer.name},\n\nThank you for your interest in doTERRA!\n\nBest regards`,
+                        templateKey: `${customer.type}-${customer.language}`
+                    });
+                }
+            }
+            
+            // Render preview cards
+            container.innerHTML = previews.map((preview, i) => {
+                const c = preview.customer;
+                const flagEmoji = {
+                    'USA': '🇺🇸', 'GBR': '🇬🇧', 'CAN': '🇨🇦', 'AUS': '🇦🇺',
+                    'DEU': '🇩🇪', 'AUT': '🇦🇹', 'CHE': '🇨🇭',
+                    'ITA': '🇮🇹', 'ESP': '🇪🇸', 'MEX': '🇲🇽', 'ARG': '🇦🇷',
+                    'FRA': '🇫🇷', 'BEL': '🇧🇪'
+                }[c.country] || '🌍';
+                
+                return `
+                    <div class="email-preview-card" style="background: white; padding: 24px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);" data-customer-index="${i}">
+                        <div class="customer-info" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #E2E8F0;">
+                            <div>
+                                <div style="font-weight: 700; font-size: 16px; color: #1E293B; margin-bottom: 4px;">${c.name}</div>
+                                <div style="font-size: 14px; color: #64748B;">${c.email}</div>
+                            </div>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <span class="type-badge type-${c.type}" style="padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; text-transform: uppercase;">
+                                    ${c.type === 'retail' ? 'RETAIL' : c.type === 'wholesale' ? 'WHOLESALE' : 'ADVOCATES'}
+                                </span>
+                                <span style="font-size: 20px;">${flagEmoji}</span>
+                                <span style="font-size: 12px; color: #64748B;">${getLanguageName(c.language)}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="email-preview">
+                            <div class="email-subject" style="margin-bottom: 16px;">
+                                <label style="display: block; font-weight: 600; color: #1E293B; margin-bottom: 8px; font-size: 14px;">Subject:</label>
+                                <input type="text" class="email-subject-input" value="${escapeHtml(preview.subject)}" data-customer-index="${i}" style="width: 100%; padding: 12px; border: 2px solid #E2E8F0; border-radius: 8px; font-size: 14px; font-family: inherit;">
+                            </div>
+                            
+                            <div class="email-body" style="margin-bottom: 16px;">
+                                <label style="display: block; font-weight: 600; color: #1E293B; margin-bottom: 8px; font-size: 14px;">Message:</label>
+                                <textarea class="email-body-input" rows="8" data-customer-index="${i}" style="width: 100%; padding: 12px; border: 2px solid #E2E8F0; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical;">${escapeHtml(preview.body)}</textarea>
+                            </div>
+                            
+                            <div class="template-selector" style="display: flex; gap: 12px; align-items: center;">
+                                <select class="template-select" data-customer-index="${i}" onchange="changeTemplate(${i}, this.value)" style="flex: 1; padding: 10px 16px; border: 2px solid #E2E8F0; border-radius: 8px; font-size: 14px; background: white;">
+                                    <option value="retail-en" ${preview.templateKey === 'retail-en' ? 'selected' : ''}>Retail - English</option>
+                                    <option value="retail-it" ${preview.templateKey === 'retail-it' ? 'selected' : ''}>Retail - Italian</option>
+                                    <option value="retail-de" ${preview.templateKey === 'retail-de' ? 'selected' : ''}>Retail - German</option>
+                                    <option value="retail-fr" ${preview.templateKey === 'retail-fr' ? 'selected' : ''}>Retail - French</option>
+                                    <option value="retail-es" ${preview.templateKey === 'retail-es' ? 'selected' : ''}>Retail - Spanish</option>
+                                    <option value="wholesale-en" ${preview.templateKey === 'wholesale-en' ? 'selected' : ''}>Wholesale - English</option>
+                                    <option value="wholesale-it" ${preview.templateKey === 'wholesale-it' ? 'selected' : ''}>Wholesale - Italian</option>
+                                    <option value="wholesale-de" ${preview.templateKey === 'wholesale-de' ? 'selected' : ''}>Wholesale - German</option>
+                                    <option value="wholesale-fr" ${preview.templateKey === 'wholesale-fr' ? 'selected' : ''}>Wholesale - French</option>
+                                    <option value="wholesale-es" ${preview.templateKey === 'wholesale-es' ? 'selected' : ''}>Wholesale - Spanish</option>
+                                    <option value="advocates-en" ${preview.templateKey === 'advocates-en' ? 'selected' : ''}>Advocates - English</option>
+                                    <option value="advocates-it" ${preview.templateKey === 'advocates-it' ? 'selected' : ''}>Advocates - Italian</option>
+                                    <option value="advocates-de" ${preview.templateKey === 'advocates-de' ? 'selected' : ''}>Advocates - German</option>
+                                    <option value="advocates-fr" ${preview.templateKey === 'advocates-fr' ? 'selected' : ''}>Advocates - French</option>
+                                    <option value="advocates-es" ${preview.templateKey === 'advocates-es' ? 'selected' : ''}>Advocates - Spanish</option>
+                                </select>
+                                <button class="btn btn-sm btn-secondary" onclick="reloadTemplate(${i})" style="padding: 10px 16px;">
+                                    Reload Template
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            updateApprovedCount();
+        }
+
+        // Fetch email template from API
+        async function fetchEmailTemplate(type, language) {
+            try {
+                const response = await fetch(`${API_URL}/emails/templates?type=${type}&language=${language}`, {
+                    headers: getAuthHeaders()
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    return data.data || null;
+                }
+            } catch (err) {
+                console.error('Error fetching template:', err);
+            }
+            return null;
+        }
+
+        // Escape HTML for safe rendering
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Change template for a customer
+        async function changeTemplate(customerIndex, templateKey) {
+            const [type, lang] = templateKey.split('-');
+            const customer = extractedData[customerIndex];
+            
+            const template = await fetchEmailTemplate(type, lang);
+            if (template) {
+                const firstName = customer.name.split(' ')[0];
+                const subject = template.subject.replace(/\{\{firstname\}\}/g, firstName).replace(/\{\{fullname\}\}/g, customer.name);
+                const body = template.body.replace(/\{\{firstname\}\}/g, firstName).replace(/\{\{fullname\}\}/g, customer.name).replace(/\{\{country\}\}/g, customer.country || '');
+                
+                document.querySelector(`.email-subject-input[data-customer-index="${customerIndex}"]`).value = subject;
+                document.querySelector(`.email-body-input[data-customer-index="${customerIndex}"]`).value = body;
+            }
+        }
+
+        // Reload template
+        async function reloadTemplate(customerIndex) {
+            const select = document.querySelector(`.template-select[data-customer-index="${customerIndex}"]`);
+            await changeTemplate(customerIndex, select.value);
+            showToast('Template reloaded', 'success');
+        }
+
+        // Apply bulk template to all
+        async function applyBulkTemplate() {
+            const templateKey = document.getElementById('bulkTemplateSelect').value;
+            if (!templateKey) {
+                showToast('Please select a template', 'error');
+                return;
+            }
+            
+            const [type, lang] = templateKey.split('-');
+            
+            for (let i = 0; i < extractedData.length; i++) {
+                await changeTemplate(i, templateKey);
+                document.querySelector(`.template-select[data-customer-index="${i}"]`).value = templateKey;
+            }
+            
+            showToast(`Applied template to all ${extractedData.length} customers`, 'success');
+        }
+
+        // Update approved count
+        function updateApprovedCount() {
+            const count = extractedData.length;
+            document.getElementById('approvedCount').textContent = count;
+            document.getElementById('approvedCountPlural').textContent = count === 1 ? '' : 's';
+        }
+
+        // Go back to Step 2
+        function goBackToStep2() {
+            document.getElementById('machineStep3').style.display = 'none';
+            document.getElementById('machineStep2').style.display = 'block';
+            document.getElementById('step3').classList.remove('active');
+            document.getElementById('step2').classList.remove('completed');
+            document.getElementById('step2').classList.add('active');
+        }
+
+        // Proceed to Step 4 (Send Confirmation)
+        function proceedToSend() {
+            // Collect all email data
+            emailData = extractedData.map((customer, i) => {
+                const subjectInput = document.querySelector(`.email-subject-input[data-customer-index="${i}"]`);
+                const bodyInput = document.querySelector(`.email-body-input[data-customer-index="${i}"]`);
+                return {
+                    customerId: customer.id,
+                    customer: customer,
+                    subject: subjectInput ? subjectInput.value : '',
+                    body: bodyInput ? bodyInput.value : ''
+                };
+            }).filter(e => e.subject && e.body);
+            
+            if (emailData.length === 0) {
+                showToast('Please ensure all emails have subject and body', 'error');
+                return;
+            }
+            
+            // Hide Step 3, show Step 4
+            document.getElementById('machineStep3').style.display = 'none';
+            document.getElementById('machineStep4').style.display = 'block';
+            document.getElementById('step3').classList.remove('active');
+            document.getElementById('step3').classList.add('completed');
+            document.getElementById('step4').classList.add('active');
+            
+            // Show send summary
+            document.getElementById('sendSummary').style.display = 'block';
+            document.getElementById('sendProgress').style.display = 'none';
+            document.getElementById('sendSuccess').style.display = 'none';
+            
+            // Update summary
+            document.getElementById('totalEmails').textContent = emailData.length;
+            document.getElementById('totalEmailsProgress').textContent = emailData.length;
+            
+            const recipientList = document.getElementById('recipientList');
+            recipientList.innerHTML = emailData.map(e => `
+                <li style="padding: 8px 0; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between;">
+                    <span style="color: #1E293B;">${e.customer.name}</span>
+                    <span style="color: #64748B; font-size: 12px;">${e.customer.email}</span>
+                </li>
+            `).join('');
+        }
+
+        // Send emails now
+        async function sendEmailsNow() {
+            if (!emailData || emailData.length === 0) {
+                showToast('No emails to send', 'error');
+                return;
+            }
+            
+            // Hide summary, show progress
+            document.getElementById('sendSummary').style.display = 'none';
+            document.getElementById('sendProgress').style.display = 'block';
+            document.getElementById('sendSuccess').style.display = 'none';
+            
+            let sentCount = 0;
+            let failedCount = 0;
+            
+            for (let i = 0; i < emailData.length; i++) {
+                const email = emailData[i];
+                
+                // Update progress
+                document.getElementById('currentEmail').textContent = i + 1;
+                const progress = ((i + 1) / emailData.length) * 100;
+                document.getElementById('progressFill').style.width = progress + '%';
+                
+                try {
+                    const response = await fetch(`${API_URL}/emails/send`, {
+                        method: 'POST',
+                        headers: {
+                            ...getAuthHeaders(),
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            customerId: email.customerId,
+                            subject: email.subject,
+                            body: email.body
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        sentCount++;
+                    } else {
+                        failedCount++;
+                        console.error(`Failed to send to ${email.customer.email}`);
+                    }
+                } catch (err) {
+                    failedCount++;
+                    console.error(`Error sending to ${email.customer.email}:`, err);
+                }
+                
+                // Small delay to show progress
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+            
+            // Show success
+            document.getElementById('sendProgress').style.display = 'none';
+            document.getElementById('sendSuccess').style.display = 'block';
+            document.getElementById('sentCount').textContent = sentCount;
+            
+            if (failedCount > 0) {
+                showToast(`${sentCount} sent, ${failedCount} failed`, 'warning');
+            } else {
+                showToast(`✅ ${sentCount} emails sent successfully!`, 'success');
+            }
+            
+            // Refresh customer list
+            await loadCustomers();
+        }
+
+        // Schedule emails (placeholder)
+        function scheduleEmails() {
+            showToast('Scheduling feature coming soon!', 'info');
+        }
+
+        // Reset machine flow
+        function resetMachineFlow() {
+            extractedData = [];
+            emailData = [];
+            
+            // Reset to Step 1
+            document.getElementById('machineStep1').style.display = 'block';
+            document.getElementById('machineStep2').style.display = 'none';
+            document.getElementById('machineStep3').style.display = 'none';
+            document.getElementById('machineStep4').style.display = 'none';
+            
+            // Reset wizard steps
+            document.querySelectorAll('.wizard-step').forEach((step, i) => {
+                step.classList.remove('active', 'completed');
+                if (i === 0) step.classList.add('active');
+            });
+            
+            // Reset file input
+            document.getElementById('machineFileInput').value = '';
+        }
+
+        // Initialize emailData variable
+        let emailData = [];
 
         function selectAllCustomers() {
             document.querySelectorAll('.customer-checkbox').forEach(cb => cb.checked = true);
