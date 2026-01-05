@@ -1089,35 +1089,54 @@ Excited to support your success!
                     throw new Error(errorData.message || errorData.error || 'Failed to complete onboarding');
                 }
 
-                const result = await response.json();
+                let result;
+                try {
+                    result = await response.json();
+                } catch (parseError) {
+                    console.error('❌ Failed to parse response:', parseError);
+                    throw new Error('Invalid response from server');
+                }
+
                 console.log('✅ API response:', result);
 
-                if (result.success) {
+                // Check for success - be more lenient with response format
+                if (response.ok && (result.success === true || result.success === 'true' || result.data?.onboarding_completed === true)) {
                     // Update localStorage
                     localStorage.setItem('onboardingCompleted', 'true');
-                    console.log('✅ Onboarding completed, redirecting to dashboard...');
+                    console.log('✅ Onboarding completed successfully!');
+                    console.log('✅ Backend response:', result);
                     
-                    // Wait a moment to ensure localStorage is saved
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                    
-                    // Verify the update was successful by checking the response
+                    // Verify the update was successful
                     if (result.data && result.data.onboarding_completed === true) {
                         console.log('✅ Backend confirmed onboarding_completed = true');
                     }
                     
+                    // NO TOAST/ALERT ON SUCCESS - Just redirect immediately
                     // Redirect to dashboard (use full URL in production)
                     const frontendUrl = isProduction 
                         ? 'https://networkfollowup.netlify.app'
                         : '';
                     
                     // Use replace to prevent back button issues
+                    console.log('🔵 Redirecting to dashboard:', `${frontendUrl}/dashboard.html`);
                     window.location.replace(`${frontendUrl}/dashboard.html`);
+                    return; // Exit function - don't execute catch block
                 } else {
-                    throw new Error(result.message || result.error || 'Failed to complete onboarding');
+                    // Response was OK but success is false
+                    const errorMsg = result.message || result.error || 'Failed to complete onboarding';
+                    console.error('❌ Backend returned success=false:', errorMsg);
+                    throw new Error(errorMsg);
                 }
             } catch (error) {
                 console.error('❌ Onboarding completion error:', error);
                 console.error('Error stack:', error.stack);
+                
+                // Only show error if it's a real error (not a success case)
+                // Check if error is about redirect (which means success)
+                if (error.message && error.message.includes('redirect')) {
+                    console.log('✅ Redirect in progress, ignoring error');
+                    return;
+                }
                 
                 // Show user-friendly error
                 const errorMessage = error.message || 'An unexpected error occurred. Please try again.';
@@ -1136,7 +1155,13 @@ Excited to support your success!
             // This function is called from step 4 (summary)
             // It should call completeOnboarding() to ensure backend is updated
             console.log('🔵 goToDashboard() called - completing onboarding...');
-            completeOnboarding();
+            // Call completeOnboarding which will handle the API call and redirect
+            completeOnboarding().catch(err => {
+                // Only log if there's a real error (not a redirect)
+                if (err && !err.message.includes('redirect')) {
+                    console.error('Error in goToDashboard:', err);
+                }
+            });
         }
 
         // Initialize
