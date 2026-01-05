@@ -1112,14 +1112,25 @@ Excited to support your success!
                     }
                     
                     // NO TOAST/ALERT ON SUCCESS - Just redirect immediately
+                    // Wait a brief moment to ensure localStorage is saved
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    
                     // Redirect to dashboard (use full URL in production)
                     const frontendUrl = isProduction 
                         ? 'https://networkfollowup.netlify.app'
                         : '';
                     
-                    // Use replace to prevent back button issues
+                    // Use replace to prevent back button issues and ensure clean redirect
                     console.log('🔵 Redirecting to dashboard:', `${frontendUrl}/dashboard.html`);
-                    window.location.replace(`${frontendUrl}/dashboard.html`);
+                    
+                    // Clear any pending operations
+                    try {
+                        window.location.replace(`${frontendUrl}/dashboard.html`);
+                    } catch (redirectError) {
+                        // Fallback if replace fails
+                        console.warn('Replace failed, using href:', redirectError);
+                        window.location.href = `${frontendUrl}/dashboard.html`;
+                    }
                     return; // Exit function - don't execute catch block
                 } else {
                     // Response was OK but success is false

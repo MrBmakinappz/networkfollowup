@@ -28,7 +28,11 @@ const checkOnboarding = async (req, res, next) => {
 
         const user = result.rows[0];
 
-        if (!user.onboarding_completed) {
+        // Check onboarding status - be explicit about true/false
+        const onboardingCompleted = user.onboarding_completed === true || user.onboarding_completed === 'true';
+        
+        if (!onboardingCompleted) {
+            log(`⚠️ User ${userId} attempted to access protected route without completing onboarding`);
             return res.status(403).json({
                 success: false,
                 error: 'Onboarding required',
@@ -37,6 +41,8 @@ const checkOnboarding = async (req, res, next) => {
                 onboardingUrl: `${process.env.FRONTEND_URL || 'https://networkfollowup.netlify.app'}/onboarding.html`
             });
         }
+
+        log(`✅ User ${userId} onboarding check passed`);
 
         // Onboarding completed, continue
         next();

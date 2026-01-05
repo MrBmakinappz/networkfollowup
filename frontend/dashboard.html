@@ -2177,9 +2177,11 @@ Variables: {{firstname}}, {{fullname}}, {{country}}, {{your-name}}, {{your-phone
                 const data = await response.json();
 
                 // Check if error is due to incomplete onboarding
-                if (response.status === 403 && data.requiresOnboarding) {
-                    console.error('❌ Onboarding not completed');
-                    showToast('Please complete onboarding first. Click "Complete Onboarding" in the sidebar.', 'error', 8000);
+                if (response.status === 403 && (data.requiresOnboarding || data.error === 'Onboarding required')) {
+                    console.error('❌ Onboarding not completed - blocking upload');
+                    
+                    // Update localStorage to reflect actual status
+                    localStorage.setItem('onboardingCompleted', 'false');
                     
                     // Show the onboarding button if hidden
                     const completeBtn = document.getElementById('completeOnboardingBtn');
@@ -2188,6 +2190,8 @@ Variables: {{firstname}}, {{fullname}}, {{country}}, {{your-name}}, {{your-phone
                         // Scroll to button or highlight it
                         completeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     }
+                    
+                    showToast('Please complete onboarding first. Click "Complete Onboarding" in the sidebar.', 'error', 8000);
                     
                     // Reset to step 1
                     document.getElementById('machineStep2').style.display = 'none';

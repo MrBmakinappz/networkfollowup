@@ -299,6 +299,23 @@ router.post('/complete-onboarding', async (req, res) => {
             });
         }
 
+        // Double-check the database to ensure update was successful
+        const verifyResult = await db.query(
+            'SELECT onboarding_completed FROM public.users WHERE id = $1',
+            [userId]
+        );
+
+        if (verifyResult.rows.length === 0 || verifyResult.rows[0].onboarding_completed !== true) {
+            error(`❌ CRITICAL: Onboarding status verification failed for user ${userId}`);
+            return res.status(500).json({
+                success: false,
+                error: 'Verification failed',
+                message: 'Onboarding status was not updated correctly. Please try again.'
+            });
+        }
+
+        log(`✅ Verified: User ${userId} onboarding_completed = TRUE in database`);
+
         // Return success response with clear structure
         const responseData = {
             success: true,
