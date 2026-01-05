@@ -306,18 +306,24 @@ router.post('/screenshot', uploadLimiter, upload.single('screenshot'), optimizeI
                     // Insert new customer
                     console.log(`   ✓ Inserting new customer: ${customer.email}`);
                     const result = await db.query(
-                        `INSERT INTO public.customers (user_id, upload_id, full_name, email, customer_type, country_code)
-                         VALUES ($1, $2, $3, $4, $5, $6)
+                        `INSERT INTO public.customers (user_id, full_name, email, customer_type, country_code)
+                         VALUES ($1, $2, $3, $4, $5)
+                         ON CONFLICT (user_id, email) DO UPDATE SET
+                           full_name = EXCLUDED.full_name,
+                           customer_type = EXCLUDED.customer_type,
+                           country_code = EXCLUDED.country_code,
+                           updated_at = NOW()
                          RETURNING id, full_name, email, customer_type, country_code, created_at`,
                         [
                             userId,
-                            uploadId,
                             customer.full_name,
                             customer.email.toLowerCase(),
                             customer.customer_type,
                             customer.country_code
                         ]
                     );
+                    
+                    // This is a new customer (we're in the else block where existing.rows.length === 0)
                     savedCustomers.push({ 
                         id: result.rows[0].id,
                         full_name: result.rows[0].full_name,
