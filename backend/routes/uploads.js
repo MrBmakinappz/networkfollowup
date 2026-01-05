@@ -226,6 +226,8 @@ router.post('/screenshot', uploadLimiter, upload.single('screenshot'), optimizeI
         const savedCustomers = [];
         const errors = [];
 
+        log(`🔵 Saving ${extractedCustomers.length} customers to database...`);
+
         for (const customer of extractedCustomers) {
             try {
                 // Check if customer already exists (by email)
@@ -250,7 +252,15 @@ router.post('/screenshot', uploadLimiter, upload.single('screenshot'), optimizeI
                             existing.rows[0].id
                         ]
                     );
-                    savedCustomers.push({ ...customer, id: existing.rows[0].id, updated: true });
+                    savedCustomers.push({ 
+                        id: existing.rows[0].id,
+                        full_name: customer.full_name,
+                        email: customer.email,
+                        customer_type: customer.customer_type,
+                        country_code: customer.country_code,
+                        language: customer.language || 'en',
+                        updated: true 
+                    });
                 } else {
                     // Insert new customer
                     const result = await db.query(
@@ -266,7 +276,11 @@ router.post('/screenshot', uploadLimiter, upload.single('screenshot'), optimizeI
                             customer.country_code
                         ]
                     );
-                    savedCustomers.push({ ...result.rows[0], updated: false });
+                    savedCustomers.push({ 
+                        ...result.rows[0],
+                        language: customer.language || 'en',
+                        updated: false 
+                    });
                 }
             } catch (err) {
                 error(`Error saving customer ${customer.email}:`, err);
@@ -274,14 +288,34 @@ router.post('/screenshot', uploadLimiter, upload.single('screenshot'), optimizeI
             }
         }
 
+        log(`✅ Saved ${savedCustomers.length} customers successfully`);
+        log(`   Debug: customersExtracted=${savedCustomers.length}, errors=${errors.length}`);
+
+        // Return response with proper format for frontend
         res.json({
             success: true,
             message: `Extracted ${savedCustomers.length} customers from screenshot`,
+            customersExtracted: savedCustomers.length,
+            customers: savedCustomers.map(c => ({
+                id: c.id,
+                full_name: c.full_name,
+                email: c.email,
+                customer_type: c.customer_type,
+                country_code: c.country_code,
+                language: c.language || 'en',
+                phone: c.phone || null,
+                updated: c.updated || false
+            })),
             data: {
                 upload_id: uploadId,
                 customers_extracted: savedCustomers.length,
                 customers: savedCustomers,
                 errors: errors.length > 0 ? errors : undefined
+            },
+            debug: {
+                extractedCount: extractedCustomers.length,
+                savedCount: savedCustomers.length,
+                errorCount: errors.length
             }
         });
     } catch (err) {
