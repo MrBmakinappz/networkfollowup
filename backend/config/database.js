@@ -12,16 +12,16 @@ if (!process.env.DATABASE_URL) {
 }
 
 // Create PostgreSQL connection pool
-// Optimized for production performance
+// Optimized for production performance and Railway deployment
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? {
+    ssl: {
         rejectUnauthorized: false
-    } : false,
-    max: 30, // Increased for better concurrency
-    min: 5, // Keep minimum connections alive
+    },
+    connectionTimeoutMillis: 30000, // 30 seconds - increased for Railway/Supabase
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000, // Increased timeout
+    max: 10, // Reduced pool size for Railway
+    min: 2, // Minimum connections
     allowExitOnIdle: false, // Keep pool alive
     // Ensure we use the public schema (default)
     // No tenant switching or schema manipulation

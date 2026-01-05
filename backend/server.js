@@ -273,12 +273,14 @@ app.listen(PORT, async () => {
 ╚══════════════════════════════════════════════════════════╝
   `);
   
-  // Seed email templates after server starts
+  // Seed email templates after server starts (non-critical)
   try {
     await seedTemplates();
+    log('✅ Email templates seeded successfully');
   } catch (err) {
-    error('Failed to seed templates on startup:', err);
-    // Don't exit - server can still run without templates
+    error('Template seeding failed (non-critical):', err.message);
+    // Continue anyway - app still works without templates
+    // Templates can be seeded manually later if needed
   }
 });
 
