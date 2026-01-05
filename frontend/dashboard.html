@@ -1664,6 +1664,21 @@ Variables: {{firstname}}, {{fullname}}, {{country}}, {{your-name}}, {{your-phone
 
         function getAuthHeaders() {
             const token = localStorage.getItem('authToken');
+            if (!token) {
+                console.error('❌ No auth token found in localStorage');
+                showToast('Authentication failed - Please log in again', 'error');
+                // Redirect to login
+                setTimeout(() => {
+                    if (isProduction) {
+                        window.location.href = 'https://networkfollowup.netlify.app/login.html';
+                    } else {
+                        window.location.href = 'login.html';
+                    }
+                }, 2000);
+                return {
+                    'Content-Type': 'application/json'
+                };
+            }
             return {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
@@ -1939,9 +1954,30 @@ Variables: {{firstname}}, {{fullname}}, {{country}}, {{your-name}}, {{your-phone
 
         async function loadCustomers() {
             try {
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    console.error('❌ No auth token - cannot load customers');
+                    return;
+                }
+
                 const response = await fetch(`${API_URL}/customers`, {
                     headers: getAuthHeaders()
                 });
+
+                if (response.status === 401 || response.status === 403) {
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('❌ Authentication failed:', errorData);
+                    showToast('Authentication failed - Please log in again', 'error');
+                    localStorage.clear();
+                    setTimeout(() => {
+                        if (isProduction) {
+                            window.location.href = 'https://networkfollowup.netlify.app/login.html';
+                        } else {
+                            window.location.href = 'login.html';
+                        }
+                    }, 2000);
+                    return;
+                }
 
                 if (!response.ok) {
                     throw new Error('Failed to load customers');
@@ -2813,6 +2849,28 @@ Best regards,
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
+            // Check auth first
+            if (!checkAuth()) {
+                console.error('❌ Authentication check failed on page load');
+                return;
+            }
+
+            // Verify token exists
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                console.error('❌ No auth token in localStorage');
+                showToast('Authentication failed - Please log in again', 'error');
+                setTimeout(() => {
+                    if (isProduction) {
+                        window.location.href = 'https://networkfollowup.netlify.app/login.html';
+                    } else {
+                        window.location.href = 'login.html';
+                    }
+                }, 2000);
+                return;
+            }
+
+            console.log('✅ Auth token found, loading dashboard...');
             loadDashboard();
             
             // Add ripple effects to all buttons
