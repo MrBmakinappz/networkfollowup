@@ -78,57 +78,87 @@ async function compressImage(buffer, mimeType) {
 
 /**
  * Optimized prompt - 95%+ accuracy with detailed extraction rules
+ * TRAINED ON EXACT doTERRA BACK OFFICE SCREENSHOT FORMAT
  */
-const OPTIMIZED_PROMPT = `Extract ALL customer data from this doTERRA/MLM back office screenshot with 95%+ accuracy.
+const OPTIMIZED_PROMPT = `Extract ALL customer data from this doTERRA back office customer list screenshot with 95%+ accuracy.
+
+SCREENSHOT STRUCTURE (doTERRA Table Format):
+This is a TABLE with 9 columns. Extract data from these specific columns:
+
+COLUMN 1: Customer Name
+- Format: "Lastname, Firstname" OR "Firstname, Lastname"
+- May be truncated with "..." - extract FULL visible name
+- Combine both parts: "Mladenov, Yordan" → "Yordan Mladenov"
+- If truncated, use what's visible: "Limańska-Rydel,..." → "Limańska-Rydel" (extract full visible text)
+
+COLUMN 4: Customer Type
+- Look for: "Retail Customer" OR "Wholesale Customer" OR "Wellness Advocate"
+- Map exactly:
+  * "Retail Customer" → "retail"
+  * "Wholesale Customer" → "wholesale"
+  * "Wellness Advocate" OR "Advocate" OR "WA" → "advocates"
+
+COLUMN 8: Email Address
+- Full email address visible in this column
+- Extract exactly as shown: "yordan.mladenov96@gmail.com"
+- If missing, use: "no-email-{row-number}@placeholder.com"
+
+COLUMN 9: Country Code
+- 3-letter uppercase ISO code: "BGR", "FRA", "CAN", "POL", "AUT", "DEU", "HUN", etc.
+- Extract exactly as shown (already in correct format)
 
 CRITICAL REQUIREMENTS:
-1. Extract EVERY visible customer (even if 50+)
-2. Full name MUST include both first name AND surname (last name)
-3. Email must be valid format or use placeholder: "no-email-{index}@placeholder.com"
-4. Customer type MUST be exactly one of: "retail", "wholesale", or "advocates"
-5. Country code MUST be 3-letter ISO code (USA, DEU, ITA, ESP, FRA, GBR, etc.)
+1. Extract EVERY visible row in the table (even if 50+ customers)
+2. Full name MUST combine both parts: "Lastname, Firstname" → "Firstname Lastname"
+3. If name is truncated with "...", extract the FULL visible portion
+4. Customer type MUST be exactly: "retail", "wholesale", or "advocates"
+5. Country code MUST be 3-letter uppercase (BGR, FRA, CAN, DEU, etc.)
+6. Email MUST be valid format or placeholder
 
-CUSTOMER TYPE DETECTION (CRITICAL):
-- "retail" = Retail Customer, PC (Preferred Customer), one-time buyer, Retail
-- "wholesale" = Wholesale Customer, WC (Wholesale Customer), discount member, Wholesale
-- "advocates" = Wellness Advocate, WA, Builder, Distributor, Advocate, Team Member
+CUSTOMER TYPE MAPPING (EXACT):
+- "Retail Customer" → "retail"
+- "Wholesale Customer" → "wholesale"
+- "Wellness Advocate" OR "Advocate" OR "WA" OR "Builder" → "advocates"
 
-COUNTRY CODE MAPPING:
-- United States, USA, US → "USA"
-- Germany, Deutschland, DEU, DE → "DEU"
-- Italy, Italia, ITA, IT → "ITA"
-- Spain, España, ESP, ES → "ESP"
-- France, FRA, FR → "FRA"
-- United Kingdom, UK, GBR, GB → "GBR"
-- Canada, CAN, CA → "CAN"
-- Australia, AUS, AU → "AUS"
+COUNTRY CODE EXAMPLES (from actual screenshot):
+- BGR (Bulgaria), FRA (France), CAN (Canada), POL (Poland), AUT (Austria), DEU (Germany), HUN (Hungary)
+- Extract the 3-letter code EXACTLY as shown
 
-LANGUAGE MAPPING (from country):
+LANGUAGE MAPPING (from country code):
 - USA, GBR, CAN, AUS → "en"
 - DEU, AUT, CHE → "de"
 - ITA → "it"
 - ESP, MEX, ARG → "es"
 - FRA, BEL → "fr"
+- POL, BGR, HUN, CZE → "en" (default to English if not in list)
 
-OUTPUT FORMAT (JSON array only, no markdown):
+OUTPUT FORMAT (JSON array ONLY, no markdown, no explanations):
 [
   {
-    "full_name": "John Smith",
-    "email": "john.smith@email.com",
+    "full_name": "Yordan Mladenov",
+    "email": "yordan.mladenov96@gmail.com",
     "customer_type": "retail",
-    "country_code": "USA",
+    "country_code": "BGR",
     "language": "en"
   },
   {
-    "full_name": "Maria Garcia",
-    "email": "maria@email.com",
+    "full_name": "Eric Hacquard",
+    "email": "salutemcorpus@gmail.com",
     "customer_type": "wholesale",
-    "country_code": "ESP",
-    "language": "es"
+    "country_code": "FRA",
+    "language": "fr"
   }
 ]
 
-EXTRACT NOW - Return ONLY the JSON array, no explanations.`;
+EXTRACTION RULES:
+1. Scan the ENTIRE table from top to bottom
+2. For each row, extract: Name (column 1), Type (column 4), Email (column 8), Country (column 9)
+3. Convert "Lastname, Firstname" to "Firstname Lastname" format
+4. Map customer type exactly as specified above
+5. Extract country code as-is (already 3-letter format)
+6. Return ALL customers in a single JSON array
+
+EXTRACT NOW - Return ONLY the JSON array, no markdown, no explanations, no text before or after.`;
 
 /**
  * Check cache for OCR result
