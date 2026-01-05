@@ -41,6 +41,30 @@ app.set('trust proxy', 1);
 const PORT = process.env.PORT || 5000;
 
 // ============================================
+// HEALTH CHECK ROUTES (MUST BE FIRST)
+// ============================================
+// These routes must be BEFORE any middleware for Railway health checks
+
+// Health check for Railway
+app.get('/health', (req, res) => {
+  console.log('🔵 Health check requested');
+  res.status(200).json({ 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
+// Root route for Railway
+app.get('/', (req, res) => {
+  console.log('🔵 Root endpoint accessed');
+  res.status(200).json({ 
+    message: 'NetworkFollowUp API',
+    status: 'running'
+  });
+});
+
+// ============================================
 // SECURITY MIDDLEWARE
 // ============================================
 
@@ -140,15 +164,8 @@ app.use(sanitizeBody);
 // ROUTES
 // ============================================
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
+// Health check moved to top of file (before middleware)
+// See health check routes above (lines 43-65)
 
 // Auth middleware
 console.log('🔵 Loading auth middleware...');
