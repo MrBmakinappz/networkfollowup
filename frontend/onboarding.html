@@ -1054,7 +1054,7 @@ Excited to support your success!
                 // Call API to complete onboarding
                 const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
                 const API_URL = isProduction 
-                    ? 'https://networkfollowup-backend-hm12cqp9v-brondors-projects.vercel.app/api'
+                    ? 'https://networkfollowup-production.up.railway.app/api'
                     : 'http://localhost:5000/api';
 
                 const response = await fetch(`${API_URL}/users/complete-onboarding`, {

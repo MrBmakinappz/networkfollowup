@@ -1243,7 +1243,7 @@
         // Auto-detect environment: production or development
         const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
         const API_URL = isProduction 
-            ? 'https://networkfollowup-backend-hm12cqp9v-brondors-projects.vercel.app/api'
+            ? 'https://networkfollowup-production.up.railway.app/api'
             : 'http://localhost:5000/api';
         console.log('Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT');
         console.log('API URL:', API_URL);
