@@ -100,7 +100,7 @@ FRONTEND_URL=https://networkfollowup.netlify.app
 DATABASE_URL=postgresql://postgres:[YOUR-PASSWORD]@[YOUR-PROJECT-REF].supabase.co:5432/postgres
 
 # Paste your Claude API key here:
-CLAUDE_API_KEY=sk-ant-api03-xxxxx
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
 
 # Generate JWT secret (run: openssl rand -base64 32)
 # Or just use this for testing:
