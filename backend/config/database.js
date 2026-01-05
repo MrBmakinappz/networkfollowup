@@ -2,12 +2,20 @@
 // PostgreSQL connection using pg library
 // Simple connection without tenant logic
 
+console.log('🔵 Initializing database pool...');
+console.log('🔵 DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'MISSING');
+
 const { Pool } = require('pg');
+console.log('✅ pg library loaded');
 const dns = require('dns');
+console.log('✅ dns library loaded');
 const { log, error } = require('../utils/logger');
+console.log('✅ logger loaded');
 
 // Force IPv4 resolution (Railway doesn't support IPv6)
+console.log('🔵 Setting DNS to IPv4 first...');
 dns.setDefaultResultOrder('ipv4first');
+console.log('✅ DNS set to IPv4 first');
 
 // Validate DATABASE_URL
 if (!process.env.DATABASE_URL) {
@@ -17,6 +25,7 @@ if (!process.env.DATABASE_URL) {
 
 // Create PostgreSQL connection pool
 // Optimized for production performance and Railway deployment
+console.log('🔵 Creating PostgreSQL connection pool...');
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: {
@@ -30,6 +39,7 @@ const pool = new Pool({
     // Ensure we use the public schema (default)
     // No tenant switching or schema manipulation
 });
+console.log('✅ Database pool created');
 
 // Test connection
 pool.on('connect', () => {
