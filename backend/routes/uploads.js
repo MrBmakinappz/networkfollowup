@@ -178,66 +178,106 @@ router.post('/screenshot', uploadLimiter, upload.single('screenshot'), optimizeI
             uploadId = recentUpload.rows[0].id;
         } else {
             // Extract customers using Claude Vision (optimized)
-            log('Extracting customers from image...');
-            extractedCustomers = await extractCustomersFromImage(
-                req.file.buffer,
-                req.file.mimetype,
-                'en', // Default language
-                userId, // For usage tracking
-                null // uploadId will be set after insert
-            );
-
-            if (!extractedCustomers || extractedCustomers.length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'No customers found',
-                    message: 'Could not extract any customer data from the image. Please ensure the screenshot contains customer information.'
-                });
-            }
-
-            // Create upload history record (if not using cached)
-            if (!uploadId) {
-                const uploadResult = await db.query(
-                    `INSERT INTO public.upload_history (user_id, filename, file_size, customers_extracted, extraction_status, file_hash)
-                     VALUES ($1, $2, $3, $4, $5, $6)
-                     RETURNING id`,
-                    [
-                        userId,
-                        req.file.originalname,
-                        req.file.size,
-                        extractedCustomers.length,
-                        'success',
-                        fileHash
-                    ]
+            console.log('=== OCR EXTRACTION DEBUG ===');
+            console.log('1. File received:', req.file.originalname);
+            console.log('2. File size:', req.file.size, 'bytes');
+            console.log('3. File type:', req.file.mimetype);
+            console.log('4. Calling Claude API...');
+            
+            try {
+                extractedCustomers = await extractCustomersFromImage(
+                    req.file.buffer,
+                    req.file.mimetype,
+                    'en', // Default language
+                    userId, // For usage tracking
+                    null // uploadId will be set after insert
                 );
-                uploadId = uploadResult.rows[0].id;
+
+                console.log('5. Claude extraction completed');
+                console.log('6. Extracted customers count:', extractedCustomers ? extractedCustomers.length : 0);
                 
-                // Save OCR result to cache
-                await db.query(
-                    `UPDATE public.upload_history 
-                     SET ocr_result = $1 
-                     WHERE id = $2`,
-                    [JSON.stringify(extractedCustomers), uploadId]
-                );
+                if (extractedCustomers && extractedCustomers.length > 0) {
+                    console.log('7. First customer sample:', JSON.stringify(extractedCustomers[0], null, 2));
+                } else {
+                    console.log('7. WARNING: No customers extracted or empty array');
+                }
+
+                if (!extractedCustomers || extractedCustomers.length === 0) {
+                    console.log('=== END DEBUG (NO CUSTOMERS) ===');
+                    return res.status(200).json({
+                        success: false,
+                        error: 'No customers found',
+                        message: 'Could not extract any customer data from the image. Please ensure the screenshot contains customer information.',
+                        customersExtracted: 0,
+                        customers: []
+                    });
+                }
+
+                // Create upload history record (if not using cached)
+                if (!uploadId) {
+                    console.log('8. Creating upload history record...');
+                    const uploadResult = await db.query(
+                        `INSERT INTO public.upload_history (user_id, filename, file_size, customers_extracted, extraction_status, file_hash)
+                         VALUES ($1, $2, $3, $4, $5, $6)
+                         RETURNING id`,
+                        [
+                            userId,
+                            req.file.originalname,
+                            req.file.size,
+                            extractedCustomers.length,
+                            'success',
+                            fileHash
+                        ]
+                    );
+                    uploadId = uploadResult.rows[0].id;
+                    console.log('9. Upload history ID:', uploadId);
+                    
+                    // Save OCR result to cache
+                    await db.query(
+                        `UPDATE public.upload_history 
+                         SET ocr_result = $1 
+                         WHERE id = $2`,
+                        [JSON.stringify(extractedCustomers), uploadId]
+                    );
+                    console.log('10. OCR result cached');
+                }
+            } catch (extractError) {
+                console.error('=== EXTRACTION ERROR ===');
+                console.error('Error:', extractError.message);
+                console.error('Stack:', extractError.stack);
+                console.log('=== END DEBUG (ERROR) ===');
+                throw extractError; // Re-throw to be caught by outer try-catch
             }
         }
 
         // Save customers to database
+        console.log('11. Starting database save process...');
+        console.log('12. Customers to save:', extractedCustomers.length);
+        
         const savedCustomers = [];
         const errors = [];
 
-        log(`🔵 Saving ${extractedCustomers.length} customers to database...`);
-
-        for (const customer of extractedCustomers) {
+        for (let i = 0; i < extractedCustomers.length; i++) {
+            const customer = extractedCustomers[i];
+            console.log(`13. Processing customer ${i + 1}/${extractedCustomers.length}:`, customer.email || customer.full_name);
+            
             try {
+                // Validate required fields
+                if (!customer.email || !customer.full_name) {
+                    console.log(`   ⚠️ Skipping customer ${i + 1}: missing email or name`);
+                    errors.push({ customer: customer.email || 'unknown', error: 'Missing email or full_name' });
+                    continue;
+                }
+
                 // Check if customer already exists (by email)
                 const existing = await db.query(
                     'SELECT id FROM public.customers WHERE user_id = $1 AND email = $2',
-                    [userId, customer.email]
+                    [userId, customer.email.toLowerCase()]
                 );
 
                 if (existing.rows.length > 0) {
                     // Update existing customer
+                    console.log(`   ✓ Updating existing customer: ${customer.email}`);
                     await db.query(
                         `UPDATE public.customers 
                          SET full_name = $1, 
@@ -255,14 +295,16 @@ router.post('/screenshot', uploadLimiter, upload.single('screenshot'), optimizeI
                     savedCustomers.push({ 
                         id: existing.rows[0].id,
                         full_name: customer.full_name,
-                        email: customer.email,
+                        email: customer.email.toLowerCase(),
                         customer_type: customer.customer_type,
                         country_code: customer.country_code,
                         language: customer.language || 'en',
+                        phone: customer.phone || null,
                         updated: true 
                     });
                 } else {
                     // Insert new customer
+                    console.log(`   ✓ Inserting new customer: ${customer.email}`);
                     const result = await db.query(
                         `INSERT INTO public.customers (user_id, upload_id, full_name, email, customer_type, country_code)
                          VALUES ($1, $2, $3, $4, $5, $6)
@@ -271,28 +313,36 @@ router.post('/screenshot', uploadLimiter, upload.single('screenshot'), optimizeI
                             userId,
                             uploadId,
                             customer.full_name,
-                            customer.email,
+                            customer.email.toLowerCase(),
                             customer.customer_type,
                             customer.country_code
                         ]
                     );
                     savedCustomers.push({ 
-                        ...result.rows[0],
+                        id: result.rows[0].id,
+                        full_name: result.rows[0].full_name,
+                        email: result.rows[0].email,
+                        customer_type: result.rows[0].customer_type,
+                        country_code: result.rows[0].country_code,
                         language: customer.language || 'en',
+                        phone: customer.phone || null,
                         updated: false 
                     });
                 }
             } catch (err) {
+                console.error(`   ❌ Error saving customer ${customer.email}:`, err.message);
                 error(`Error saving customer ${customer.email}:`, err);
                 errors.push({ customer: customer.email, error: err.message });
             }
         }
 
-        log(`✅ Saved ${savedCustomers.length} customers successfully`);
-        log(`   Debug: customersExtracted=${savedCustomers.length}, errors=${errors.length}`);
+        console.log('14. Database save complete');
+        console.log('15. Total saved:', savedCustomers.length);
+        console.log('16. Total errors:', errors.length);
+        console.log('=== END DEBUG ===');
 
-        // Return response with proper format for frontend
-        res.json({
+        // Return response with proper JSON format
+        const responseData = {
             success: true,
             message: `Extracted ${savedCustomers.length} customers from screenshot`,
             customersExtracted: savedCustomers.length,
@@ -305,19 +355,24 @@ router.post('/screenshot', uploadLimiter, upload.single('screenshot'), optimizeI
                 language: c.language || 'en',
                 phone: c.phone || null,
                 updated: c.updated || false
-            })),
-            data: {
-                upload_id: uploadId,
-                customers_extracted: savedCustomers.length,
-                customers: savedCustomers,
-                errors: errors.length > 0 ? errors : undefined
-            },
-            debug: {
+            }))
+        };
+
+        // Only add debug/errors if in development or if there are errors
+        if (process.env.NODE_ENV === 'development' || errors.length > 0) {
+            responseData.debug = {
                 extractedCount: extractedCustomers.length,
                 savedCount: savedCustomers.length,
                 errorCount: errors.length
+            };
+            if (errors.length > 0) {
+                responseData.errors = errors;
             }
-        });
+        }
+
+        // Ensure proper JSON response
+        log(`✅ Sending response: ${savedCustomers.length} customers`);
+        res.status(200).json(responseData);
     } catch (err) {
         error('Screenshot upload error:', err);
         
