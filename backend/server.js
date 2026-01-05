@@ -142,16 +142,26 @@ try {
 }
 
 app.use('/api/auth', authRoutes);
+
+// Direct OAuth route handler (must be before router to ensure it works)
+app.get('/api/oauth/google', (req, res) => {
+  log('🔵 Direct OAuth route handler called');
+  const { getAuthUrl } = require('./utils/gmail');
+  try {
+    const authUrl = getAuthUrl();
+    log('✅ OAuth URL generated, redirecting to Google');
+    res.redirect(authUrl);
+  } catch (err) {
+    log('❌ Error in direct OAuth handler:', err);
+    res.status(500).json({
+      error: 'OAuth Error',
+      message: err.message || 'Failed to generate authorization URL'
+    });
+  }
+});
+
 app.use('/api/oauth', oauthRoutes);
 log('✅ Routes registered: /api/auth, /api/oauth');
-
-// Debug: Test OAuth route registration
-app.get('/api/oauth/test', (req, res) => {
-  res.json({ 
-    message: 'OAuth route is accessible',
-    routes: oauthRoutes.stack ? oauthRoutes.stack.map(r => r.route?.path) : 'No stack'
-  });
-});
 
 // Protected routes (auth required)
 const uploadsRoutes = require('./routes/uploads');
