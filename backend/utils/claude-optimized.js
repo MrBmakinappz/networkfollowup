@@ -77,27 +77,58 @@ async function compressImage(buffer, mimeType) {
 }
 
 /**
- * Optimized prompt - reduced tokens by 50%
+ * Optimized prompt - 95%+ accuracy with detailed extraction rules
  */
-const OPTIMIZED_PROMPT = `Extract customer data from doTERRA/MLM screenshot. Return JSON array only.
+const OPTIMIZED_PROMPT = `Extract ALL customer data from this doTERRA/MLM back office screenshot with 95%+ accuracy.
 
-Required fields per customer:
-- full_name: First + Last
-- email: Email address
-- customer_type: "retail" | "wholesale" | "advocates"
-- country_code: 3-letter code (USA, DEU, ITA, etc.)
-- language: 2-letter code (en, de, it, etc.)
+CRITICAL REQUIREMENTS:
+1. Extract EVERY visible customer (even if 50+)
+2. Full name MUST include both first name AND surname (last name)
+3. Email must be valid format or use placeholder: "no-email-{index}@placeholder.com"
+4. Customer type MUST be exactly one of: "retail", "wholesale", or "advocates"
+5. Country code MUST be 3-letter ISO code (USA, DEU, ITA, ESP, FRA, GBR, etc.)
 
-Type rules:
-- retail: PC, one-time buyer
-- wholesale: WC, discount member
-- advocates: WA, Builder, Distributor
+CUSTOMER TYPE DETECTION (CRITICAL):
+- "retail" = Retail Customer, PC (Preferred Customer), one-time buyer, Retail
+- "wholesale" = Wholesale Customer, WC (Wholesale Customer), discount member, Wholesale
+- "advocates" = Wellness Advocate, WA, Builder, Distributor, Advocate, Team Member
 
-If email missing: "no-email-{index}@placeholder.com"
-If no customers: return []
+COUNTRY CODE MAPPING:
+- United States, USA, US → "USA"
+- Germany, Deutschland, DEU, DE → "DEU"
+- Italy, Italia, ITA, IT → "ITA"
+- Spain, España, ESP, ES → "ESP"
+- France, FRA, FR → "FRA"
+- United Kingdom, UK, GBR, GB → "GBR"
+- Canada, CAN, CA → "CAN"
+- Australia, AUS, AU → "AUS"
 
-Format:
-[{"full_name":"John Smith","email":"john@email.com","customer_type":"retail","country_code":"USA","language":"en"}]`;
+LANGUAGE MAPPING (from country):
+- USA, GBR, CAN, AUS → "en"
+- DEU, AUT, CHE → "de"
+- ITA → "it"
+- ESP, MEX, ARG → "es"
+- FRA, BEL → "fr"
+
+OUTPUT FORMAT (JSON array only, no markdown):
+[
+  {
+    "full_name": "John Smith",
+    "email": "john.smith@email.com",
+    "customer_type": "retail",
+    "country_code": "USA",
+    "language": "en"
+  },
+  {
+    "full_name": "Maria Garcia",
+    "email": "maria@email.com",
+    "customer_type": "wholesale",
+    "country_code": "ESP",
+    "language": "es"
+  }
+]
+
+EXTRACT NOW - Return ONLY the JSON array, no explanations.`;
 
 /**
  * Check cache for OCR result

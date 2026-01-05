@@ -185,11 +185,11 @@ router.post('/', validateCustomer, async (req, res) => {
         }
 
         const result = await db.query(
-            `INSERT INTO public.customers (user_id, full_name, email, member_type, country_code)
+            `INSERT INTO public.customers (user_id, full_name, email, customer_type, country_code)
              VALUES ($1, $2, $3, $4, $5)
              ON CONFLICT (user_id, email) DO UPDATE SET
                 full_name = EXCLUDED.full_name,
-                member_type = EXCLUDED.member_type,
+                customer_type = EXCLUDED.customer_type,
                 country_code = EXCLUDED.country_code,
                 updated_at = NOW()
              RETURNING *`,
@@ -231,7 +231,7 @@ router.put('/:id', validateUUID, validateCustomer, async (req, res) => {
             `UPDATE public.customers 
              SET full_name = COALESCE($1, full_name),
                  email = COALESCE($2, email),
-                 member_type = COALESCE($3, member_type),
+                 customer_type = COALESCE($3, customer_type),
                  country_code = COALESCE($4, country_code),
                  updated_at = NOW()
              WHERE id = $5 AND user_id = $6

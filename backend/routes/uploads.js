@@ -239,7 +239,7 @@ router.post('/screenshot', uploadLimiter, upload.single('screenshot'), optimizeI
                     await db.query(
                         `UPDATE public.customers 
                          SET full_name = $1, 
-                             member_type = $2, 
+                             customer_type = $2, 
                              country_code = $3,
                              updated_at = NOW()
                          WHERE id = $4`,

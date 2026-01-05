@@ -2,16 +2,20 @@
 // NetworkFollowUp Backend - Complete Server
 
 // Global error handlers - MUST be at the very top
-process.on('unhandledRejection', (err) => {
-  console.error('❌ UNHANDLED REJECTION:', err);
-  console.error('Stack:', err.stack);
-  // Don't exit - let server continue
+// These catch errors but DON'T exit - Railway needs the process to stay alive
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ UNHANDLED REJECTION at:', promise);
+  console.error('Reason:', reason);
+  console.error('Stack:', reason?.stack || 'No stack trace');
+  // DON'T exit - let server continue running
+  // Railway will restart if needed, but we want to stay alive
 });
 
 process.on('uncaughtException', (err) => {
   console.error('❌ UNCAUGHT EXCEPTION:', err);
   console.error('Stack:', err.stack);
-  // Don't exit - let server continue
+  // DON'T exit - let server continue running
+  // Log the error but keep the process alive for Railway
 });
 
 console.log('🔵 Starting server...');
@@ -45,22 +49,22 @@ const PORT = process.env.PORT || 5000;
 // ============================================
 // These routes must be BEFORE any middleware for Railway health checks
 
-// Health check for Railway
+// Health check for Railway - MUST respond quickly (no logging to reduce noise)
 app.get('/health', (req, res) => {
-  console.log('🔵 Health check requested');
   res.status(200).json({ 
     status: 'ok',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'production'
   });
 });
 
-// Root route for Railway
+// Root route for Railway - MUST respond quickly (no logging to reduce noise)
 app.get('/', (req, res) => {
-  console.log('🔵 Root endpoint accessed');
   res.status(200).json({ 
     message: 'NetworkFollowUp API',
-    status: 'running'
+    status: 'running',
+    version: '1.0.0'
   });
 });
 
@@ -325,51 +329,70 @@ app.use((err, req, res, next) => {
 console.log('🔵 Starting server on port', PORT);
 console.log('🔵 About to call app.listen()...');
 
-const server = app.listen(PORT, async () => {
-  console.log(`✅ Server running on port ${PORT}`);
+let server;
+
+try {
+  server = app.listen(PORT, () => {
+    console.log(`✅ Server running on port ${PORT}`);
+    console.log(`✅ Health check available at: http://localhost:${PORT}/health`);
+    console.log(`✅ Root endpoint available at: http://localhost:${PORT}/`);
+    console.log(`✅ Environment: ${process.env.NODE_ENV || 'production'}`);
+    console.log('✅ Server is ready to accept connections');
+    console.log('✅ Server will stay running - Railway health checks will keep it alive');
+  });
   
-  try {
-    console.log('🔵 Running post-startup tasks...');
-    
-    // Use console.log instead of log() to avoid potential logger issues
-    console.log(`
-╔══════════════════════════════════════════════════════════╗
-║                                                          ║
-║      🌿 NetworkFollowUp API Server                      ║
-║                                                          ║
-║      Status: Running ✓                                   ║
-║      Port: ${PORT}                                       ║
-║      Environment: ${process.env.NODE_ENV || 'development'}                            ║
-║                                                          ║
-║      Endpoints: http://localhost:${PORT}/api             ║
-║      Health: http://localhost:${PORT}/health             ║
-║                                                          ║
-╚══════════════════════════════════════════════════════════╝
-    `);
-    
-    // Template seeding disabled - app will start without templates
-    // Templates can be added manually via SQL if needed
-    // No async operations here - all disabled
-    
-    console.log('✅ Post-startup tasks complete');
-  } catch (err) {
-    console.error('❌ Post-startup error:', err);
+  // Handle server errors - don't exit on server errors
+  server.on('error', (err) => {
+    console.error('❌ Server error:', err);
     console.error('Stack:', err.stack);
-    // Don't exit - server is already running
+    // Don't exit - let Railway handle restarts if needed
+  });
+  
+  console.log('🔵 app.listen() called, waiting for callback...');
+} catch (err) {
+  console.error('❌ Failed to start server:', err);
+  console.error('Stack:', err.stack);
+  // Only exit if server fails to start
+  process.exit(1);
+}
+
+// Graceful shutdown handlers
+// Railway sends SIGTERM when stopping containers - this is normal
+process.on('SIGTERM', () => {
+  console.log('🔵 SIGTERM received, shutting down gracefully...');
+  console.log('This is normal when Railway stops the container');
+  if (server) {
+    server.close(() => {
+      console.log('✅ Server closed gracefully');
+      process.exit(0);
+    });
+    // Force exit after 10 seconds if server doesn't close
+    setTimeout(() => {
+      console.log('⚠️ Forcing exit after timeout');
+      process.exit(0);
+    }, 10000);
+  } else {
+    console.log('⚠️ Server not initialized, exiting immediately');
+    process.exit(0);
   }
 });
 
-console.log('🔵 app.listen() called, waiting for callback...');
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  log('SIGTERM received, shutting down gracefully...');
-  process.exit(0);
-});
-
 process.on('SIGINT', () => {
-  log('SIGINT received, shutting down gracefully...');
-  process.exit(0);
+  console.log('🔵 SIGINT received, shutting down gracefully...');
+  if (server) {
+    server.close(() => {
+      console.log('✅ Server closed gracefully');
+      process.exit(0);
+    });
+    // Force exit after 10 seconds if server doesn't close
+    setTimeout(() => {
+      console.log('⚠️ Forcing exit after timeout');
+      process.exit(0);
+    }, 10000);
+  } else {
+    console.log('⚠️ Server not initialized, exiting immediately');
+    process.exit(0);
+  }
 });
 
 module.exports = app;
