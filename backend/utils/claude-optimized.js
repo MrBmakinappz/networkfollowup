@@ -235,8 +235,8 @@ async function extractCustomersFromImage(imageBuffer, mimeType = 'image/jpeg', d
         // Call Claude with optimized prompt
         const startTime = Date.now();
         const message = await anthropic.messages.create({
-            model: "claude-3-5-sonnet-20241022",
-            max_tokens: 2048, // Reduced from 4096
+            model: "claude-3-5-sonnet-20240620",
+            max_tokens: 2048,
             messages: [{
                 role: "user",
                 content: [
