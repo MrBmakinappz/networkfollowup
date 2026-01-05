@@ -187,11 +187,15 @@ router.get('/google/callback', async (req, res) => {
     );
 
     // Determine frontend URL and redirect destination
-    const frontendUrl = process.env.FRONTEND_URL || 'https://networkfollowup.netlify.app';
+    // CRITICAL: Use FRONTEND_URL (Netlify) not backend URL (Railway)
+    const frontendUrl = (process.env.FRONTEND_URL || 'https://networkfollowup.netlify.app').replace(/\/$/, ''); // Remove trailing slash
     const redirectPath = user.onboarding_completed ? '/dashboard.html' : '/onboarding.html';
     const redirectUrl = `${frontendUrl}${redirectPath}`;
 
     log(`✅ OAuth success - Redirecting to: ${redirectUrl}`);
+    log(`   Frontend URL: ${frontendUrl}`);
+    log(`   Redirect Path: ${redirectPath}`);
+    log(`   Onboarding Completed: ${user.onboarding_completed}`);
 
     // Return HTML page that sets localStorage and immediately redirects
     // This ensures JWT is stored before redirect
