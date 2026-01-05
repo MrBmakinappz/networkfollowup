@@ -258,27 +258,67 @@ async function extractCustomersFromImage(imageBuffer, mimeType = 'image/jpeg', d
 
         const duration = Date.now() - startTime;
         
-        // Parse response
+        // Parse response with extensive logging
         const responseText = message.content[0].text.trim();
+        log('Claude raw response length:', responseText.length);
+        log('Claude response preview:', responseText.substring(0, 200));
+        
         let customers = [];
+        let jsonText = responseText;
         
         try {
-            let jsonText = responseText;
+            // Remove markdown code blocks
             if (jsonText.startsWith('```json')) {
                 jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+                log('Removed ```json markdown');
             } else if (jsonText.startsWith('```')) {
                 jsonText = jsonText.replace(/```\n?/g, '');
+                log('Removed ``` markdown');
             }
             
+            // Try to find JSON array in response (in case Claude adds explanation text)
+            const arrayMatch = jsonText.match(/\[[\s\S]*\]/);
+            if (arrayMatch) {
+                jsonText = arrayMatch[0];
+                log('Extracted JSON array from response');
+            }
+            
+            log('Parsing JSON, length:', jsonText.length);
             customers = JSON.parse(jsonText);
+            log('JSON parsed successfully, customers found:', customers.length);
+            
+            if (customers.length > 0) {
+                log('First customer sample:', JSON.stringify(customers[0], null, 2));
+            }
         } catch (parseError) {
             error('JSON parse error:', parseError);
-            const jsonMatch = responseText.match(/\[[\s\S]*\]/);
-            if (jsonMatch) {
-                customers = JSON.parse(jsonMatch[0]);
-            } else {
-                throw new Error('Could not parse customers from Claude response');
+            error('Failed to parse text:', jsonText.substring(0, 500));
+            
+            // Try alternative parsing methods
+            try {
+                // Try to find any JSON array
+                const jsonMatch = jsonText.match(/\[[\s\S]*\]/);
+                if (jsonMatch) {
+                    log('Trying alternative parse with extracted array');
+                    customers = JSON.parse(jsonMatch[0]);
+                    log('Alternative parse successful');
+                } else {
+                    throw new Error('No JSON array found in response');
+                }
+            } catch (altError) {
+                error('Alternative parse also failed:', altError);
+                throw new Error(`Could not parse customers from Claude response: ${parseError.message}. Raw response preview: ${jsonText.substring(0, 200)}`);
             }
+        }
+        
+        // Validate customers array
+        if (!Array.isArray(customers)) {
+            error('Claude response is not an array:', typeof customers);
+            throw new Error('Claude response is not a valid array');
+        }
+        
+        if (customers.length === 0) {
+            log('WARNING: Claude returned empty array');
         }
 
         // Validate and clean

@@ -2398,7 +2398,24 @@ Variables: {{firstname}}, {{fullname}}, {{country}}, {{your-name}}, {{your-phone
                     body: formData
                 });
 
-                const data = await response.json();
+                // Parse JSON response with error handling
+                let data;
+                try {
+                    const responseText = await response.text();
+                    console.log('Backend raw response:', responseText.substring(0, 500));
+                    
+                    try {
+                        data = JSON.parse(responseText);
+                        console.log('Backend parsed response:', data);
+                    } catch (parseError) {
+                        console.error('❌ JSON parse error:', parseError);
+                        console.error('Response text:', responseText);
+                        throw new Error('Invalid JSON response from server. Please try again.');
+                    }
+                } catch (fetchError) {
+                    console.error('❌ Response parsing error:', fetchError);
+                    throw new Error('Failed to parse server response. Please try again.');
+                }
 
                 // Check if error is due to incomplete onboarding
                 if (response.status === 403 && (data.requiresOnboarding || data.error === 'Onboarding required')) {
@@ -2426,39 +2443,77 @@ Variables: {{firstname}}, {{fullname}}, {{country}}, {{your-name}}, {{your-phone
                     return;
                 }
 
-                if (response.ok && data.success) {
-                    // Use customers from response (prioritize top-level customers array)
-                    const customers = data.customers || data.data?.customers || [];
-                    
-                    if (customers.length === 0) {
-                        throw new Error('No customers extracted from screenshot. Please ensure the image contains customer data.');
-                    }
-
-                    // Convert API response to extractedData format
-                    extractedData = customers.map(c => ({
-                        id: c.id,
-                        name: c.full_name || c.name,
-                        email: c.email,
-                        type: c.customer_type || c.member_type || 'retail',
-                        country: c.country_code || c.country || 'USA',
-                        language: c.language || mapCountryToLanguage(c.country_code || c.country || 'USA'),
-                        phone: c.phone || null,
-                        selected: true
-                    }));
-
-                    console.log('✅ Extracted customers:', extractedData);
-                    console.log('   Count:', extractedData.length);
-                    
-                    // Show Step 2 results (extracted customers table)
-                    showStep2Results(extractedData);
-                    
-                    // Refresh customer list in background (don't redirect)
-                    loadCustomers().catch(err => console.error('Background customer refresh failed:', err));
-                    
-                    showToast(`✅ Extracted ${extractedData.length} customers!`, 'success');
-                } else {
-                    throw new Error(data.message || data.error || 'Failed to extract customers');
+                // Handle response
+                if (!response.ok) {
+                    const errorMsg = data.error || data.message || `Server error: ${response.status}`;
+                    console.error('❌ Server error:', response.status, errorMsg);
+                    throw new Error(errorMsg);
                 }
+
+                // Check success flag
+                if (!data.success) {
+                    const errorMsg = data.error || data.message || 'Extraction failed';
+                    console.error('❌ Extraction failed:', errorMsg);
+                    
+                    if (data.customersExtracted === 0) {
+                        showToast('No customers found in screenshot. Please ensure the image contains customer data.', 'warning', 5000);
+                    } else {
+                        showToast(errorMsg, 'error');
+                    }
+                    
+                    // Reset to step 1
+                    document.getElementById('machineStep2').style.display = 'none';
+                    document.getElementById('machineStep1').style.display = 'block';
+                    document.getElementById('step1').classList.remove('completed');
+                    document.getElementById('step1').classList.add('active');
+                    document.getElementById('step2').classList.remove('active');
+                    return;
+                }
+
+                // Check if customers were extracted
+                if (data.customersExtracted === 0 || !data.customers || data.customers.length === 0) {
+                    console.warn('⚠️ No customers in response:', data);
+                    showToast('No customers found in screenshot. Please ensure the image contains customer data.', 'warning', 5000);
+                    
+                    // Reset to step 1
+                    document.getElementById('machineStep2').style.display = 'none';
+                    document.getElementById('machineStep1').style.display = 'block';
+                    document.getElementById('step1').classList.remove('completed');
+                    document.getElementById('step1').classList.add('active');
+                    document.getElementById('step2').classList.remove('active');
+                    return;
+                }
+
+                // Use customers from response (prioritize top-level customers array)
+                const customers = data.customers || data.data?.customers || [];
+                
+                console.log('✅ Extraction successful!');
+                console.log('   Customers extracted:', data.customersExtracted);
+                console.log('   Customers array length:', customers.length);
+                console.log('   First customer:', customers[0]);
+
+                // Convert API response to extractedData format
+                extractedData = customers.map(c => ({
+                    id: c.id,
+                    name: c.full_name || c.name,
+                    email: c.email,
+                    type: c.customer_type || c.member_type || 'retail',
+                    country: c.country_code || c.country || 'USA',
+                    language: c.language || mapCountryToLanguage(c.country_code || c.country || 'USA'),
+                    phone: c.phone || null,
+                    selected: true
+                }));
+
+                console.log('✅ Processed customers:', extractedData.length);
+                console.log('   Sample:', extractedData[0]);
+                
+                // Show Step 2 results (extracted customers table)
+                showStep2Results(extractedData);
+                
+                // Refresh customer list in background (don't redirect)
+                loadCustomers().catch(err => console.error('Background customer refresh failed:', err));
+                
+                showToast(`✅ Extracted ${extractedData.length} customers!`, 'success');
             } catch (error) {
                 console.error('Upload error:', error);
                 
