@@ -48,7 +48,8 @@ pool.on('connect', () => {
 
 pool.on('error', (err) => {
     error('❌ Unexpected database error:', err);
-    process.exit(-1);
+    console.error('Database pool error (non-fatal):', err.message);
+    // Don't exit - let server continue, connections will retry
 });
 
 // Helper function to execute queries
