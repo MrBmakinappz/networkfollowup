@@ -254,13 +254,13 @@ router.post('/complete-onboarding', async (req, res) => {
 
         log(`🔵 Completing onboarding for user ${userId}...`);
 
-        // Update user onboarding status
-        const updateResult = await db.query(
-            'UPDATE public.users SET onboarding_completed = TRUE WHERE id = $1 RETURNING id, onboarding_completed',
+        // First verify user exists
+        const userCheck = await db.query(
+            'SELECT id, onboarding_completed FROM public.users WHERE id = $1',
             [userId]
         );
 
-        if (updateResult.rows.length === 0) {
+        if (userCheck.rows.length === 0) {
             error(`❌ User ${userId} not found`);
             return res.status(404).json({
                 success: false,
@@ -269,14 +269,43 @@ router.post('/complete-onboarding', async (req, res) => {
             });
         }
 
-        log(`✅ User ${userId} completed onboarding successfully`);
+        log(`🔵 User ${userId} current onboarding status: ${userCheck.rows[0].onboarding_completed}`);
+
+        // Update user onboarding status
+        const updateResult = await db.query(
+            'UPDATE public.users SET onboarding_completed = TRUE, updated_at = NOW() WHERE id = $1 RETURNING id, onboarding_completed',
+            [userId]
+        );
+
+        if (updateResult.rows.length === 0) {
+            error(`❌ Failed to update onboarding status for user ${userId}`);
+            return res.status(500).json({
+                success: false,
+                error: 'Update failed',
+                message: 'Failed to update onboarding status'
+            });
+        }
+
+        const updatedUser = updateResult.rows[0];
+        log(`✅ User ${userId} completed onboarding successfully. Status: ${updatedUser.onboarding_completed}`);
+
+        // Verify the update
+        if (updatedUser.onboarding_completed !== true) {
+            error(`❌ WARNING: Onboarding status not set to TRUE for user ${userId}`);
+            return res.status(500).json({
+                success: false,
+                error: 'Update verification failed',
+                message: 'Onboarding status was not updated correctly'
+            });
+        }
 
         res.json({
             success: true,
             message: 'Onboarding completed successfully',
             redirectTo: '/dashboard.html',
             data: {
-                onboarding_completed: true
+                onboarding_completed: true,
+                user_id: userId
             }
         });
     } catch (err) {

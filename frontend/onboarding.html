@@ -1097,11 +1097,21 @@ Excited to support your success!
                     localStorage.setItem('onboardingCompleted', 'true');
                     console.log('✅ Onboarding completed, redirecting to dashboard...');
                     
+                    // Wait a moment to ensure localStorage is saved
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Verify the update was successful by checking the response
+                    if (result.data && result.data.onboarding_completed === true) {
+                        console.log('✅ Backend confirmed onboarding_completed = true');
+                    }
+                    
                     // Redirect to dashboard (use full URL in production)
                     const frontendUrl = isProduction 
                         ? 'https://networkfollowup.netlify.app'
                         : '';
-                    window.location.href = `${frontendUrl}/dashboard.html`;
+                    
+                    // Use replace to prevent back button issues
+                    window.location.replace(`${frontendUrl}/dashboard.html`);
                 } else {
                     throw new Error(result.message || result.error || 'Failed to complete onboarding');
                 }
