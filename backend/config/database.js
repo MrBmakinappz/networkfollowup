@@ -3,7 +3,11 @@
 // Simple connection without tenant logic
 
 const { Pool } = require('pg');
+const dns = require('dns');
 const { log, error } = require('../utils/logger');
+
+// Force IPv4 resolution (Railway doesn't support IPv6)
+dns.setDefaultResultOrder('ipv4first');
 
 // Validate DATABASE_URL
 if (!process.env.DATABASE_URL) {
