@@ -1992,24 +1992,27 @@ Variables: {{firstname}}, {{fullname}}, {{country}}, {{your-name}}, {{your-phone
                 <table class="customers-table">
                     <thead>
                         <tr>
+                            <th style="width: 40px;"><input type="checkbox" id="selectAllCustomers" onchange="toggleSelectAllCustomers(this)"></th>
                             <th>Name</th>
                             <th>Email</th>
                             <th>Type</th>
                             <th>Country</th>
-                            <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${filtered.map(c => `
                             <tr>
+                                <td><input type="checkbox" class="customer-checkbox" data-customer-id="${c.id}" onchange="updateSelectedCustomers()"></td>
                                 <td><strong>${c.name}</strong></td>
                                 <td>${c.email}</td>
-                                <td><span class="type-badge type-${c.type}">${c.type.toUpperCase()}</span></td>
-                                <td>${c.country}</td>
-                                <td><span class="email-status ${c.emailSent ? 'sent' : 'not-sent'}">${c.emailSent ? '✓ Sent' : '✗ Not Sent'}</span></td>
+                                <td><span class="type-badge type-${c.type}">${c.type === 'retail' ? 'RETAIL' : c.type === 'wholesale' ? 'WHOLESALE' : 'ADVOCATES'}</span></td>
+                                <td>${c.country || 'N/A'}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-secondary">✉️ Send</button>
+                                    <div style="display: flex; gap: 8px;">
+                                        <button class="btn btn-sm btn-secondary" onclick="openModifyCustomerModal('${c.id}')" style="padding: 6px 12px; font-size: 13px;">Edit</button>
+                                        <button class="btn btn-sm btn-primary" onclick="openMessageCustomerModal('${c.id}')" style="padding: 6px 12px; font-size: 13px;">Message</button>
+                                    </div>
                                 </td>
                             </tr>
                         `).join('')}
@@ -2097,8 +2100,12 @@ Variables: {{firstname}}, {{fullname}}, {{country}}, {{your-name}}, {{your-phone
                         selected: true
                     }));
 
-                    showToast(`Extracted ${extractedData.length} customers from screenshot!`, 'success');
-                    showExtractedCustomers();
+                    showToast(`✅ Extracted ${extractedData.length} customers from screenshot!`, 'success');
+                    
+                    // Auto-refresh customer list and show customers section
+                    await loadCustomers();
+                    showSection('customers', event);
+                    showToast(`✅ ${extractedData.length} customers added to list!`, 'success');
                 } else {
                     throw new Error(data.message || data.error || 'Failed to extract customers');
                 }
@@ -2543,6 +2550,257 @@ Variables: {{firstname}}, {{fullname}}, {{country}}, {{your-name}}, {{your-phone
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
+            }
+        }
+
+        // Customer list management
+        let selectedCustomerIds = [];
+
+        function toggleSelectAllCustomers(checkbox) {
+            const checkboxes = document.querySelectorAll('.customer-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = checkbox.checked;
+            });
+            updateSelectedCustomers();
+        }
+
+        function updateSelectedCustomers() {
+            const checkboxes = document.querySelectorAll('.customer-checkbox:checked');
+            selectedCustomerIds = Array.from(checkboxes).map(cb => cb.dataset.customerId);
+        }
+
+        // Modify Customer Modal
+        async function openModifyCustomerModal(customerId) {
+            try {
+                const response = await fetch(`${API_URL}/customers/${customerId}`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load customer');
+                }
+
+                const data = await response.json();
+                const customer = data.data;
+
+                const modal = document.createElement('div');
+                modal.className = 'modal-overlay';
+                modal.id = 'modifyCustomerModal';
+                modal.innerHTML = `
+                    <div class="modal-content" style="max-width: 500px;">
+                        <div class="modal-header">
+                            <h3>Edit Client</h3>
+                            <button class="modal-close" onclick="closeModal('modifyCustomerModal')">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="modifyCustomerForm" onsubmit="saveModifiedCustomer(event, '${customerId}')">
+                                <div class="form-group">
+                                    <label>Full Name *</label>
+                                    <input type="text" id="modifyFullName" value="${customer.full_name || ''}" required placeholder="John Smith">
+                                </div>
+                                <div class="form-group">
+                                    <label>Email *</label>
+                                    <input type="email" id="modifyEmail" value="${customer.email || ''}" required placeholder="john@email.com">
+                                </div>
+                                <div class="form-group">
+                                    <label>Client Type *</label>
+                                    <select id="modifyCustomerType" required>
+                                        <option value="retail" ${customer.customer_type === 'retail' ? 'selected' : ''}>Retail</option>
+                                        <option value="wholesale" ${customer.customer_type === 'wholesale' ? 'selected' : ''}>Wholesale</option>
+                                        <option value="advocates" ${customer.customer_type === 'advocates' ? 'selected' : ''}>Advocates</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Country</label>
+                                    <input type="text" id="modifyCountry" value="${customer.country_code || ''}" placeholder="USA, DEU, ITA, etc.">
+                                </div>
+                                <div class="modal-footer" style="margin-top: 24px;">
+                                    <button type="button" class="btn btn-secondary" onclick="closeModal('modifyCustomerModal')">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            } catch (error) {
+                console.error('Error opening modify modal:', error);
+                showToast('Error loading client', 'error');
+            }
+        }
+
+        async function saveModifiedCustomer(event, customerId) {
+            event.preventDefault();
+            try {
+                const fullName = document.getElementById('modifyFullName').value;
+                const email = document.getElementById('modifyEmail').value;
+                const customerType = document.getElementById('modifyCustomerType').value;
+                const country = document.getElementById('modifyCountry').value;
+
+                const response = await fetch(`${API_URL}/customers/${customerId}`, {
+                    method: 'PUT',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        full_name: fullName,
+                        email: email,
+                        customer_type: customerType,
+                        country_code: country
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showToast('✅ Client updated successfully!', 'success');
+                    closeModal('modifyCustomerModal');
+                    await loadCustomers();
+                } else {
+                    throw new Error(data.message || data.error || 'Failed to update customer');
+                }
+            } catch (error) {
+                console.error('Error saving customer:', error);
+                showToast(error.message || 'Error saving changes', 'error');
+            }
+        }
+
+        // Message Customer Modal
+        async function openMessageCustomerModal(customerId) {
+            try {
+                const response = await fetch(`${API_URL}/customers/${customerId}`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load customer');
+                }
+
+                const data = await response.json();
+                const customer = data.data;
+
+                // Get template based on customer type and country
+                const languageMap = {
+                    'USA': 'en', 'GBR': 'en', 'CAN': 'en', 'AUS': 'en',
+                    'ITA': 'it',
+                    'DEU': 'de', 'AUT': 'de', 'CHE': 'de',
+                    'FRA': 'fr', 'BEL': 'fr',
+                    'ESP': 'es', 'MEX': 'es', 'ARG': 'es'
+                };
+                const language = languageMap[customer.country_code] || 'en';
+                const customerType = customer.customer_type || 'retail';
+
+                // Fetch template from API
+                let templateSubject = 'Your doTERRA 25% Discount is Waiting!';
+                let templateBody = `Hi {{firstname}},
+
+I'm {{your-name}}, your official doTERRA Wellness Advocate...
+
+Best regards,
+{{your-name}}`;
+
+                try {
+                    const templateResponse = await fetch(`${API_URL}/emails/templates?type=${customerType}&language=${language}`, {
+                        headers: getAuthHeaders()
+                    });
+                    if (templateResponse.ok) {
+                        const templateData = await templateResponse.json();
+                        if (templateData.success && templateData.data) {
+                            templateSubject = templateData.data.subject || templateSubject;
+                            templateBody = templateData.data.body || templateBody;
+                        }
+                    }
+                } catch (err) {
+                    console.warn('Could not load template, using default');
+                }
+
+                // Personalize template
+                const firstName = (customer.full_name || '').split(' ')[0];
+                const userName = localStorage.getItem('userName') || 'Your Advocate';
+                const personalizedSubject = templateSubject
+                    .replace(/\{\{firstname\}\}/g, firstName)
+                    .replace(/\{\{fullname\}\}/g, customer.full_name || '')
+                    .replace(/\{\{your-name\}\}/g, userName);
+                const personalizedBody = templateBody
+                    .replace(/\{\{firstname\}\}/g, firstName)
+                    .replace(/\{\{fullname\}\}/g, customer.full_name || '')
+                    .replace(/\{\{email\}\}/g, customer.email || '')
+                    .replace(/\{\{country\}\}/g, customer.country_code || '')
+                    .replace(/\{\{your-name\}\}/g, userName);
+
+                const modal = document.createElement('div');
+                modal.className = 'modal-overlay';
+                modal.id = 'messageCustomerModal';
+                modal.innerHTML = `
+                    <div class="modal-content" style="max-width: 600px;">
+                        <div class="modal-header">
+                            <h3>Send Message</h3>
+                            <button class="modal-close" onclick="closeModal('messageCustomerModal')">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <div style="margin-bottom: 16px; padding: 12px; background: #F0F9FF; border-radius: 8px;">
+                                <strong>Recipient:</strong> ${customer.full_name} (${customer.email})
+                            </div>
+                            <form id="messageCustomerForm" onsubmit="sendCustomerMessage(event, '${customerId}')">
+                                <div class="form-group">
+                                    <label>Subject *</label>
+                                    <input type="text" id="messageSubject" value="${personalizedSubject}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Message *</label>
+                                    <textarea id="messageBody" rows="10" required style="width: 100%; padding: 12px; border: 1px solid #E2E8F0; border-radius: 8px; font-family: inherit; resize: vertical;">${personalizedBody}</textarea>
+                                    <small style="color: #64748B; margin-top: 4px; display: block;">
+                                        Available variables: {{firstname}}, {{fullname}}, {{email}}, {{country}}, {{your-name}}
+                                    </small>
+                                </div>
+                                <div class="modal-footer" style="margin-top: 24px;">
+                                    <button type="button" class="btn btn-secondary" onclick="closeModal('messageCustomerModal')">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">✉️ Send Message</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            } catch (error) {
+                console.error('Error opening message modal:', error);
+                showToast('Error loading client', 'error');
+            }
+        }
+
+        async function sendCustomerMessage(event, customerId) {
+            event.preventDefault();
+            try {
+                const subject = document.getElementById('messageSubject').value;
+                const body = document.getElementById('messageBody').value;
+
+                const response = await fetch(`${API_URL}/emails/send`, {
+                    method: 'POST',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        customer_ids: [customerId],
+                        template_type: 'retail', // Will be determined from customer
+                        subject: subject,
+                        body: body
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showToast('✅ Message sent successfully!', 'success');
+                    closeModal('messageCustomerModal');
+                    await loadCustomers();
+                } else {
+                    throw new Error(data.message || data.error || 'Failed to send message');
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+                showToast(error.message || 'Error sending message', 'error');
             }
         }
 

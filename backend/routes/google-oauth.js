@@ -179,19 +179,28 @@ router.get('/google/callback', async (req, res) => {
     );
     log('✅ Gmail connection saved');
 
-    // Generate JWT token
+    // Generate JWT token (7-day expiry per requirements)
     const jwtToken = jwt.sign(
       { userId: user.id, email: user.email },
       process.env.JWT_SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: '7d' }
     );
 
-    // Return success page that sets JWT in localStorage and redirects
+    // Determine frontend URL and redirect destination
+    const frontendUrl = process.env.FRONTEND_URL || 'https://networkfollowup.netlify.app';
+    const redirectPath = user.onboarding_completed ? '/dashboard.html' : '/onboarding.html';
+    const redirectUrl = `${frontendUrl}${redirectPath}`;
+
+    log(`✅ OAuth success - Redirecting to: ${redirectUrl}`);
+
+    // Return HTML page that sets localStorage and immediately redirects
+    // This ensures JWT is stored before redirect
     res.send(`
       <!DOCTYPE html>
       <html>
       <head>
-          <title>Gmail Connected</title>
+          <title>Authentication Success</title>
+          <meta http-equiv="refresh" content="0;url=${redirectUrl}">
           <style>
               body {
                   font-family: 'Inter', sans-serif;
@@ -224,6 +233,19 @@ router.get('/google/callback', async (req, res) => {
                   color: #64748B;
                   margin-bottom: 20px;
               }
+              .spinner {
+                  display: inline-block;
+                  width: 20px;
+                  height: 20px;
+                  border: 3px solid rgba(16, 185, 129, 0.3);
+                  border-radius: 50%;
+                  border-top-color: #10B981;
+                  animation: spin 0.8s linear infinite;
+                  margin-left: 10px;
+              }
+              @keyframes spin {
+                  to { transform: rotate(360deg); }
+              }
           </style>
       </head>
       <body>
@@ -231,32 +253,56 @@ router.get('/google/callback', async (req, res) => {
               <div class="success-icon">✓</div>
               <h1>${isNewUser ? 'Account Created!' : 'Welcome Back!'}</h1>
               <p>${isNewUser ? 'Your account has been created' : 'You have been logged in'} with <strong>${gmailEmail}</strong></p>
-              <p>Redirecting to dashboard...</p>
+              <p>Redirecting<span class="spinner"></span></p>
           </div>
           <script>
-              const token = ${JSON.stringify(jwtToken)};
-              const user = ${JSON.stringify({
-                  id: user.id,
-                  email: user.email,
-                  full_name: user.full_name,
-                  subscription_tier: user.subscription_tier || 'starter',
-                  onboarding_completed: user.onboarding_completed || false
-              })};
-              
-              localStorage.setItem('authToken', token);
-              localStorage.setItem('userName', user.full_name);
-              localStorage.setItem('userEmail', user.email);
-              localStorage.setItem('userId', user.id);
-              localStorage.setItem('onboardingCompleted', user.onboarding_completed ? 'true' : 'false');
-              
-              setTimeout(() => {
-                  // Redirect to onboarding if not completed, otherwise dashboard
-                  if (!user.onboarding_completed) {
-                      window.location.href = 'https://networkfollowup.netlify.app/onboarding.html';
-                  } else {
-                      window.location.href = 'https://networkfollowup.netlify.app/dashboard.html';
+              (function() {
+                  try {
+                      const token = ${JSON.stringify(jwtToken)};
+                      const user = ${JSON.stringify({
+                          id: user.id,
+                          email: user.email,
+                          full_name: user.full_name,
+                          subscription_tier: user.subscription_tier || 'starter',
+                          onboarding_completed: user.onboarding_completed || false
+                      })};
+                      const redirectUrl = ${JSON.stringify(redirectUrl)};
+                      
+                      // Save to localStorage immediately
+                      localStorage.setItem('authToken', token);
+                      localStorage.setItem('userName', user.full_name);
+                      localStorage.setItem('userEmail', user.email);
+                      localStorage.setItem('userId', user.id);
+                      localStorage.setItem('onboardingCompleted', user.onboarding_completed ? 'true' : 'false');
+                      
+                      console.log('✅ JWT stored, redirecting to:', redirectUrl);
+                      
+                      // Immediate redirect - no delay
+                      // Use replace() to prevent back button issues
+                      window.location.replace(redirectUrl);
+                      
+                      // Fallback 1: If replace doesn't work, try href after 100ms
+                      setTimeout(() => {
+                          if (window.location.href.includes('callback')) {
+                              console.warn('⚠️ Replace failed, trying href');
+                              window.location.href = redirectUrl;
+                          }
+                      }, 100);
+                      
+                      // Fallback 2: Force redirect after 500ms
+                      setTimeout(() => {
+                          if (window.location.href.includes('callback')) {
+                              console.error('❌ All redirects failed, forcing navigation');
+                              window.location = redirectUrl;
+                          }
+                      }, 500);
+                  } catch (err) {
+                      console.error('❌ Error in redirect script:', err);
+                      // Emergency fallback
+                      const fallbackUrl = ${JSON.stringify(frontendUrl + '/dashboard.html')};
+                      window.location.replace(fallbackUrl);
                   }
-              }, 1500);
+              })();
           </script>
       </body>
       </html>

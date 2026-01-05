@@ -15,6 +15,63 @@ const {
 } = require('../utils/gmail');
 
 /**
+ * GET /api/emails/templates
+ * Get email template by type and language
+ */
+router.get('/templates', async (req, res) => {
+    try {
+        const { type, language } = req.query;
+
+        if (!type || !language) {
+            return res.status(400).json({
+                success: false,
+                error: 'Type and language required'
+            });
+        }
+
+        const result = await db.query(
+            `SELECT subject, body 
+             FROM public.email_templates 
+             WHERE customer_type = $1 
+               AND language = $2
+               AND is_active = true
+             LIMIT 1`,
+            [type, language]
+        );
+
+        if (result.rows.length === 0) {
+            // Return default template
+            return res.json({
+                success: true,
+                data: {
+                    subject: 'Your doTERRA 25% Discount is Waiting!',
+                    body: `Hi {{firstname}},
+
+I'm {{your-name}}, your official doTERRA Wellness Advocate...
+
+Best regards,
+{{your-name}}`
+                }
+            });
+        }
+
+        res.json({
+            success: true,
+            data: {
+                subject: result.rows[0].subject,
+                body: result.rows[0].body
+            }
+        });
+    } catch (error) {
+        error('Get template error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch template'
+        });
+    }
+});
+
+/**
  * GET /api/emails/gmail-auth
  * Start Gmail OAuth flow
  */
@@ -27,7 +84,7 @@ router.get('/gmail-auth', (req, res) => {
             authUrl: authUrl
         });
     } catch (error) {
-        error('Gmail auth error:', err);
+        error('Gmail auth error:', error);
         res.status(500).json({ error: 'Failed to generate authorization URL' });
     }
 });
@@ -328,7 +385,7 @@ router.post('/send', validateEmailSend, async (req, res) => {
                 } else {
                     // Get template from database
                     const customerLanguage = language || customer.language || 'en';
-                    const customerType = template_type || customer.member_type || 'retail';
+                    const customerType = template_type || customer.customer_type || 'retail';
 
                     // Map country code to language
                     const languageMap = {
@@ -428,7 +485,7 @@ Best regards,
                 // Small delay between emails
                 await new Promise(resolve => setTimeout(resolve, 1000));
             } catch (error) {
-                error(`Error sending email to ${customer.email}:`, err);
+                error(`Error sending email to ${customer.email}:`, error);
                 failedCount++;
                 results.push({
                     customer_id: customer.id,
@@ -450,7 +507,7 @@ Best regards,
             }
         });
     } catch (error) {
-        error('Send emails error:', err);
+        error('Send emails error:', error);
         res.status(500).json({
             success: false,
             error: 'Failed to send emails',
