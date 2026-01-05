@@ -254,9 +254,9 @@ router.post('/screenshot', uploadLimiter, upload.single('screenshot'), optimizeI
                 } else {
                     // Insert new customer
                     const result = await db.query(
-                        `INSERT INTO public.customers (user_id, upload_id, full_name, email, member_type, country_code)
+                        `INSERT INTO public.customers (user_id, upload_id, full_name, email, customer_type, country_code)
                          VALUES ($1, $2, $3, $4, $5, $6)
-                         RETURNING id, full_name, email, member_type, country_code, created_at`,
+                         RETURNING id, full_name, email, customer_type, country_code, created_at`,
                         [
                             userId,
                             uploadId,

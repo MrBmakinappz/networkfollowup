@@ -33,3 +33,4 @@ ADD COLUMN IF NOT EXISTS name VARCHAR(255);
 -- FROM information_schema.columns 
 -- WHERE table_name = 'email_templates';
 
+

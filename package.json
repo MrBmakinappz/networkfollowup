@@ -1,0 +1,13 @@
+{
+  "name": "networkfollowup",
+  "version": "1.0.0",
+  "description": "NetworkFollowUp - AI-Powered Follow-Up Automation for MLM",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "cd backend && node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+
