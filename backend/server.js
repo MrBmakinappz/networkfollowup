@@ -132,26 +132,32 @@ const authMiddleware = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
 log('✅ Auth routes loaded');
 
-// Google OAuth routes (standalone for Vercel)
+// OAuth routes (MUST be registered FIRST for Vercel routing)
 const googleOAuthRoutes = require('./routes/google-oauth');
-log('✅ Google OAuth routes loaded');
+const gmailOAuthRoutes = require('./routes/gmail-oauth');
+log('✅ OAuth routes loaded');
 
-app.use('/api/auth', authRoutes);
+// Register OAuth routes FIRST (before other routes)
 app.use('/api/oauth', googleOAuthRoutes);
+app.use('/api/oauth/gmail', gmailOAuthRoutes);
+app.use('/api/auth', authRoutes);
 log('✅ Routes registered: /api/auth, /api/oauth');
 
-// Protected routes (auth required)
+// Onboarding middleware
+const checkOnboarding = require('./middleware/onboarding');
+
+// Protected routes (auth + onboarding required)
 const uploadsRoutes = require('./routes/uploads');
 const customersRoutes = require('./routes/customers');
 const emailsRoutes = require('./routes/emails');
 const statsRoutes = require('./routes/stats');
 const billingRoutes = require('./routes/billing');
 
-app.use('/api/uploads', authMiddleware, uploadsRoutes);
-app.use('/api/customers', authMiddleware, customersRoutes);
-app.use('/api/emails', authMiddleware, emailsRoutes);
-app.use('/api/users', authMiddleware, statsRoutes);
-app.use('/api/billing', authMiddleware, billingRoutes);
+app.use('/api/uploads', authMiddleware, checkOnboarding, uploadsRoutes);
+app.use('/api/customers', authMiddleware, checkOnboarding, customersRoutes);
+app.use('/api/emails', authMiddleware, checkOnboarding, emailsRoutes);
+app.use('/api/users', authMiddleware, checkOnboarding, statsRoutes);
+app.use('/api/billing', authMiddleware, checkOnboarding, billingRoutes);
 
 // ============================================
 // API INFO ENDPOINT
@@ -248,7 +254,10 @@ app.use((err, req, res, next) => {
 // START SERVER
 // ============================================
 
-app.listen(PORT, () => {
+// Seed email templates on startup
+const { seedTemplates } = require('./utils/seed-templates');
+
+app.listen(PORT, async () => {
   log(`
 ╔══════════════════════════════════════════════════════════╗
 ║                                                          ║
@@ -263,6 +272,14 @@ app.listen(PORT, () => {
 ║                                                          ║
 ╚══════════════════════════════════════════════════════════╝
   `);
+  
+  // Seed email templates after server starts
+  try {
+    await seedTemplates();
+  } catch (err) {
+    error('Failed to seed templates on startup:', err);
+    // Don't exit - server can still run without templates
+  }
 });
 
 // Graceful shutdown

@@ -125,9 +125,9 @@ router.get('/google/callback', async (req, res) => {
 
       log('🔵 Creating new user:', gmailEmail.toLowerCase());
       const result = await db.query(
-        `INSERT INTO public.users (email, password_hash, full_name, subscription_tier) 
-         VALUES ($1, $2, $3, $4) 
-         RETURNING id, email, full_name, subscription_tier, created_at`,
+        `INSERT INTO public.users (email, password_hash, full_name, subscription_tier, onboarding_completed) 
+         VALUES ($1, $2, $3, $4, FALSE) 
+         RETURNING id, email, full_name, subscription_tier, onboarding_completed, created_at`,
         [gmailEmail.toLowerCase(), hashedPassword, fullName, 'starter']
       );
       
@@ -223,16 +223,23 @@ router.get('/google/callback', async (req, res) => {
                   id: user.id,
                   email: user.email,
                   full_name: user.full_name,
-                  subscription_tier: user.subscription_tier || 'starter'
+                  subscription_tier: user.subscription_tier || 'starter',
+                  onboarding_completed: user.onboarding_completed || false
               })};
               
               localStorage.setItem('authToken', token);
               localStorage.setItem('userName', user.full_name);
               localStorage.setItem('userEmail', user.email);
               localStorage.setItem('userId', user.id);
+              localStorage.setItem('onboardingCompleted', user.onboarding_completed ? 'true' : 'false');
               
               setTimeout(() => {
-                  window.location.href = 'https://networkfollowup.netlify.app/dashboard.html';
+                  // Redirect to onboarding if not completed, otherwise dashboard
+                  if (!user.onboarding_completed) {
+                      window.location.href = 'https://networkfollowup.netlify.app/onboarding.html';
+                  } else {
+                      window.location.href = 'https://networkfollowup.netlify.app/dashboard.html';
+                  }
               }, 1500);
           </script>
       </body>

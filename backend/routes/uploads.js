@@ -9,6 +9,11 @@ const { upload, optimizeImage } = require('../middleware/upload');
 const { extractCustomersFromImage } = require('../utils/claude-optimized');
 const { log, error } = require('../utils/logger');
 const { calculateFileHash } = require('../utils/claude-optimized');
+const Anthropic = require('@anthropic-ai/sdk');
+
+const anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY
+});
 
 // Rate limiting: Max 10 uploads per hour per user
 const uploadLimiter = rateLimit({
@@ -24,6 +29,113 @@ const uploadLimiter = rateLimit({
     keyGenerator: (req) => {
         // Rate limit per user
         return req.user?.userId || req.ip;
+    }
+});
+
+/**
+ * POST /api/uploads/ocr
+ * Extract business card data from image using Claude Vision
+ * Returns: {name, email, phone, company, role}
+ */
+router.post('/ocr', uploadLimiter, upload.single('image'), optimizeImage, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                error: 'No file uploaded',
+                message: 'Please select an image file'
+            });
+        }
+
+        log('🔵 Starting business card OCR extraction');
+
+        // Convert image to base64
+        const base64Image = req.file.buffer.toString('base64');
+
+        // Call Claude Vision API
+        const message = await anthropic.messages.create({
+            model: "claude-3-5-sonnet-20241022",
+            max_tokens: 1024,
+            messages: [{
+                role: "user",
+                content: [
+                    {
+                        type: "image",
+                        source: {
+                            type: "base64",
+                            media_type: req.file.mimetype,
+                            data: base64Image,
+                        }
+                    },
+                    {
+                        type: "text",
+                        text: `Extract all information from this business card image. Return ONLY a JSON object with these exact fields:
+{
+  "name": "Full name (First Last)",
+  "email": "Email address",
+  "phone": "Phone number",
+  "company": "Company name",
+  "role": "Job title/role"
+}
+
+If a field is not visible or cannot be extracted, use null for that field.
+Return ONLY the JSON object, no markdown, no explanation.`
+                    }
+                ]
+            }]
+        });
+
+        // Parse response
+        const responseText = message.content[0].text.trim();
+        let extractedData;
+
+        try {
+            // Remove markdown if present
+            let jsonText = responseText;
+            if (jsonText.startsWith('```json')) {
+                jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+            } else if (jsonText.startsWith('```')) {
+                jsonText = jsonText.replace(/```\n?/g, '');
+            }
+            
+            extractedData = JSON.parse(jsonText);
+        } catch (parseError) {
+            error('JSON parse error:', parseError);
+            // Try to extract JSON from response
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                extractedData = JSON.parse(jsonMatch[0]);
+            } else {
+                throw new Error('Could not parse data from Claude response');
+            }
+        }
+
+        // Validate and clean data
+        const cleanedData = {
+            name: extractedData.name ? String(extractedData.name).trim() : null,
+            email: extractedData.email ? String(extractedData.email).trim().toLowerCase() : null,
+            phone: extractedData.phone ? String(extractedData.phone).trim() : null,
+            company: extractedData.company ? String(extractedData.company).trim() : null,
+            role: extractedData.role ? String(extractedData.role).trim() : null
+        };
+
+        log('✅ Business card OCR extraction successful');
+
+        res.json({
+            success: true,
+            message: 'Data extracted successfully',
+            data: cleanedData
+        });
+
+    } catch (err) {
+        error('Business card OCR error:', err);
+        res.status(500).json({
+            success: false,
+            error: 'OCR extraction failed',
+            message: err.message || 'Failed to extract data from image'
+        });
     }
 });
 

@@ -330,14 +330,25 @@ router.post('/send', validateEmailSend, async (req, res) => {
                     const customerLanguage = language || customer.language || 'en';
                     const customerType = template_type || customer.member_type || 'retail';
 
+                    // Map country code to language
+                    const languageMap = {
+                        'USA': 'en', 'GBR': 'en', 'CAN': 'en', 'AUS': 'en',
+                        'ITA': 'it',
+                        'DEU': 'de', 'AUT': 'de', 'CHE': 'de',
+                        'FRA': 'fr', 'BEL': 'fr',
+                        'ESP': 'es', 'MEX': 'es', 'ARG': 'es',
+                        'POL': 'pl', 'BGR': 'bg', 'CZE': 'cs', 'ROU': 'ro', 'SVK': 'sk'
+                    };
+                    const mappedLang = languageMap[customer.country_code] || customerLanguage || 'en';
+                    
+                    // Get global template (no user_id required)
                     const templateResult = await db.query(
                         `SELECT subject, body 
                          FROM public.email_templates 
-                         WHERE user_id = $1 
-                           AND customer_type = $2 
-                           AND language = $3
+                         WHERE customer_type = $1 
+                           AND language = $2
                          LIMIT 1`,
-                        [userId, customerType, customerLanguage]
+                        [customerType, mappedLang]
                     );
 
                     if (templateResult.rows.length > 0) {
