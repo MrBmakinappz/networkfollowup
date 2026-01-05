@@ -56,8 +56,8 @@ router.post('/ocr', uploadLimiter, upload.single('image'), optimizeImage, async 
 
         // Call Claude Vision API
         const message = await anthropic.messages.create({
-            model: "claude-3-5-sonnet-20241022",
-            max_tokens: 1024,
+            model: "claude-3-5-sonnet-20240620",
+            max_tokens: 2048,
             messages: [{
                 role: "user",
                 content: [
