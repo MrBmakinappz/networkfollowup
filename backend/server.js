@@ -132,35 +132,12 @@ const authMiddleware = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
 log('✅ Auth routes loaded');
 
-let oauthRoutes;
-try {
-    oauthRoutes = require('./routes/oauth');
-    log('✅ OAuth routes loaded successfully');
-} catch (err) {
-    error('❌ Error loading OAuth routes:', err);
-    throw err;
-}
+// Google OAuth routes (standalone for Vercel)
+const googleOAuthRoutes = require('./routes/google-oauth');
+log('✅ Google OAuth routes loaded');
 
 app.use('/api/auth', authRoutes);
-
-// Direct OAuth route handler (must be before router to ensure it works)
-app.get('/api/oauth/google', (req, res) => {
-  log('🔵 Direct OAuth route handler called');
-  const { getAuthUrl } = require('./utils/gmail');
-  try {
-    const authUrl = getAuthUrl();
-    log('✅ OAuth URL generated, redirecting to Google');
-    res.redirect(authUrl);
-  } catch (err) {
-    log('❌ Error in direct OAuth handler:', err);
-    res.status(500).json({
-      error: 'OAuth Error',
-      message: err.message || 'Failed to generate authorization URL'
-    });
-  }
-});
-
-app.use('/api/oauth', oauthRoutes);
+app.use('/api/oauth', googleOAuthRoutes);
 log('✅ Routes registered: /api/auth, /api/oauth');
 
 // Protected routes (auth required)
