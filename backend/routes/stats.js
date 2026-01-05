@@ -208,4 +208,35 @@ router.get('/billing', async (req, res) => {
     }
 });
 
+/**
+ * POST /api/users/complete-onboarding
+ * Mark onboarding as completed for user
+ */
+router.post('/complete-onboarding', async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        // Update user onboarding status
+        await db.query(
+            'UPDATE public.users SET onboarding_completed = TRUE WHERE id = $1',
+            [userId]
+        );
+
+        log(`User ${userId} completed onboarding`);
+
+        res.json({
+            success: true,
+            message: 'Onboarding completed successfully',
+            redirectTo: '/dashboard.html'
+        });
+    } catch (err) {
+        error('Complete onboarding error:', err);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to complete onboarding',
+            message: err.message
+        });
+    }
+});
+
 module.exports = router;
