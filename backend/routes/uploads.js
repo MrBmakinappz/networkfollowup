@@ -9,6 +9,7 @@ const { upload, optimizeImage } = require('../middleware/upload');
 const { extractCustomersFromImage } = require('../utils/claude-optimized');
 const { log, error } = require('../utils/logger');
 const { calculateFileHash } = require('../utils/claude-optimized');
+const { getLanguageFromCountry } = require('../utils/constants');
 const Anthropic = require('@anthropic-ai/sdk');
 
 const anthropic = new Anthropic({
@@ -292,34 +293,61 @@ router.post('/screenshot', uploadLimiter, upload.single('screenshot'), optimizeI
                             existing.rows[0].id
                         ]
                     );
+                    // Update language if country changed
+                    const language = getLanguageFromCountry(customer.country_code);
+                    
+                    await db.query(
+                        `UPDATE public.customers 
+                         SET full_name = $1, 
+                             customer_type = $2, 
+                             country_code = $3,
+                             language = $4,
+                             updated_at = NOW()
+                         WHERE id = $5`,
+                        [
+                            customer.full_name,
+                            customer.customer_type,
+                            customer.country_code,
+                            language,
+                            existing.rows[0].id
+                        ]
+                    );
+                    
                     savedCustomers.push({ 
                         id: existing.rows[0].id,
                         full_name: customer.full_name,
                         email: customer.email.toLowerCase(),
                         customer_type: customer.customer_type,
                         country_code: customer.country_code,
-                        language: customer.language || 'en',
+                        language: language,
                         phone: customer.phone || null,
                         updated: true 
                     });
                 } else {
                     // Insert new customer
                     console.log(`   ✓ Inserting new customer: ${customer.email}`);
+                    
+                    // Determine language from country code
+                    const language = getLanguageFromCountry(customer.country_code);
+                    console.log(`   ✓ Language for ${customer.country_code}: ${language}`);
+                    
                     const result = await db.query(
-                        `INSERT INTO public.customers (user_id, full_name, email, customer_type, country_code)
-                         VALUES ($1, $2, $3, $4, $5)
+                        `INSERT INTO public.customers (user_id, full_name, email, customer_type, country_code, language)
+                         VALUES ($1, $2, $3, $4, $5, $6)
                          ON CONFLICT (user_id, email) DO UPDATE SET
                            full_name = EXCLUDED.full_name,
                            customer_type = EXCLUDED.customer_type,
                            country_code = EXCLUDED.country_code,
+                           language = EXCLUDED.language,
                            updated_at = NOW()
-                         RETURNING id, full_name, email, customer_type, country_code, created_at`,
+                         RETURNING id, full_name, email, customer_type, country_code, language, created_at`,
                         [
                             userId,
                             customer.full_name,
                             customer.email.toLowerCase(),
                             customer.customer_type,
-                            customer.country_code
+                            customer.country_code,
+                            language
                         ]
                     );
                     
@@ -330,7 +358,7 @@ router.post('/screenshot', uploadLimiter, upload.single('screenshot'), optimizeI
                         email: result.rows[0].email,
                         customer_type: result.rows[0].customer_type,
                         country_code: result.rows[0].country_code,
-                        language: customer.language || 'en',
+                        language: result.rows[0].language || language,
                         phone: customer.phone || null,
                         updated: false 
                     });

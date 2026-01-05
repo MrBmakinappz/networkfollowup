@@ -15,8 +15,154 @@ const {
 } = require('../utils/gmail');
 
 /**
+ * POST /api/emails/preview
+ * Get email preview for a customer (with fallback logic)
+ */
+router.post('/preview', async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { customerId, customerType, language } = req.body;
+
+        if (!customerId || !customerType || !language) {
+            return res.status(400).json({
+                success: false,
+                error: 'customerId, customerType, and language are required'
+            });
+        }
+
+        // Get customer data for personalization
+        const customerResult = await db.query(
+            'SELECT full_name, email, customer_type, country_code, language FROM public.customers WHERE id = $1 AND user_id = $2',
+            [customerId, userId]
+        );
+
+        if (customerResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Customer not found'
+            });
+        }
+
+        const customer = customerResult.rows[0];
+        const firstName = customer.full_name.split(' ')[0];
+
+        // Try to get user's template for this type and language
+        let templateResult = await db.query(
+            `SELECT subject, body, language
+             FROM public.email_templates
+             WHERE user_id = $1 AND customer_type = $2 AND language = $3
+             LIMIT 1`,
+            [userId, customerType, language]
+        );
+
+        let isFallback = false;
+        let templateLanguage = language;
+
+        // If not found, try user's default language
+        if (templateResult.rows.length === 0) {
+            const userResult = await db.query(
+                'SELECT default_language FROM public.users WHERE id = $1',
+                [userId]
+            );
+            const defaultLang = userResult.rows[0]?.default_language || 'en';
+
+            templateResult = await db.query(
+                `SELECT subject, body, language
+                 FROM public.email_templates
+                 WHERE user_id = $1 AND customer_type = $2 AND language = $3
+                 LIMIT 1`,
+                [userId, customerType, defaultLang]
+            );
+
+            if (templateResult.rows.length > 0) {
+                isFallback = true;
+                templateLanguage = defaultLang;
+            }
+        }
+
+        // If still not found, try global templates
+        if (templateResult.rows.length === 0) {
+            templateResult = await db.query(
+                `SELECT subject, body, language
+                 FROM public.email_templates
+                 WHERE user_id IS NULL AND customer_type = $1 AND language = $2
+                 LIMIT 1`,
+                [customerType, language]
+            );
+
+            if (templateResult.rows.length === 0) {
+                // Try English fallback
+                templateResult = await db.query(
+                    `SELECT subject, body, language
+                     FROM public.email_templates
+                     WHERE user_id IS NULL AND customer_type = $1 AND language = 'en'
+                     LIMIT 1`,
+                    [customerType]
+                );
+                if (templateResult.rows.length > 0) {
+                    isFallback = true;
+                    templateLanguage = 'en';
+                }
+            }
+        }
+
+        // If still no template, use default
+        if (templateResult.rows.length === 0) {
+            const defaultTemplate = {
+                subject: `Hello ${firstName}!`,
+                body: `Hi ${customer.full_name},\n\nThank you for your interest in doTERRA!\n\nBest regards`
+            };
+            return res.json({
+                success: true,
+                data: {
+                    subject: defaultTemplate.subject,
+                    body: defaultTemplate.body,
+                    is_fallback: true,
+                    template_language: 'en'
+                }
+            });
+        }
+
+        const template = templateResult.rows[0];
+        
+        // Personalize template
+        const subject = template.subject
+            .replace(/\{\{firstname\}\}/g, firstName)
+            .replace(/\{\{fullname\}\}/g, customer.full_name)
+            .replace(/\{\{name\}\}/g, customer.full_name)
+            .replace(/\{\{email\}\}/g, customer.email)
+            .replace(/\{\{country\}\}/g, customer.country_code || '');
+
+        const body = template.body
+            .replace(/\{\{firstname\}\}/g, firstName)
+            .replace(/\{\{fullname\}\}/g, customer.full_name)
+            .replace(/\{\{name\}\}/g, customer.full_name)
+            .replace(/\{\{email\}\}/g, customer.email)
+            .replace(/\{\{country\}\}/g, customer.country_code || '');
+
+        res.json({
+            success: true,
+            data: {
+                subject,
+                body,
+                is_fallback: isFallback,
+                template_language: templateLanguage,
+                requested_language: language
+            }
+        });
+    } catch (err) {
+        error('Email preview error:', err);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to generate email preview',
+            message: err.message
+        });
+    }
+});
+
+/**
  * GET /api/emails/templates
- * Get email template by type and language
+ * Get email template by type and language (legacy endpoint - use /api/templates instead)
  */
 router.get('/templates', async (req, res) => {
     try {
