@@ -80,23 +80,23 @@ CREATE TABLE IF NOT EXISTS upload_history (
 CREATE INDEX IF NOT EXISTS idx_upload_history_user_id ON upload_history(user_id);
 
 -- ============================================
--- EMAIL TEMPLATES TABLE
+-- EMAIL TEMPLATES TABLE (Global Templates)
 -- ============================================
 CREATE TABLE IF NOT EXISTS email_templates (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(255),
     customer_type VARCHAR(50) NOT NULL CHECK (customer_type IN ('retail', 'wholesale', 'advocates')),
     language VARCHAR(5) NOT NULL DEFAULT 'en',
     subject TEXT NOT NULL,
     body TEXT NOT NULL,
-    is_default BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW(),
-    UNIQUE(user_id, customer_type, language)
+    UNIQUE(customer_type, language)
 );
 
-CREATE INDEX IF NOT EXISTS idx_email_templates_user_id ON email_templates(user_id);
-CREATE INDEX IF NOT EXISTS idx_email_templates_type ON email_templates(user_id, customer_type);
+CREATE INDEX IF NOT EXISTS idx_email_templates_type_language ON email_templates(customer_type, language);
+CREATE INDEX IF NOT EXISTS idx_email_templates_active ON email_templates(is_active) WHERE is_active = TRUE;
 
 -- ============================================
 -- USAGE TRACKING TABLE (Enhanced)

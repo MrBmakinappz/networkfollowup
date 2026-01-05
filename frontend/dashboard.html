@@ -986,9 +986,14 @@ Variables: {{firstname}}, {{fullname}}, {{country}}, {{your-name}}, {{your-phone
                         <h2 class="card-title">Customer List</h2>
                         <p class="card-subtitle">Filter and manage your customers</p>
                     </div>
-                    <button class="btn btn-primary" onclick="showSection('machine', event)">
-                        📤 Add Customers
-                    </button>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn btn-secondary" onclick="openAddCustomerModal()">
+                            ➕ Add Customer
+                        </button>
+                        <button class="btn btn-primary" onclick="showSection('machine', event)">
+                            📤 Upload Screenshot
+                        </button>
+                    </div>
                 </div>
 
                 <div class="filters">
@@ -1479,6 +1484,18 @@ Variables: {{firstname}}, {{fullname}}, {{country}}, {{your-name}}, {{your-phone
                 }
                 return false;
             }
+            
+            // Check onboarding status
+            const onboardingCompleted = localStorage.getItem('onboardingCompleted');
+            if (onboardingCompleted !== 'true') {
+                if (isProduction) {
+                    window.location.href = 'https://networkfollowup.netlify.app/onboarding.html';
+                } else {
+                    window.location.href = 'onboarding.html';
+                }
+                return false;
+            }
+            
             return true;
         }
 
@@ -2357,6 +2374,183 @@ Variables: {{firstname}}, {{fullname}}, {{country}}, {{your-name}}, {{your-phone
                 },
                 onCancel: () => {}
             });
+        }
+
+        // Add Customer Modal with Business Card OCR
+        function openAddCustomerModal() {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.id = 'addCustomerModal';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 600px;">
+                    <div class="modal-header">
+                        <h3>➕ Add Customer</h3>
+                        <button class="modal-close" onclick="closeModal('addCustomerModal')">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <div style="margin-bottom: 24px; padding: 16px; background: #F0F9FF; border-radius: 8px; border: 2px dashed #3B82F6;">
+                            <div style="text-align: center; margin-bottom: 12px;">
+                                <div style="font-size: 48px;">📇</div>
+                                <h4 style="margin: 8px 0; color: #1E293B;">Upload Business Card</h4>
+                                <p style="color: #64748B; font-size: 14px; margin-bottom: 12px;">Take a photo or upload an image of a business card</p>
+                                <input type="file" id="businessCardInput" accept="image/*" style="display: none;" onchange="uploadBusinessCard(event)">
+                                <button class="btn btn-primary" onclick="document.getElementById('businessCardInput').click()">
+                                    📷 Upload Business Card
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div style="border-top: 1px solid #E2E8F0; padding-top: 24px; margin-top: 24px;">
+                            <h4 style="margin-bottom: 16px; color: #1E293B;">Or Enter Manually</h4>
+                            <form id="addCustomerForm" onsubmit="saveCustomer(event)">
+                                <div class="form-group">
+                                    <label>Full Name *</label>
+                                    <input type="text" id="customerName" required placeholder="John Smith">
+                                </div>
+                                <div class="form-group">
+                                    <label>Email *</label>
+                                    <input type="email" id="customerEmail" required placeholder="john@example.com">
+                                </div>
+                                <div class="form-group">
+                                    <label>Phone</label>
+                                    <input type="tel" id="customerPhone" placeholder="+1 234 567 8900">
+                                </div>
+                                <div class="form-group">
+                                    <label>Company</label>
+                                    <input type="text" id="customerCompany" placeholder="Company Name">
+                                </div>
+                                <div class="form-group">
+                                    <label>Role/Title</label>
+                                    <input type="text" id="customerRole" placeholder="Job Title">
+                                </div>
+                                <div class="form-group">
+                                    <label>Customer Type *</label>
+                                    <select id="customerType" required>
+                                        <option value="retail">🛍️ Retail</option>
+                                        <option value="wholesale">💼 Wholesale</option>
+                                        <option value="advocates">⭐ Advocates</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Country Code</label>
+                                    <input type="text" id="customerCountry" placeholder="USA" maxlength="3" style="text-transform: uppercase;">
+                                </div>
+                                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                                    <button type="submit" class="btn btn-primary" style="flex: 1;">Save Customer</button>
+                                    <button type="button" class="btn btn-secondary" onclick="closeModal('addCustomerModal')" style="flex: 1;">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        async function uploadBusinessCard(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Show loading state
+            const modal = document.getElementById('addCustomerModal');
+            const uploadBtn = modal.querySelector('.btn-primary');
+            const originalText = uploadBtn.innerHTML;
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<span class="spinner"></span> Extracting data...';
+
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                const response = await fetch(`${API_URL}/uploads/ocr`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Auto-fill form with extracted data
+                    const extracted = data.data;
+                    if (extracted.name) document.getElementById('customerName').value = extracted.name;
+                    if (extracted.email) document.getElementById('customerEmail').value = extracted.email;
+                    if (extracted.phone) document.getElementById('customerPhone').value = extracted.phone;
+                    if (extracted.company) document.getElementById('customerCompany').value = extracted.company;
+                    if (extracted.role) document.getElementById('customerRole').value = extracted.role;
+
+                    showToast('✅ Business card data extracted! Review and save.', 'success');
+                } else {
+                    throw new Error(data.message || data.error || 'Failed to extract data');
+                }
+            } catch (error) {
+                console.error('Business card OCR error:', error);
+                showToast(error.message || 'Failed to extract data from image. Please enter manually.', 'error');
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = originalText;
+                // Reset file input
+                event.target.value = '';
+            }
+        }
+
+        async function saveCustomer(event) {
+            event.preventDefault();
+
+            const customerData = {
+                full_name: document.getElementById('customerName').value.trim(),
+                email: document.getElementById('customerEmail').value.trim().toLowerCase(),
+                customer_type: document.getElementById('customerType').value,
+                country_code: document.getElementById('customerCountry').value.trim().toUpperCase() || 'USA'
+            };
+
+            if (!customerData.full_name || !customerData.email) {
+                showToast('Please fill in required fields', 'error');
+                return;
+            }
+
+            const submitBtn = event.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner"></span> Saving...';
+
+            try {
+                const response = await fetch(`${API_URL}/customers`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(customerData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showToast('✅ Customer added successfully!', 'success');
+                    closeModal('addCustomerModal');
+                    
+                    // Reload customers list
+                    await loadCustomers();
+                    
+                    // Reset form
+                    document.getElementById('addCustomerForm').reset();
+                } else {
+                    throw new Error(data.message || data.error || 'Failed to save customer');
+                }
+            } catch (error) {
+                console.error('Save customer error:', error);
+                showToast(error.message || 'Failed to save customer. Please try again.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.remove();
+            }
         }
 
         // Initialize on page load

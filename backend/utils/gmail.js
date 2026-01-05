@@ -188,7 +188,7 @@ async function sendEmail(transporter, fromEmail, toEmail, subject, body) {
         
         return {
             success: false,
-            error: error.message
+            error: err.message
         };
     }
 }
