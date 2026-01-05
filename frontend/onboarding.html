@@ -915,6 +915,9 @@ Excited to support your success!
                 if (currentStep === 4) {
                     showSummary();
                 }
+            } else {
+                // Final step - complete onboarding
+                completeOnboarding();
             }
         }
 
@@ -1034,9 +1037,58 @@ Excited to support your success!
             }
         }
 
+        async function completeOnboarding() {
+            try {
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    alert('Please log in first');
+                    window.location.href = '/login.html';
+                    return;
+                }
+
+                // Show loading
+                const nextBtn = document.getElementById('nextBtn');
+                nextBtn.disabled = true;
+                nextBtn.textContent = 'Completing...';
+
+                // Call API to complete onboarding
+                const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+                const API_URL = isProduction 
+                    ? 'https://networkfollowup-backend-hm12cqp9v-brondors-projects.vercel.app/api'
+                    : 'http://localhost:5000/api';
+
+                const response = await fetch(`${API_URL}/users/complete-onboarding`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    // Update localStorage
+                    localStorage.setItem('onboardingCompleted', 'true');
+                    
+                    // Redirect to dashboard
+                    window.location.href = '/dashboard.html';
+                } else {
+                    throw new Error(result.message || 'Failed to complete onboarding');
+                }
+            } catch (error) {
+                console.error('Onboarding completion error:', error);
+                alert('Failed to complete onboarding: ' + error.message);
+                const nextBtn = document.getElementById('nextBtn');
+                nextBtn.disabled = false;
+                nextBtn.textContent = 'Complete Setup';
+            }
+        }
+
         function goToDashboard() {
-            alert('🎉 Setup complete! In production, you would be redirected to the dashboard.');
-            console.log('[NFU] Final data:', data);
+            // Always redirect to dashboard
+            localStorage.setItem('onboardingCompleted', 'true');
+            window.location.href = '/dashboard.html';
         }
 
         // Initialize
