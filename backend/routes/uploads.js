@@ -75,38 +75,39 @@ router.post('/screenshot', uploadLimiter, upload.single('screenshot'), optimizeI
                 null // uploadId will be set after insert
             );
 
-        if (!extractedCustomers || extractedCustomers.length === 0) {
-            return res.status(400).json({
-                success: false,
-                error: 'No customers found',
-                message: 'Could not extract any customer data from the image. Please ensure the screenshot contains customer information.'
-            });
-        }
+            if (!extractedCustomers || extractedCustomers.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'No customers found',
+                    message: 'Could not extract any customer data from the image. Please ensure the screenshot contains customer information.'
+                });
+            }
 
-        // Create upload history record (if not using cached)
-        if (!uploadId) {
-            const uploadResult = await db.query(
-                `INSERT INTO public.upload_history (user_id, filename, file_size, customers_extracted, extraction_status, file_hash)
-                 VALUES ($1, $2, $3, $4, $5, $6)
-                 RETURNING id`,
-                [
-                    userId,
-                    req.file.originalname,
-                    req.file.size,
-                    extractedCustomers.length,
-                    'success',
-                    fileHash
-                ]
-            );
-            uploadId = uploadResult.rows[0].id;
-            
-            // Save OCR result to cache
-            await db.query(
-                `UPDATE public.upload_history 
-                 SET ocr_result = $1 
-                 WHERE id = $2`,
-                [JSON.stringify(extractedCustomers), uploadId]
-            );
+            // Create upload history record (if not using cached)
+            if (!uploadId) {
+                const uploadResult = await db.query(
+                    `INSERT INTO public.upload_history (user_id, filename, file_size, customers_extracted, extraction_status, file_hash)
+                     VALUES ($1, $2, $3, $4, $5, $6)
+                     RETURNING id`,
+                    [
+                        userId,
+                        req.file.originalname,
+                        req.file.size,
+                        extractedCustomers.length,
+                        'success',
+                        fileHash
+                    ]
+                );
+                uploadId = uploadResult.rows[0].id;
+                
+                // Save OCR result to cache
+                await db.query(
+                    `UPDATE public.upload_history 
+                     SET ocr_result = $1 
+                     WHERE id = $2`,
+                    [JSON.stringify(extractedCustomers), uploadId]
+                );
+            }
         }
 
         // Save customers to database
