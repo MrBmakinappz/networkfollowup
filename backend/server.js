@@ -1,6 +1,19 @@
 // server.js
 // NetworkFollowUp Backend - Complete Server
 
+// Global error handlers - MUST be at the very top
+process.on('unhandledRejection', (err) => {
+  console.error('❌ UNHANDLED REJECTION:', err);
+  console.error('Stack:', err.stack);
+  // Don't exit - let server continue
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('❌ UNCAUGHT EXCEPTION:', err);
+  console.error('Stack:', err.stack);
+  // Don't exit - let server continue
+});
+
 console.log('🔵 Starting server...');
 console.log('🔵 NODE_ENV:', process.env.NODE_ENV || 'not set');
 console.log('🔵 PORT:', process.env.PORT || 'not set');
@@ -295,9 +308,14 @@ app.use((err, req, res, next) => {
 console.log('🔵 Starting server on port', PORT);
 console.log('🔵 About to call app.listen()...');
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
   console.log(`✅ Server running on port ${PORT}`);
-  log(`
+  
+  try {
+    console.log('🔵 Running post-startup tasks...');
+    
+    // Use console.log instead of log() to avoid potential logger issues
+    console.log(`
 ╔══════════════════════════════════════════════════════════╗
 ║                                                          ║
 ║      🌿 NetworkFollowUp API Server                      ║
@@ -310,16 +328,18 @@ const server = app.listen(PORT, () => {
 ║      Health: http://localhost:${PORT}/health             ║
 ║                                                          ║
 ╚══════════════════════════════════════════════════════════╝
-  `);
-  
-  // Template seeding disabled - app will start without templates
-  // Templates can be added manually via SQL if needed
-  // try {
-  //   await seedTemplates();
-  //   log('✅ Email templates seeded successfully');
-  // } catch (err) {
-  //   error('Template seeding failed (non-critical):', err.message);
-  // }
+    `);
+    
+    // Template seeding disabled - app will start without templates
+    // Templates can be added manually via SQL if needed
+    // No async operations here - all disabled
+    
+    console.log('✅ Post-startup tasks complete');
+  } catch (err) {
+    console.error('❌ Post-startup error:', err);
+    console.error('Stack:', err.stack);
+    // Don't exit - server is already running
+  }
 });
 
 console.log('🔵 app.listen() called, waiting for callback...');
