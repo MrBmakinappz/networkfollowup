@@ -20,9 +20,9 @@ router.get('/stats', cacheMiddleware(5 * 60 * 1000), async (req, res) => {
         const customerStats = await db.query(
             `SELECT 
                 COUNT(*) as total_customers,
-                COUNT(CASE WHEN member_type = 'retail' OR customer_type = 'retail' THEN 1 END) as retail_count,
-                COUNT(CASE WHEN member_type = 'wholesale' OR customer_type = 'wholesale' THEN 1 END) as wholesale_count,
-                COUNT(CASE WHEN member_type = 'advocates' OR customer_type = 'advocates' THEN 1 END) as advocates_count,
+                COUNT(CASE WHEN customer_type = 'retail' THEN 1 END) as retail_count,
+                COUNT(CASE WHEN customer_type = 'wholesale' THEN 1 END) as wholesale_count,
+                COUNT(CASE WHEN customer_type = 'advocates' THEN 1 END) as advocates_count,
                 COUNT(CASE WHEN last_contacted_at IS NOT NULL THEN 1 END) as contacted_count,
                 COUNT(CASE WHEN last_contacted_at IS NULL THEN 1 END) as pending_count,
                 COUNT(DISTINCT country_code) as countries_count
@@ -97,12 +97,12 @@ router.get('/stats', cacheMiddleware(5 * 60 * 1000), async (req, res) => {
                 }
             }
         });
-    } catch (error) {
+    } catch (err) {
         error('Stats error:', err);
         res.status(500).json({ 
             success: false,
             error: 'Failed to fetch statistics',
-            message: error.message
+            message: err.message
         });
     }
 });
@@ -202,7 +202,7 @@ router.get('/billing', async (req, res) => {
                 }
             }
         });
-    } catch (error) {
+    } catch (err) {
         error('Billing info error:', err);
         res.status(500).json({ error: 'Failed to fetch billing information' });
     }

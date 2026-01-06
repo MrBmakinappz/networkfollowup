@@ -181,14 +181,29 @@ async function getCachedResult(fileHash) {
         );
 
         if (result.rows.length > 0) {
-            const ocrResult = JSON.parse(result.rows[0].ocr_result);
-            // Store in memory cache
-            ocrCache.set(fileHash, {
-                data: ocrResult,
-                timestamp: Date.now()
-            });
-            log('Using database cached OCR result');
-            return ocrResult;
+            try {
+                // Check if ocr_result is already an object or a string
+                const ocrResultRaw = result.rows[0].ocr_result;
+                let ocrResult;
+                
+                if (typeof ocrResultRaw === 'string') {
+                    ocrResult = JSON.parse(ocrResultRaw);
+                } else {
+                    ocrResult = ocrResultRaw; // Already parsed
+                }
+                
+                // Store in memory cache
+                ocrCache.set(fileHash, {
+                    data: ocrResult,
+                    timestamp: Date.now()
+                });
+                log('Using database cached OCR result');
+                return ocrResult;
+            } catch (parseError) {
+                error('Error parsing cached OCR result:', parseError);
+                // Return null to trigger fresh extraction
+                return null;
+            }
         }
     } catch (err) {
         error('Cache lookup error:', err);
