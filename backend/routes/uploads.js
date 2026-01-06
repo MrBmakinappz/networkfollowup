@@ -195,9 +195,25 @@ router.post('/screenshot', uploadLimiter, upload.single('screenshot'), optimizeI
         if (recentUpload.rows.length > 0 && recentUpload.rows[0].ocr_result) {
             // Use cached result
             log('Using cached OCR result for duplicate upload');
-            extractedCustomers = JSON.parse(recentUpload.rows[0].ocr_result);
-            uploadId = recentUpload.rows[0].id;
-        } else {
+            try {
+                // Check if ocr_result is already an object or a string
+                const ocrResult = recentUpload.rows[0].ocr_result;
+                if (typeof ocrResult === 'string') {
+                    extractedCustomers = JSON.parse(ocrResult);
+                } else {
+                    extractedCustomers = ocrResult; // Already parsed
+                }
+                uploadId = recentUpload.rows[0].id;
+            } catch (parseError) {
+                console.error('❌ Error parsing cached OCR result:', parseError);
+                console.error('   OCR result type:', typeof recentUpload.rows[0].ocr_result);
+                console.error('   OCR result value:', recentUpload.rows[0].ocr_result);
+                // Continue to extract fresh if cache is corrupted
+                extractedCustomers = null;
+            }
+        }
+        
+        if (!extractedCustomers) {
             // Extract customers using Claude Vision (optimized)
             console.log('=== OCR EXTRACTION DEBUG ===');
             console.log('1. File received:', req.file.originalname);
