@@ -1068,8 +1068,8 @@
                                     <span id="selectedCountStep2">0</span> customer<span id="selectedCountPlural">s</span> selected
                                 </div>
                             </div>
-                            <button id="continueToReview" class="btn btn-primary" onclick="proceedToReview()" style="background: white; color: #10B981; font-weight: 600; padding: 12px 32px; border: none;">
-                                Continue to Review →
+                            <button id="sendSelectedEmails" class="btn btn-primary" onclick="sendSelectedEmails()" style="background: white; color: #10B981; font-weight: 600; padding: 12px 32px; border: none;">
+                                📧 Send Selected Emails
                             </button>
                         </div>
                     </div>
@@ -2627,7 +2627,7 @@
                     <td style="padding: 16px;">
                         <input type="checkbox" class="extracted-customer-checkbox customer-checkbox" checked data-id="${c.id}" data-index="${i}" onchange="updateSelectedCountStep2()" style="cursor: pointer;">
                     </td>
-                    <td style="padding: 16px; font-weight: 600; color: #1E293B;">${c.name || 'N/A'}</td>
+                    <td style="padding: 16px; font-weight: 600; color: #1E293B;">${c.full_name || c.name || 'N/A'}</td>
                     <td style="padding: 16px; color: #64748B;">${c.email || 'N/A'}</td>
                     <td style="padding: 16px;">
                         <span class="badge badge-${c.type}" style="padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; background: ${c.type === 'retail' ? '#FEF3C7' : c.type === 'wholesale' ? '#DBEAFE' : '#E9D5FF'}; color: ${c.type === 'retail' ? '#92400E' : c.type === 'wholesale' ? '#1E40AF' : '#6B21A8'};">
@@ -2653,7 +2653,7 @@
             const selected = Array.from(document.querySelectorAll('.extracted-customer-checkbox:checked')).length;
             document.getElementById('selectedCountStep2').textContent = selected;
             document.getElementById('selectedCountPlural').textContent = selected === 1 ? '' : 's';
-            document.getElementById('continueToReview').disabled = selected === 0;
+            document.getElementById('sendSelectedEmails').disabled = selected === 0;
         }
 
         // Select/Deselect all in Step 2
@@ -3054,7 +3054,7 @@
             document.getElementById('modalCustomerName').value = customer.name || customer.full_name || '';
             document.getElementById('modalCustomerEmail').value = customer.email || '';
             document.getElementById('modalCustomerType').value = (customer.type || customer.customer_type || 'retail').toLowerCase();
-            document.getElementById('modalCustomerLanguage').value = (customer.language || 'en').toLowerCase();
+            document.getElementById('modalCustomerLanguage').value = (customer.language || 'en').toUpperCase();
             
             // Check if we have edited version
             if (editedEmails[customerId]) {
@@ -3088,7 +3088,6 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        customerId: customer.id,
                         customerType: customer.customer_type || customer.type || 'retail',
                         language: customer.language || 'en',
                         customerName: customer.name || customer.full_name,
@@ -3105,15 +3104,15 @@
                 const data = await response.json();
                 console.log('✅ Preview API response:', data);
                 
-                if (data.success && data.data) {
-                    document.getElementById('emailSubject').value = data.data.subject || 'No subject';
-                    document.getElementById('emailBody').value = data.data.body || 'No template found';
+                if (data.success) {
+                    document.getElementById('emailSubject').value = data.subject || '';
+                    document.getElementById('emailBody').value = data.body || '';
                     
                     // Show template status
                     const statusBadge = document.getElementById('templateStatusBadge');
-                    if (data.data.is_fallback) {
+                    if (data.is_fallback) {
                         statusBadge.innerHTML = `
-                            <span style="background: #FEF3C7; color: #92400E; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; margin-right: 8px;">⚠️ Fallback: ${data.data.template_language.toUpperCase()}</span>
+                            <span style="background: #FEF3C7; color: #92400E; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; margin-right: 8px;">⚠️ Fallback: ${data.template_language.toUpperCase()}</span>
                             <button class="btn-link" onclick="createMissingTemplate('${customer.language || 'en'}', '${customer.customer_type || customer.type || 'retail'}')" style="background: none; border: none; color: #2196F3; cursor: pointer; text-decoration: underline; font-size: 12px;">
                                 Create ${(customer.language || 'en').toUpperCase()} template
                             </button>
@@ -4396,29 +4395,7 @@ Best regards,
                     </div>
                     <div class="form-group">
                         <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #333;">Language:</label>
-                        <select id="modalCustomerLanguage" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
-                            <option value="en">English</option>
-                            <option value="it">Italian</option>
-                            <option value="fr">French</option>
-                            <option value="de">German</option>
-                            <option value="es">Spanish</option>
-                            <option value="pl">Polish</option>
-                            <option value="bg">Bulgarian</option>
-                            <option value="hu">Hungarian</option>
-                            <option value="cs">Czech</option>
-                            <option value="sk">Slovak</option>
-                            <option value="ro">Romanian</option>
-                            <option value="hr">Croatian</option>
-                            <option value="sr">Serbian</option>
-                            <option value="ru">Russian</option>
-                            <option value="uk">Ukrainian</option>
-                            <option value="pt">Portuguese</option>
-                            <option value="nl">Dutch</option>
-                            <option value="sv">Swedish</option>
-                            <option value="no">Norwegian</option>
-                            <option value="da">Danish</option>
-                            <option value="fi">Finnish</option>
-                        </select>
+                        <input type="text" id="modalCustomerLanguage" class="form-control" readonly style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: #f5f5f5;">
                     </div>
                 </div>
                 
