@@ -203,3 +203,5 @@ ALTER TABLE customers ADD COLUMN IF NOT EXISTS language VARCHAR(10);
 
 **All backend and frontend code is ready!** ✅
 
+
+

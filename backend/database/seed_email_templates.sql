@@ -334,3 +334,5 @@ ON CONFLICT (customer_type, language) DO UPDATE SET
 -- SELECT customer_type, language, name FROM email_templates ORDER BY customer_type, language;
 
 
+
+

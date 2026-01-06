@@ -44,6 +44,43 @@ router.get('/', async (req, res) => {
 });
 
 /**
+ * POST /api/templates/check
+ * Check if template exists for customer type and language
+ */
+router.post('/check', async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { customerType, language } = req.body;
+
+        if (!customerType || !language) {
+            return res.status(400).json({
+                success: false,
+                error: 'customerType and language are required'
+            });
+        }
+
+        const result = await db.query(
+            `SELECT id FROM public.email_templates
+             WHERE user_id = $1 AND customer_type = $2 AND language = $3
+             LIMIT 1`,
+            [userId, customerType.toLowerCase(), language.toLowerCase()]
+        );
+
+        res.json({
+            success: true,
+            has_template: result.rows.length > 0
+        });
+    } catch (err) {
+        error('Check template error:', err);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to check template',
+            message: err.message
+        });
+    }
+});
+
+/**
  * GET /api/templates/:type/:language
  * Get specific template for customer type and language
  */
@@ -199,4 +236,6 @@ router.delete('/:id', async (req, res) => {
 });
 
 module.exports = router;
+
+
 
