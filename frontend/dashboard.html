@@ -839,6 +839,10 @@
                 <span class="nav-icon">💳</span>
                 <span>Billing</span>
             </a>
+            <a class="nav-item" onclick="showSection('templates', event)">
+                <span class="nav-icon">📧</span>
+                <span>Email Templates</span>
+            </a>
             <a class="nav-item" onclick="showSection('settings', event)">
                 <span class="nav-icon">⚙️</span>
                 <span>Settings</span>
@@ -1278,6 +1282,99 @@
             </div>
         </div>
 
+        <!-- TEMPLATES SECTION -->
+        <div id="templates-section" class="section-content" style="display: none;">
+            <div class="header">
+                <h1 class="welcome-text">Email Templates 📧</h1>
+                <p class="welcome-subtext">Create and manage templates for each customer type and language</p>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title">Create New Template</h2>
+                        <p class="card-subtitle">Customize messages for each customer type and language</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="openCreateTemplateModal()" style="padding: 10px 20px;">
+                        ➕ Create Template
+                    </button>
+                </div>
+                <div style="padding: 24px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 6px; font-weight: 600;">Customer Type:</label>
+                            <select id="newTemplateType" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                                <option value="retail">Retail Customer</option>
+                                <option value="wholesale">Wholesale Customer</option>
+                                <option value="advocate">Advocate/Distributor</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 6px; font-weight: 600;">Language:</label>
+                            <select id="newTemplateLanguage" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                                <option value="en">English</option>
+                                <option value="it">Italian</option>
+                                <option value="fr">French</option>
+                                <option value="de">German</option>
+                                <option value="es">Spanish</option>
+                                <option value="pl">Polish</option>
+                                <option value="bg">Bulgarian</option>
+                                <option value="hu">Hungarian</option>
+                                <option value="cs">Czech</option>
+                                <option value="ru">Russian</option>
+                                <option value="pt">Portuguese</option>
+                                <option value="nl">Dutch</option>
+                                <option value="sv">Swedish</option>
+                                <option value="no">Norwegian</option>
+                                <option value="da">Danish</option>
+                                <option value="fi">Finnish</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 6px; font-weight: 600;">Subject Line:</label>
+                        <input type="text" id="newTemplateSubject" placeholder="Hi {{name}}, special offer for you!" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 6px; font-weight: 600;">Email Body:</label>
+                        <textarea id="newTemplateBody" rows="12" placeholder="Hi {{name}},&#10;&#10;As a {{customer_type}} customer, you have access to exclusive benefits...&#10;&#10;Best regards,&#10;{{your_name}}&#10;{{company_name}}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; resize: vertical;"></textarea>
+                    </div>
+                    <div style="padding: 12px; background: #E3F2FD; border-radius: 6px; margin-bottom: 16px;">
+                        <small style="color: #1E293B;">
+                            <strong>Variables:</strong>
+                            <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 0 4px;">{{name}}</code>
+                            <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 0 4px;">{{customer_type}}</code>
+                            <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 0 4px;">{{country}}</code>
+                            <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 0 4px;">{{your_name}}</code>
+                            <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 0 4px;">{{your_email}}</code>
+                            <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 0 4px;">{{your_phone}}</code>
+                            <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 0 4px;">{{company_name}}</code>
+                        </small>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn btn-primary" onclick="saveNewTemplate()" style="padding: 12px 24px;">
+                            💾 Save Template
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearTemplateForm()" style="padding: 12px 24px;">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title">Your Templates</h2>
+                        <p class="card-subtitle">Manage existing templates</p>
+                    </div>
+                </div>
+                <div id="templatesGrid" style="padding: 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+                    <!-- Templates will be loaded here -->
+                </div>
+            </div>
+        </div>
+
         <!-- SETTINGS SECTION -->
         <div id="settings-section" class="section-content" style="display: none;">
             <div class="header">
@@ -1565,6 +1662,185 @@
             margin-right: auto;
         }
 
+        /* Email Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.modal-show {
+            display: flex !important;
+        }
+
+        .modal-overlay {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .modal-content {
+            position: relative;
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            z-index: 10000;
+        }
+
+        .modal-content.modal-large {
+            max-width: 800px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .template-status {
+            margin: 16px 0;
+            padding: 12px;
+            background: #f5f5f5;
+            border-radius: 6px;
+        }
+
+        .badge-success {
+            background: #4CAF50;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+        }
+
+        .badge-warning {
+            background: #FF9800;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+        }
+
+        .variables-help {
+            margin-top: 12px;
+            padding: 12px;
+            background: #E3F2FD;
+            border-radius: 6px;
+        }
+
+        .variables-help code {
+            background: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin: 0 4px;
+            font-size: 12px;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid #eee;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+        }
+
+        .btn-secondary {
+            background: #2196F3;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+            background: #0b7dda;
+        }
+
+        .btn-cancel {
+            background: #f5f5f5;
+            color: #333;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .btn-cancel:hover {
+            background: #e0e0e0;
+        }
+
         /* Confirmation Modal */
         .modal-overlay {
             position: fixed;
@@ -1578,16 +1854,6 @@
             justify-content: center;
             z-index: 10000;
             animation: fadeIn 0.2s;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 16px;
-            padding: 0;
-            max-width: 500px;
-            width: 90%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            animation: slideUp 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
 
         .modal-content.danger .modal-header h3 {
@@ -2409,6 +2675,8 @@
                     if (section === 'settings') {
                         loadUserSettings();
                         loadUserTemplates();
+                    } else if (section === 'templates') {
+                        loadUserTemplates();
                     } else if (section === 'dashboard') {
                         loadDashboardStats();
                     } else if (section === 'customers') {
@@ -3067,7 +3335,23 @@
             }
             
             // Show modal
-            document.getElementById('emailModal').style.display = 'flex';
+            const modal = document.getElementById('emailModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.style.position = 'fixed';
+                modal.style.zIndex = '9999';
+                modal.style.left = '0';
+                modal.style.top = '0';
+                modal.style.width = '100%';
+                modal.style.height = '100%';
+                modal.style.background = 'rgba(0,0,0,0.5)';
+                modal.style.alignItems = 'center';
+                modal.style.justifyContent = 'center';
+                console.log('✅ Modal displayed');
+            } else {
+                console.error('❌ Email modal not found!');
+                showToast('Email modal not found. Please refresh the page.', 'error');
+            }
         }
         
         // Load email template for customer
@@ -3214,6 +3498,7 @@
         function closeEmailModal() {
             const modal = document.getElementById('emailModal');
             if (modal) {
+                modal.classList.remove('modal-show');
                 modal.style.display = 'none';
             }
             currentEditingCustomer = null;
@@ -3302,23 +3587,39 @@
                 }
 
                 const data = await response.json();
+                console.log('Templates response:', data);
                 
-                if (data.success && data.data && data.data.length > 0) {
-                    displayTemplates(data.data);
+                // Handle both response formats: {success: true, data: [...]} or {templates: [...]}
+                const templates = (data.success && data.data) ? data.data : (data.templates || []);
+                
+                const grid = document.getElementById('templatesGrid');
+                if (!grid) {
+                    console.error('Templates grid not found');
+                    return;
+                }
+                
+                if (templates.length > 0) {
+                    displayTemplates(templates);
                 } else {
-                    document.getElementById('templatesGrid').innerHTML = `
-                        <div class="empty-state" style="grid-column: 1 / -1;">
+                    grid.innerHTML = `
+                        <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
                             <div class="empty-icon">📝</div>
-                            <p style="font-size: 16px; margin-bottom: 16px;">No templates yet</p>
-                            <button class="btn btn-primary" onclick="openCreateTemplateModal()">
-                                Create Your First Template
-                            </button>
+                            <p style="font-size: 16px; margin-bottom: 16px; color: #64748B;">No templates yet. Create your first template above!</p>
                         </div>
                     `;
                 }
             } catch (error) {
                 console.error('Error loading templates:', error);
                 showToast('Failed to load templates', 'error');
+                const grid = document.getElementById('templatesGrid');
+                if (grid) {
+                    grid.innerHTML = `
+                        <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                            <div class="empty-icon">❌</div>
+                            <p style="font-size: 16px; margin-bottom: 16px; color: #EF4444;">Failed to load templates. Please try again.</p>
+                        </div>
+                    `;
+                }
             }
         }
 
@@ -3361,11 +3662,11 @@
                         </div>
                         <div style="margin-bottom: 12px;">
                             <strong style="color: #1E293B; font-size: 13px;">Subject:</strong>
-                            <p style="color: #64748B; font-size: 12px; margin-top: 4px; word-break: break-word;">${escapeHtml(template.subject).substring(0, 60)}${template.subject.length > 60 ? '...' : ''}</p>
+                            <p style="color: #64748B; font-size: 12px; margin-top: 4px; word-break: break-word;">${(template.subject || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').substring(0, 60)}${template.subject && template.subject.length > 60 ? '...' : ''}</p>
                         </div>
                         <div>
                             <strong style="color: #1E293B; font-size: 13px;">Body:</strong>
-                            <p style="color: #64748B; font-size: 12px; margin-top: 4px; word-break: break-word; max-height: 60px; overflow: hidden;">${escapeHtml(template.body).substring(0, 100)}${template.body.length > 100 ? '...' : ''}</p>
+                            <p style="color: #64748B; font-size: 12px; margin-top: 4px; word-break: break-word; max-height: 60px; overflow: hidden;">${(template.body || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').substring(0, 100)}${template.body && template.body.length > 100 ? '...' : ''}</p>
                         </div>
                     </div>
                 `;
@@ -3445,12 +3746,23 @@
             }
         }
 
-        // Save new template
+        // Save new template (works from both Templates section and modal)
         async function saveNewTemplate() {
-            const type = document.getElementById('newTemplateType').value;
-            const lang = document.getElementById('newTemplateLang').value;
-            const subject = document.getElementById('newTemplateSubject').value.trim();
-            const body = document.getElementById('newTemplateBody').value.trim();
+            // Try both IDs (for section form and modal form)
+            const typeEl = document.getElementById('newTemplateType');
+            const langEl = document.getElementById('newTemplateLanguage') || document.getElementById('newTemplateLang');
+            const subjectEl = document.getElementById('newTemplateSubject');
+            const bodyEl = document.getElementById('newTemplateBody');
+
+            if (!typeEl || !langEl || !subjectEl || !bodyEl) {
+                showToast('Template form not found. Please fill in the form.', 'error');
+                return;
+            }
+
+            const type = typeEl.value;
+            const lang = langEl.value;
+            const subject = subjectEl.value.trim();
+            const body = bodyEl.value.trim();
 
             if (!type || !lang || !subject || !body) {
                 showToast('All fields are required', 'error');
@@ -3458,10 +3770,16 @@
             }
 
             try {
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    showToast('Please log in', 'error');
+                    return;
+                }
+
                 const response = await fetch(`${API_URL}/templates`, {
                     method: 'POST',
                     headers: {
-                        ...getAuthHeaders(),
+                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
@@ -3473,18 +3791,33 @@
                 });
 
                 const data = await response.json();
+                console.log('Save template response:', data);
 
                 if (response.ok && data.success) {
                     showToast('✅ Template saved successfully!', 'success');
                     closeCreateTemplateModal();
+                    clearTemplateForm();
                     await loadUserTemplates();
                 } else {
-                    throw new Error(data.error || 'Failed to save template');
+                    throw new Error(data.error || data.message || 'Failed to save template');
                 }
             } catch (error) {
                 console.error('Save template error:', error);
                 showToast(error.message || 'Failed to save template', 'error');
             }
+        }
+
+        // Clear template form
+        function clearTemplateForm() {
+            const typeEl = document.getElementById('newTemplateType');
+            const langEl = document.getElementById('newTemplateLanguage') || document.getElementById('newTemplateLang');
+            const subjectEl = document.getElementById('newTemplateSubject');
+            const bodyEl = document.getElementById('newTemplateBody');
+
+            if (typeEl) typeEl.value = 'retail';
+            if (langEl) langEl.value = 'en';
+            if (subjectEl) subjectEl.value = '';
+            if (bodyEl) bodyEl.value = '';
         }
 
         // Edit template
@@ -4364,9 +4697,9 @@ Best regards,
     </script>
 
     <!-- Email Preview & Edit Modal -->
-    <div id="emailModal" class="modal" style="display:none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
-        <div class="modal-overlay" onclick="closeEmailModal()" style="position: absolute; width: 100%; height: 100%;"></div>
-        <div class="modal-content modal-large" style="position: relative; background: white; padding: 24px; border-radius: 12px; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+    <div id="emailModal" class="modal">
+        <div class="modal-overlay" onclick="closeEmailModal()"></div>
+        <div class="modal-content modal-large">
             <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #eee;">
                 <h3 style="margin: 0; color: #1E293B;">📧 Email Preview & Edit</h3>
                 <button class="close-btn" onclick="closeEmailModal()" style="background: none; border: none; font-size: 28px; cursor: pointer; color: #999;">&times;</button>
