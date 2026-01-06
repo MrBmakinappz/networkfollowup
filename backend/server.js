@@ -22,8 +22,13 @@ console.log('🔵 Starting server...');
 console.log('🔵 NODE_ENV:', process.env.NODE_ENV || 'not set');
 console.log('🔵 PORT:', process.env.PORT || 'not set');
 
-require('dotenv').config();
-console.log('✅ dotenv loaded');
+// Wrap entire server startup in try-catch to prevent crashes
+try {
+  require('dotenv').config();
+  console.log('✅ dotenv loaded');
+} catch (err) {
+  console.error('⚠️ dotenv load error (non-fatal):', err.message);
+}
 
 const express = require('express');
 console.log('✅ express loaded');
@@ -173,63 +178,122 @@ app.use(sanitizeBody);
 
 // Auth middleware
 console.log('🔵 Loading auth middleware...');
-const authMiddleware = require('./middleware/auth');
-console.log('✅ Auth middleware loaded');
+let authMiddleware;
+try {
+  authMiddleware = require('./middleware/auth');
+  console.log('✅ Auth middleware loaded');
+} catch (err) {
+  console.error('❌ Failed to load auth middleware:', err.message);
+  // Create a dummy middleware that rejects all requests
+  authMiddleware = (req, res, next) => {
+    res.status(500).json({ error: 'Auth middleware not available' });
+  };
+}
 
 // Public routes (no auth required)
 console.log('🔵 Loading auth routes...');
-const authRoutes = require('./routes/auth');
-console.log('✅ Auth routes loaded');
+let authRoutes;
+try {
+  authRoutes = require('./routes/auth');
+  console.log('✅ Auth routes loaded');
+  app.use('/api/auth', authRoutes);
+  console.log('✅ /api/auth registered');
+} catch (err) {
+  console.error('❌ Failed to load auth routes:', err.message);
+}
 
 // OAuth routes (MUST be registered FIRST for Vercel routing)
 console.log('🔵 Loading OAuth routes...');
-const googleOAuthRoutes = require('./routes/google-oauth');
-console.log('✅ Google OAuth routes loaded');
-const gmailOAuthRoutes = require('./routes/gmail-oauth');
-console.log('✅ Gmail OAuth routes loaded');
+let googleOAuthRoutes, gmailOAuthRoutes;
+try {
+  googleOAuthRoutes = require('./routes/google-oauth');
+  console.log('✅ Google OAuth routes loaded');
+  app.use('/api/oauth', googleOAuthRoutes);
+  console.log('✅ /api/oauth registered');
+} catch (err) {
+  console.error('⚠️ Google OAuth routes not available:', err.message);
+}
 
-// Register OAuth routes FIRST (before other routes)
-console.log('🔵 Registering OAuth routes...');
-app.use('/api/oauth', googleOAuthRoutes);
-console.log('✅ /api/oauth registered');
-app.use('/api/oauth/gmail', gmailOAuthRoutes);
-console.log('✅ /api/oauth/gmail registered');
-app.use('/api/auth', authRoutes);
-console.log('✅ /api/auth registered');
+try {
+  gmailOAuthRoutes = require('./routes/gmail-oauth');
+  console.log('✅ Gmail OAuth routes loaded');
+  app.use('/api/oauth/gmail', gmailOAuthRoutes);
+  console.log('✅ /api/oauth/gmail registered');
+} catch (err) {
+  console.error('⚠️ Gmail OAuth routes not available:', err.message);
+}
 
 // Onboarding middleware
 console.log('🔵 Loading onboarding middleware...');
-const checkOnboarding = require('./middleware/onboarding');
-console.log('✅ Onboarding middleware loaded');
+let checkOnboarding;
+try {
+  checkOnboarding = require('./middleware/onboarding');
+  console.log('✅ Onboarding middleware loaded');
+} catch (err) {
+  console.error('❌ Failed to load onboarding middleware:', err.message);
+  // Create a dummy middleware that allows all requests
+  checkOnboarding = (req, res, next) => next();
+}
 
 // Protected routes (auth + onboarding required)
 console.log('🔵 Loading protected routes...');
-const uploadsRoutes = require('./routes/uploads');
-console.log('✅ Uploads routes loaded');
-const customersRoutes = require('./routes/customers');
-console.log('✅ Customers routes loaded');
-const emailsRoutes = require('./routes/emails');
-console.log('✅ Emails routes loaded');
-const statsRoutes = require('./routes/stats');
-console.log('✅ Stats routes loaded');
-const billingRoutes = require('./routes/billing');
-console.log('✅ Billing routes loaded');
-const templateRoutes = require('./routes/templates');
-console.log('✅ Templates routes loaded');
 
-console.log('🔵 Registering protected routes...');
-app.use('/api/uploads', authMiddleware, checkOnboarding, uploadsRoutes);
-console.log('✅ /api/uploads registered');
-app.use('/api/customers', authMiddleware, checkOnboarding, customersRoutes);
-console.log('✅ /api/customers registered');
-app.use('/api/emails', authMiddleware, checkOnboarding, emailsRoutes);
-console.log('✅ /api/emails registered');
-app.use('/api/users', authMiddleware, checkOnboarding, statsRoutes);
-console.log('✅ /api/users registered');
-app.use('/api/billing', authMiddleware, checkOnboarding, billingRoutes);
-console.log('✅ /api/billing registered');
-app.use('/api/templates', authMiddleware, templateRoutes);
-console.log('✅ /api/templates registered');
+let uploadsRoutes, customersRoutes, emailsRoutes, statsRoutes, billingRoutes, templateRoutes;
+
+try {
+  uploadsRoutes = require('./routes/uploads');
+  console.log('✅ Uploads routes loaded');
+  app.use('/api/uploads', authMiddleware, checkOnboarding, uploadsRoutes);
+  console.log('✅ /api/uploads registered');
+} catch (err) {
+  console.error('❌ Failed to load uploads routes:', err.message);
+}
+
+try {
+  customersRoutes = require('./routes/customers');
+  console.log('✅ Customers routes loaded');
+  app.use('/api/customers', authMiddleware, checkOnboarding, customersRoutes);
+  console.log('✅ /api/customers registered');
+} catch (err) {
+  console.error('❌ Failed to load customers routes:', err.message);
+}
+
+try {
+  emailsRoutes = require('./routes/emails');
+  console.log('✅ Emails routes loaded');
+  app.use('/api/emails', authMiddleware, checkOnboarding, emailsRoutes);
+  console.log('✅ /api/emails registered');
+} catch (err) {
+  console.error('❌ Failed to load emails routes:', err.message);
+}
+
+try {
+  statsRoutes = require('./routes/stats');
+  console.log('✅ Stats routes loaded');
+  app.use('/api/users', authMiddleware, checkOnboarding, statsRoutes);
+  console.log('✅ /api/users registered');
+} catch (err) {
+  console.error('❌ Failed to load stats routes:', err.message);
+}
+
+try {
+  billingRoutes = require('./routes/billing');
+  console.log('✅ Billing routes loaded');
+  app.use('/api/billing', authMiddleware, checkOnboarding, billingRoutes);
+  console.log('✅ /api/billing registered');
+} catch (err) {
+  console.error('❌ Failed to load billing routes:', err.message);
+}
+
+try {
+  templateRoutes = require('./routes/templates');
+  console.log('✅ Templates routes loaded');
+  app.use('/api/templates', authMiddleware, templateRoutes);
+  console.log('✅ /api/templates registered');
+} catch (err) {
+  console.error('❌ Failed to load templates routes:', err.message);
+  console.error('   Error details:', err.stack);
+}
 
 // ============================================
 // API INFO ENDPOINT
