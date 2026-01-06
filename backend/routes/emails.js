@@ -22,156 +22,79 @@ const {
 router.post('/preview', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.userId;
-        const { customerId, customerType, language, customerName, country } = req.body;
+        const { customerType, language, customerName, countryCode } = req.body;
 
-        console.log(`Generating preview for ${customerName || customerId} (${customerType}, ${language})`);
-
-        if (!customerId || !customerType || !language) {
+        if (!customerType || !language) {
             return res.status(400).json({
                 success: false,
-                error: 'customerId, customerType, and language are required'
+                error: 'customerType and language are required'
             });
         }
 
-        // Get customer data for personalization (if customerId is valid UUID)
-        let customer = null;
-        let firstName = '';
-        let fullName = customerName || 'Customer';
+        // Get user info for personalization
+        const userInfo = await db.query(
+            'SELECT full_name, email, company_name, phone FROM public.users WHERE id = $1',
+            [userId]
+        );
+        const user = userInfo.rows[0] || {};
         
-        try {
-            const customerResult = await db.query(
-                'SELECT full_name, email, customer_type, country_code, language FROM public.customers WHERE id = $1 AND user_id = $2',
-                [customerId, userId]
-            );
-
-            if (customerResult.rows.length > 0) {
-                customer = customerResult.rows[0];
-                fullName = customer.full_name;
-                firstName = customer.full_name.split(' ')[0];
-            } else {
-                // Use provided customerName as fallback
-                firstName = (customerName || 'Customer').split(' ')[0];
-            }
-        } catch (err) {
-            // If customerId is not a valid UUID or customer not found, use provided data
-            firstName = (customerName || 'Customer').split(' ')[0];
-            fullName = customerName || 'Customer';
-        }
-
-        // Try to find template for this type + language
-        let templateResult = await db.query(`
-            SELECT subject, body, language
-            FROM public.email_templates 
-            WHERE user_id = $1 
-              AND customer_type = $2 
-              AND language = $3
-            LIMIT 1
-        `, [userId, customerType.toLowerCase(), language]);
+        // Try to find template
+        let template = await db.query(
+            'SELECT * FROM public.email_templates WHERE user_id = $1 AND customer_type = $2 AND language = $3',
+            [userId, customerType.toLowerCase(), language.toLowerCase()]
+        );
         
         let is_fallback = false;
         let template_language = language;
         
-        // If not found, try user's default language
-        if (templateResult.rows.length === 0) {
-            const userResult = await db.query('SELECT default_language FROM public.users WHERE id = $1', [userId]);
-            const defaultLang = userResult.rows[0]?.default_language || 'en';
+        // Fallback to default language
+        if (template.rows.length === 0) {
+            const defaultLang = await db.query('SELECT default_language FROM public.users WHERE id = $1', [userId]);
+            const fallbackLang = defaultLang.rows[0]?.default_language || 'en';
             
-            templateResult = await db.query(`
-                SELECT subject, body, language
-                FROM public.email_templates 
-                WHERE user_id = $1 
-                  AND customer_type = $2 
-                  AND language = $3
-                LIMIT 1
-            `, [userId, customerType.toLowerCase(), defaultLang]);
+            template = await db.query(
+                'SELECT * FROM public.email_templates WHERE user_id = $1 AND customer_type = $2 AND language = $3',
+                [userId, customerType.toLowerCase(), fallbackLang]
+            );
             
-            if (templateResult.rows.length > 0) {
-                is_fallback = true;
-                template_language = defaultLang;
-            }
+            is_fallback = true;
+            template_language = fallbackLang;
         }
         
-        // If still not found, try global templates (user_id IS NULL)
-        if (templateResult.rows.length === 0) {
-            templateResult = await db.query(`
-                SELECT subject, body, language
-                FROM public.email_templates 
-                WHERE user_id IS NULL 
-                  AND customer_type = $1 
-                  AND language = $2
-                LIMIT 1
-            `, [customerType.toLowerCase(), language]);
-            
-            if (templateResult.rows.length === 0) {
-                // Try English fallback
-                templateResult = await db.query(`
-                    SELECT subject, body, language
-                    FROM public.email_templates 
-                    WHERE user_id IS NULL 
-                      AND customer_type = $1 
-                      AND language = 'en'
-                    LIMIT 1
-                `, [customerType.toLowerCase()]);
-                if (templateResult.rows.length > 0) {
-                    is_fallback = true;
-                    template_language = 'en';
-                }
-            }
-        }
-        
-        // If still no template, use default
-        if (templateResult.rows.length === 0) {
-            return res.json({
-                success: true,
-                data: {
-                    subject: `Hi ${firstName}!`,
-                    body: `Hi ${fullName},\n\nWelcome as our ${customerType} customer!\n\nBest regards`,
-                    is_fallback: true,
-                    template_language: 'en'
-                }
+        // If still no template, return error
+        if (template.rows.length === 0) {
+            return res.status(404).json({ 
+                success: false,
+                error: 'No template found',
+                message: `Missing template for ${customerType}-${language}. Please create one.`
             });
         }
         
-        const template = templateResult.rows[0];
-        
-        // Get user info for personalization
-        const userResult = await db.query(
-            'SELECT full_name, email, company_name, phone FROM public.users WHERE id = $1',
-            [userId]
-        );
-        const user = userResult.rows[0] || {};
-        
         // Replace all variables
         const replacements = {
-            '{{name}}': fullName,
-            '{{firstname}}': firstName,
-            '{{fullname}}': fullName,
-            '{{customer_type}}': customerType,
-            '{{country}}': country || (customer ? customer.country_code : ''),
-            '{{your_name}}': user.full_name || 'Your consultant',
+            '{{name}}': customerName || '',
+            '{{customer_type}}': customerType || '',
+            '{{country}}': countryCode || '',
+            '{{your_name}}': user.full_name || '',
             '{{your_email}}': user.email || '',
             '{{your_phone}}': user.phone || '',
             '{{company_name}}': user.company_name || ''
         };
         
-        let subject = template.subject;
-        let body = template.body;
+        let subject = template.rows[0].subject;
+        let body = template.rows[0].body;
         
-        // Replace all variables
-        for (const [variable, value] of Object.entries(replacements)) {
-            const regex = new RegExp(variable.replace(/[{}]/g, '\\$&'), 'g');
-            subject = subject.replace(regex, value);
-            body = body.replace(regex, value);
+        for (const [key, value] of Object.entries(replacements)) {
+            subject = subject.replace(new RegExp(key, 'g'), value);
+            body = body.replace(new RegExp(key, 'g'), value);
         }
-
-        res.json({
+        
+        res.json({ 
             success: true,
-            data: {
-                subject,
-                body,
-                is_fallback: is_fallback,
-                template_language: template_language
-            }
+            subject, 
+            body, 
+            is_fallback, 
+            template_language 
         });
     } catch (err) {
         error('Email preview error:', err);
