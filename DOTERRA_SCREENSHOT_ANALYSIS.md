@@ -90,3 +90,5 @@ The prompt must:
 7. Handle truncated names
 8. Extract ALL visible rows
 
+
+

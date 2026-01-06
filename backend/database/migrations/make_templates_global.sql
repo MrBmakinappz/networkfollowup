@@ -34,3 +34,5 @@ ADD COLUMN IF NOT EXISTS name VARCHAR(255);
 -- WHERE table_name = 'email_templates';
 
 
+
+

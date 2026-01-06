@@ -3031,42 +3031,47 @@
 
         // View email preview for a customer
         async function viewEmail(customerId) {
-            const customer = extractedCustomersData.find(c => c.id === customerId);
+            console.log('🔵 Opening email editor for customer:', customerId);
+            
+            // Find customer in extractedCustomersData
+            let customer = extractedCustomersData.find(c => c.id === customerId);
+            
+            // Fallback to extractedData if not found
             if (!customer) {
-                // Try to find in extractedData (fallback)
-                const fallbackCustomer = extractedData.find(c => c.id === customerId);
-                if (!fallbackCustomer) {
-                    showToast('Customer not found', 'error');
-                    return;
-                }
-                currentEditingCustomer = fallbackCustomer;
-            } else {
-                currentEditingCustomer = customer;
+                customer = extractedData.find(c => c.id === customerId);
             }
             
-            // Set customer info in modal
-            document.getElementById('modalCustomerName').textContent = currentEditingCustomer.name || currentEditingCustomer.full_name;
-            document.getElementById('modalCustomerEmail').textContent = currentEditingCustomer.email;
-            document.getElementById('modalCustomerType').textContent = (currentEditingCustomer.type || currentEditingCustomer.customer_type || 'retail').toUpperCase();
-            document.getElementById('modalLanguage').textContent = (currentEditingCustomer.language || 'en').toUpperCase();
+            if (!customer) {
+                console.error('❌ Customer not found:', customerId);
+                showToast('Customer not found', 'error');
+                return;
+            }
+            
+            currentEditingCustomer = customer;
+            console.log('✅ Customer found:', customer);
+            
+            // Populate modal fields
+            document.getElementById('modalCustomerName').value = customer.name || customer.full_name || '';
+            document.getElementById('modalCustomerEmail').value = customer.email || '';
+            document.getElementById('modalCustomerType').value = (customer.type || customer.customer_type || 'retail').toLowerCase();
+            document.getElementById('modalCustomerLanguage').value = (customer.language || 'en').toLowerCase();
             
             // Check if we have edited version
             if (editedEmails[customerId]) {
                 document.getElementById('emailSubject').value = editedEmails[customerId].subject;
                 document.getElementById('emailBody').value = editedEmails[customerId].body;
-                document.getElementById('templateBadge').innerHTML = '<span style="background: #FEF3C7; color: #92400E; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">✏️ Edited</span>';
-                document.getElementById('createTemplateBtn').style.display = 'none';
+                document.getElementById('templateStatusBadge').innerHTML = '<span style="background: #FEF3C7; color: #92400E; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">✏️ Edited</span>';
             } else {
                 // Generate from template
-                await generateEmailPreview(currentEditingCustomer);
+                await loadEmailTemplate(customer);
             }
             
             // Show modal
-            document.getElementById('emailModal').style.display = 'block';
+            document.getElementById('emailModal').style.display = 'flex';
         }
-
-        // Generate email preview from template
-        async function generateEmailPreview(customer) {
+        
+        // Load email template for customer
+        async function loadEmailTemplate(customer) {
             try {
                 const token = localStorage.getItem('authToken');
                 if (!token) {
@@ -3074,7 +3079,7 @@
                     return;
                 }
 
-                console.log('🔵 Generating preview for customer:', customer);
+                console.log('🔵 Loading template for:', customer);
 
                 const response = await fetch(`${API_URL}/emails/preview`, {
                     method: 'POST',
@@ -3087,7 +3092,7 @@
                         customerType: customer.customer_type || customer.type || 'retail',
                         language: customer.language || 'en',
                         customerName: customer.name || customer.full_name,
-                        country: customer.country || customer.country_code || ''
+                        countryCode: customer.country_code || customer.country || ''
                     })
                 });
                 
@@ -3105,50 +3110,96 @@
                     document.getElementById('emailBody').value = data.data.body || 'No template found';
                     
                     // Show template status
+                    const statusBadge = document.getElementById('templateStatusBadge');
                     if (data.data.is_fallback) {
-                        document.getElementById('templateBadge').innerHTML = 
-                            `<span style="background: #FEF3C7; color: #92400E; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">⚠️ Using fallback: ${data.data.template_language.toUpperCase()}</span>`;
-                        document.getElementById('createTemplateBtn').style.display = 'block';
+                        statusBadge.innerHTML = `
+                            <span style="background: #FEF3C7; color: #92400E; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; margin-right: 8px;">⚠️ Fallback: ${data.data.template_language.toUpperCase()}</span>
+                            <button class="btn-link" onclick="createMissingTemplate('${customer.language || 'en'}', '${customer.customer_type || customer.type || 'retail'}')" style="background: none; border: none; color: #2196F3; cursor: pointer; text-decoration: underline; font-size: 12px;">
+                                Create ${(customer.language || 'en').toUpperCase()} template
+                            </button>
+                        `;
                     } else {
-                        document.getElementById('templateBadge').innerHTML = 
-                            `<span style="background: #D1FAE5; color: #065F46; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">✓ Template: ${(customer.customer_type || customer.type || 'retail')}-${(customer.language || 'en').toUpperCase()}</span>`;
-                        document.getElementById('createTemplateBtn').style.display = 'none';
+                        statusBadge.innerHTML = `
+                            <span style="background: #D1FAE5; color: #065F46; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">✓ Template: ${(customer.customer_type || customer.type || 'retail')}-${(customer.language || 'en').toUpperCase()}</span>
+                        `;
                     }
                 } else {
                     // Fallback if no template
                     const firstName = (customer.name || customer.full_name || '').split(' ')[0];
                     document.getElementById('emailSubject').value = `Hello ${firstName}!`;
                     document.getElementById('emailBody').value = `Hi ${customer.name || customer.full_name},\n\nThank you for your interest in doTERRA!\n\nBest regards`;
-                    document.getElementById('templateBadge').innerHTML = 
-                        `<span style="background: #FEF3C7; color: #92400E; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">⚠️ No template found - using default</span>`;
-                    document.getElementById('createTemplateBtn').style.display = 'block';
+                    document.getElementById('templateStatusBadge').innerHTML = `
+                        <span style="background: #FEF3C7; color: #92400E; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; margin-right: 8px;">⚠️ No template found - using default</span>
+                        <button class="btn-link" onclick="createMissingTemplate('${customer.language || 'en'}', '${customer.customer_type || customer.type || 'retail'}')" style="background: none; border: none; color: #2196F3; cursor: pointer; text-decoration: underline; font-size: 12px;">
+                            Create template
+                        </button>
+                    `;
                 }
             } catch (error) {
-                console.error('❌ Error fetching preview:', error);
-                showToast('Failed to load email preview', 'error');
+                console.error('❌ Error loading template:', error);
+                showToast('Failed to load email template', 'error');
                 // Fallback
                 const firstName = (customer.name || customer.full_name || '').split(' ')[0];
                 document.getElementById('emailSubject').value = `Hello ${firstName}!`;
                 document.getElementById('emailBody').value = `Hi ${customer.name || customer.full_name},\n\nThank you for your interest in doTERRA!\n\nBest regards`;
             }
         }
+        
+        function createMissingTemplate(language, customerType) {
+            closeEmailModal();
+            window.location.href = `templates.html?lang=${language}&type=${customerType}`;
+        }
+
 
         // Save edited email
         function saveEmailChanges() {
-            if (!currentEditingCustomer) return;
+            if (!currentEditingCustomer) {
+                showToast('No customer selected', 'error');
+                return;
+            }
             
             const subject = document.getElementById('emailSubject').value.trim();
             const body = document.getElementById('emailBody').value.trim();
+            const name = document.getElementById('modalCustomerName').value.trim();
+            const email = document.getElementById('modalCustomerEmail').value.trim();
+            const type = document.getElementById('modalCustomerType').value;
+            const language = document.getElementById('modalCustomerLanguage').value;
             
             if (!subject || !body) {
                 showToast('Subject and body are required', 'error');
                 return;
             }
             
+            // Update customer data
+            currentEditingCustomer.name = name;
+            currentEditingCustomer.full_name = name;
+            currentEditingCustomer.email = email;
+            currentEditingCustomer.customer_type = type;
+            currentEditingCustomer.type = type;
+            currentEditingCustomer.language = language;
+            
+            // Save custom email
             editedEmails[currentEditingCustomer.id] = { subject, body };
             
-            showToast(`✅ Email saved for ${currentEditingCustomer.name || currentEditingCustomer.full_name}`, 'success');
+            showToast(`✅ Changes saved for ${name}`, 'success');
             closeEmailModal();
+            
+            // Update table row if visible
+            updateCustomerRow(currentEditingCustomer);
+        }
+        
+        function updateCustomerRow(customer) {
+            const row = document.querySelector(`tr[data-customer-id="${customer.id}"]`);
+            if (row) {
+                row.querySelector('td:nth-child(2)').textContent = customer.name || customer.full_name;
+                row.querySelector('td:nth-child(3)').textContent = customer.email;
+                row.querySelector('td:nth-child(4)').innerHTML = `
+                    <span class="badge badge-${customer.type || customer.customer_type}" style="padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; background: ${(customer.type || customer.customer_type) === 'retail' ? '#FEF3C7' : (customer.type || customer.customer_type) === 'wholesale' ? '#DBEAFE' : '#E9D5FF'}; color: ${(customer.type || customer.customer_type) === 'retail' ? '#92400E' : (customer.type || customer.customer_type) === 'wholesale' ? '#1E40AF' : '#6B21A8'};">
+                        ${(customer.type || customer.customer_type) === 'retail' ? 'RETAIL' : (customer.type || customer.customer_type) === 'wholesale' ? 'WHOLESALE' : 'ADVOCATES'}
+                    </span>
+                `;
+                row.querySelector('td:nth-child(6)').innerHTML = `<strong>${(customer.language || 'en').toUpperCase()}</strong>`;
+            }
         }
 
         // Reset to template
@@ -3156,13 +3207,16 @@
             if (!currentEditingCustomer) return;
             
             delete editedEmails[currentEditingCustomer.id];
-            await generateEmailPreview(currentEditingCustomer);
-            showToast('Reset to template', 'success');
+            await loadEmailTemplate(currentEditingCustomer);
+            showToast('Email reset to template', 'info');
         }
 
         // Close email modal
         function closeEmailModal() {
-            document.getElementById('emailModal').style.display = 'none';
+            const modal = document.getElementById('emailModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
             currentEditingCustomer = null;
         }
 
@@ -3175,14 +3229,20 @@
 
             const subject = document.getElementById('emailSubject').value.trim();
             const body = document.getElementById('emailBody').value.trim();
+            const email = document.getElementById('modalCustomerEmail').value.trim();
 
             if (!subject || !body) {
                 showToast('Subject and body are required', 'error');
                 return;
             }
+            
+            if (!email) {
+                showToast('Customer email is required', 'error');
+                return;
+            }
 
             // Disable button and show loading
-            const sendBtn = event.target;
+            const sendBtn = event?.target || document.querySelector('#emailModal .btn-primary');
             const originalText = sendBtn.innerHTML;
             sendBtn.disabled = true;
             sendBtn.innerHTML = '<span class="spinner" style="width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; display: inline-block; animation: spin 0.8s linear infinite;"></span> Sending...';
@@ -3200,7 +3260,8 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        customerId: currentEditingCustomer.id,
+                        customer_ids: [currentEditingCustomer.id],
+                        template_type: currentEditingCustomer.customer_type || currentEditingCustomer.type || 'retail',
                         subject: subject,
                         body: body
                     })
@@ -3213,7 +3274,9 @@
                     closeEmailModal();
                     
                     // Refresh customer list to update "sent" status
-                    await loadCustomers();
+                    if (typeof loadCustomers === 'function') {
+                        await loadCustomers();
+                    }
                 } else {
                     throw new Error(data.error || data.message || 'Failed to send email');
                 }
@@ -3221,8 +3284,10 @@
                 console.error('Send email error:', error);
                 showToast(error.message || 'Failed to send email. Please try again.', 'error');
             } finally {
-                sendBtn.disabled = false;
-                sendBtn.innerHTML = originalText;
+                if (sendBtn) {
+                    sendBtn.disabled = false;
+                    sendBtn.innerHTML = originalText;
+                }
             }
         }
 
@@ -4298,5 +4363,98 @@ Best regards,
             });
         });
     </script>
+
+    <!-- Email Preview & Edit Modal -->
+    <div id="emailModal" class="modal" style="display:none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+        <div class="modal-overlay" onclick="closeEmailModal()" style="position: absolute; width: 100%; height: 100%;"></div>
+        <div class="modal-content modal-large" style="position: relative; background: white; padding: 24px; border-radius: 12px; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #eee;">
+                <h3 style="margin: 0; color: #1E293B;">📧 Email Preview & Edit</h3>
+                <button class="close-btn" onclick="closeEmailModal()" style="background: none; border: none; font-size: 28px; cursor: pointer; color: #999;">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div class="form-group">
+                        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #333;">Customer Name:</label>
+                        <input type="text" id="modalCustomerName" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    <div class="form-group">
+                        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #333;">Email:</label>
+                        <input type="email" id="modalCustomerEmail" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;" readonly>
+                    </div>
+                </div>
+                
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                    <div class="form-group">
+                        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #333;">Type:</label>
+                        <select id="modalCustomerType" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                            <option value="retail">Retail</option>
+                            <option value="wholesale">Wholesale</option>
+                            <option value="advocate">Advocate</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #333;">Language:</label>
+                        <select id="modalCustomerLanguage" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                            <option value="en">English</option>
+                            <option value="it">Italian</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                            <option value="es">Spanish</option>
+                            <option value="pl">Polish</option>
+                            <option value="bg">Bulgarian</option>
+                            <option value="hu">Hungarian</option>
+                            <option value="cs">Czech</option>
+                            <option value="sk">Slovak</option>
+                            <option value="ro">Romanian</option>
+                            <option value="hr">Croatian</option>
+                            <option value="sr">Serbian</option>
+                            <option value="ru">Russian</option>
+                            <option value="uk">Ukrainian</option>
+                            <option value="pt">Portuguese</option>
+                            <option value="nl">Dutch</option>
+                            <option value="sv">Swedish</option>
+                            <option value="no">Norwegian</option>
+                            <option value="da">Danish</option>
+                            <option value="fi">Finnish</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #333;">Subject:</label>
+                    <input type="text" id="emailSubject" class="form-control" placeholder="Email subject..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 6px; font-weight: 600; color: #333;">Message:</label>
+                    <textarea id="emailBody" class="form-control" rows="12" placeholder="Email message..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; resize: vertical;"></textarea>
+                </div>
+                
+                <div id="templateStatusBadge" class="template-status" style="margin: 16px 0; padding: 12px; background: #f5f5f5; border-radius: 6px;"></div>
+                
+                <div class="variables-help" style="margin-top: 12px; padding: 12px; background: #E3F2FD; border-radius: 6px;">
+                    <small style="color: #1E293B;">
+                        <strong>Variables:</strong>
+                        <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 0 4px; font-size: 12px;">{{name}}</code>
+                        <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 0 4px; font-size: 12px;">{{customer_type}}</code>
+                        <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 0 4px; font-size: 12px;">{{country}}</code>
+                        <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 0 4px; font-size: 12px;">{{your_name}}</code>
+                        <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 0 4px; font-size: 12px;">{{your_email}}</code>
+                        <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 0 4px; font-size: 12px;">{{your_phone}}</code>
+                        <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 0 4px; font-size: 12px;">{{company_name}}</code>
+                    </small>
+                </div>
+            </div>
+            
+            <div class="modal-footer" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid #eee;">
+                <button class="btn-primary" onclick="sendEmailFromModal()" style="background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">📧 Send Email</button>
+                <button class="btn-primary" onclick="saveEmailChanges()" style="background: #2196F3; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">💾 Save Changes</button>
+                <button class="btn-secondary" onclick="resetToTemplate()" style="background: #f5f5f5; color: #333; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">🔄 Reset to Template</button>
+                <button class="btn-cancel" onclick="closeEmailModal()" style="background: #f5f5f5; color: #333; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">Cancel</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

@@ -58,3 +58,5 @@ WHERE user_id IS NULL;
 -- Migration complete
 SELECT 'Migration completed successfully' AS status;
 
+
+

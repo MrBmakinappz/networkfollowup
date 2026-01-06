@@ -74,3 +74,5 @@ If templates are needed, they can be added manually via SQL:
 
 **App should now start successfully on Railway!** 🚀
 
+
+

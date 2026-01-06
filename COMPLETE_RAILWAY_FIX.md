@@ -74,3 +74,5 @@ Both should return JSON responses.
 
 **After Railway configuration, container should stay alive!** 🚀
 
+
+

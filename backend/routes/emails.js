@@ -4,6 +4,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const { authenticateToken } = require('../middleware/auth');
 const { validateEmailSend } = require('../middleware/validation');
 const { log, error } = require('../utils/logger');
 const {
@@ -18,7 +19,7 @@ const {
  * POST /api/emails/preview
  * Get email preview for a customer (with fallback logic)
  */
-router.post('/preview', async (req, res) => {
+router.post('/preview', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.userId;
         const { customerId, customerType, language, customerName, country } = req.body;
@@ -133,20 +134,35 @@ router.post('/preview', async (req, res) => {
         
         const template = templateResult.rows[0];
         
-        // Replace variables
-        let subject = template.subject
-            .replace(/\{\{name\}\}/g, fullName)
-            .replace(/\{\{firstname\}\}/g, firstName)
-            .replace(/\{\{fullname\}\}/g, fullName)
-            .replace(/\{\{customer_type\}\}/g, customerType)
-            .replace(/\{\{country\}\}/g, country || (customer ? customer.country_code : ''));
+        // Get user info for personalization
+        const userResult = await db.query(
+            'SELECT full_name, email, company_name, phone FROM public.users WHERE id = $1',
+            [userId]
+        );
+        const user = userResult.rows[0] || {};
         
-        let body = template.body
-            .replace(/\{\{name\}\}/g, fullName)
-            .replace(/\{\{firstname\}\}/g, firstName)
-            .replace(/\{\{fullname\}\}/g, fullName)
-            .replace(/\{\{customer_type\}\}/g, customerType)
-            .replace(/\{\{country\}\}/g, country || (customer ? customer.country_code : ''));
+        // Replace all variables
+        const replacements = {
+            '{{name}}': fullName,
+            '{{firstname}}': firstName,
+            '{{fullname}}': fullName,
+            '{{customer_type}}': customerType,
+            '{{country}}': country || (customer ? customer.country_code : ''),
+            '{{your_name}}': user.full_name || 'Your consultant',
+            '{{your_email}}': user.email || '',
+            '{{your_phone}}': user.phone || '',
+            '{{company_name}}': user.company_name || ''
+        };
+        
+        let subject = template.subject;
+        let body = template.body;
+        
+        // Replace all variables
+        for (const [variable, value] of Object.entries(replacements)) {
+            const regex = new RegExp(variable.replace(/[{}]/g, '\\$&'), 'g');
+            subject = subject.replace(regex, value);
+            body = body.replace(regex, value);
+        }
 
         res.json({
             success: true,
