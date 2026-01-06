@@ -9,7 +9,7 @@ const { upload, optimizeImage } = require('../middleware/upload');
 const { extractCustomersFromImage } = require('../utils/claude-optimized');
 const { log, error } = require('../utils/logger');
 const { calculateFileHash } = require('../utils/claude-optimized');
-const { getLanguageFromCountry } = require('../utils/constants');
+const { getLanguageFromCountry, LANGUAGE_NAMES } = require('../utils/constants');
 const Anthropic = require('@anthropic-ai/sdk');
 
 const anthropic = new Anthropic({
@@ -147,15 +147,35 @@ Return ONLY the JSON object, no markdown, no explanation.`
  */
 router.post('/screenshot', uploadLimiter, upload.single('screenshot'), optimizeImage, async (req, res) => {
     try {
+        console.log('=== UPLOAD START ===');
+        
+        // TEST DATABASE CONNECTION FIRST
+        try {
+            await db.query('SELECT 1');
+            console.log('✅ Database connected');
+        } catch (dbError) {
+            console.error('❌ Database connection failed:', dbError);
+            return res.status(500).json({
+                success: false,
+                error: 'Database connection failed',
+                details: dbError.message,
+                code: dbError.code
+            });
+        }
+        
         const userId = req.user.userId;
+        console.log('User ID:', userId);
 
         if (!req.file) {
+            console.error('❌ No file uploaded');
             return res.status(400).json({
                 success: false,
                 error: 'No file uploaded',
                 message: 'Please select a screenshot file'
             });
         }
+        
+        console.log('File received:', req.file.originalname, req.file.size, 'bytes');
 
         // Calculate file hash for caching
         const fileHash = calculateFileHash(req.file.buffer);
@@ -295,6 +315,8 @@ router.post('/screenshot', uploadLimiter, upload.single('screenshot'), optimizeI
                     );
                     // Update language if country changed
                     const language = getLanguageFromCountry(customer.country_code);
+                    const languageName = LANGUAGE_NAMES[language] || language.toUpperCase();
+                    console.log(`   ✓ Updating customer ${customer.full_name}: ${customer.country_code} → ${language} (${languageName})`);
                     
                     await db.query(
                         `UPDATE public.customers 
@@ -327,13 +349,15 @@ router.post('/screenshot', uploadLimiter, upload.single('screenshot'), optimizeI
                     // Insert new customer
                     console.log(`   ✓ Inserting new customer: ${customer.email}`);
                     
-                    // Determine language from country code
+                    // Detect language from country
                     const language = getLanguageFromCountry(customer.country_code);
-                    console.log(`   ✓ Language for ${customer.country_code}: ${language}`);
+                    const languageName = LANGUAGE_NAMES[language] || language.toUpperCase();
+                    console.log(`   ✓ Customer ${customer.full_name}: ${customer.country_code} → ${language} (${languageName})`);
+                    console.log(`   ✓ About to insert customer with language field: ${language}`);
                     
                     const result = await db.query(
-                        `INSERT INTO public.customers (user_id, full_name, email, customer_type, country_code, language)
-                         VALUES ($1, $2, $3, $4, $5, $6)
+                        `INSERT INTO public.customers (user_id, full_name, email, customer_type, country_code, language, source)
+                         VALUES ($1, $2, $3, $4, $5, $6, 'screenshot_upload')
                          ON CONFLICT (user_id, email) DO UPDATE SET
                            full_name = EXCLUDED.full_name,
                            customer_type = EXCLUDED.customer_type,
@@ -408,6 +432,8 @@ router.post('/screenshot', uploadLimiter, upload.single('screenshot'), optimizeI
         log(`✅ Sending response: ${savedCustomers.length} customers`);
         res.status(200).json(responseData);
     } catch (err) {
+        console.error('❌ UPLOAD ERROR:', err);
+        console.error('Error stack:', err.stack);
         error('Screenshot upload error:', err);
         
         // Try to save error to upload_history
@@ -432,6 +458,8 @@ router.post('/screenshot', uploadLimiter, upload.single('screenshot'), optimizeI
         res.status(500).json({
             success: false,
             error: 'Upload failed',
+            details: err.message,
+            code: err.code || 'UNKNOWN_ERROR',
             message: err.message || 'Failed to process screenshot'
         });
     }
