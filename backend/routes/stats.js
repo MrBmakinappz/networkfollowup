@@ -340,4 +340,83 @@ router.post('/complete-onboarding', async (req, res) => {
     }
 });
 
+/**
+ * GET /api/users/me
+ * Get current user information
+ */
+router.get('/me', async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        const result = await db.query(
+            'SELECT id, email, full_name, subscription_tier, default_language, onboarding_completed, created_at FROM public.users WHERE id = $1',
+            [userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'User not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: result.rows[0]
+        });
+    } catch (err) {
+        error('Get user info error:', err);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get user information',
+            message: err.message
+        });
+    }
+});
+
+/**
+ * POST /api/users/update-default-language
+ * Update user's default language
+ */
+router.post('/update-default-language', async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { default_language } = req.body;
+
+        if (!default_language) {
+            return res.status(400).json({
+                success: false,
+                error: 'default_language is required'
+            });
+        }
+
+        const result = await db.query(
+            'UPDATE public.users SET default_language = $1, updated_at = NOW() WHERE id = $2 RETURNING id, default_language',
+            [default_language, userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'User not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Default language updated',
+            data: {
+                default_language: result.rows[0].default_language
+            }
+        });
+    } catch (err) {
+        error('Update default language error:', err);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to update default language',
+            message: err.message
+        });
+    }
+});
+
 module.exports = router;

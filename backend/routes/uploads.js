@@ -355,25 +355,55 @@ router.post('/screenshot', uploadLimiter, upload.single('screenshot'), optimizeI
                     console.log(`   ✓ Customer ${customer.full_name}: ${customer.country_code} → ${language} (${languageName})`);
                     console.log(`   ✓ About to insert customer with language field: ${language}`);
                     
-                    const result = await db.query(
-                        `INSERT INTO public.customers (user_id, full_name, email, customer_type, country_code, language, source)
-                         VALUES ($1, $2, $3, $4, $5, $6, 'screenshot_upload')
-                         ON CONFLICT (user_id, email) DO UPDATE SET
-                           full_name = EXCLUDED.full_name,
-                           customer_type = EXCLUDED.customer_type,
-                           country_code = EXCLUDED.country_code,
-                           language = EXCLUDED.language,
-                           updated_at = NOW()
-                         RETURNING id, full_name, email, customer_type, country_code, language, created_at`,
-                        [
-                            userId,
-                            customer.full_name,
-                            customer.email.toLowerCase(),
-                            customer.customer_type,
-                            customer.country_code,
-                            language
-                        ]
-                    );
+                    // Try INSERT with source column first, fallback without it if column doesn't exist
+                    let result;
+                    try {
+                        result = await db.query(
+                            `INSERT INTO public.customers (user_id, full_name, email, customer_type, country_code, language, source)
+                             VALUES ($1, $2, $3, $4, $5, $6, 'screenshot_upload')
+                             ON CONFLICT (user_id, email) DO UPDATE SET
+                               full_name = EXCLUDED.full_name,
+                               customer_type = EXCLUDED.customer_type,
+                               country_code = EXCLUDED.country_code,
+                               language = EXCLUDED.language,
+                               updated_at = NOW()
+                             RETURNING id, full_name, email, customer_type, country_code, language, created_at`,
+                            [
+                                userId,
+                                customer.full_name,
+                                customer.email.toLowerCase(),
+                                customer.customer_type,
+                                customer.country_code,
+                                language
+                            ]
+                        );
+                    } catch (sourceError) {
+                        // If source column doesn't exist, try without it
+                        if (sourceError.message && sourceError.message.includes('source')) {
+                            console.log('   ⚠️ Source column not found, inserting without it');
+                            result = await db.query(
+                                `INSERT INTO public.customers (user_id, full_name, email, customer_type, country_code, language)
+                                 VALUES ($1, $2, $3, $4, $5, $6)
+                                 ON CONFLICT (user_id, email) DO UPDATE SET
+                                   full_name = EXCLUDED.full_name,
+                                   customer_type = EXCLUDED.customer_type,
+                                   country_code = EXCLUDED.country_code,
+                                   language = EXCLUDED.language,
+                                   updated_at = NOW()
+                                 RETURNING id, full_name, email, customer_type, country_code, language, created_at`,
+                                [
+                                    userId,
+                                    customer.full_name,
+                                    customer.email.toLowerCase(),
+                                    customer.customer_type,
+                                    customer.country_code,
+                                    language
+                                ]
+                            );
+                        } else {
+                            throw sourceError; // Re-throw if it's a different error
+                        }
+                    }
                     
                     // This is a new customer (we're in the else block where existing.rows.length === 0)
                     savedCustomers.push({ 
