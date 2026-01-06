@@ -1286,90 +1286,133 @@
         <div id="templates-section" class="section-content" style="display: none;">
             <div class="header">
                 <h1 class="welcome-text">Email Templates 📧</h1>
-                <p class="welcome-subtext">Create and manage templates for each customer type and language</p>
+                <p class="welcome-subtext">Create and manage professional email templates for each customer type and language</p>
             </div>
 
-            <div class="card">
+            <!-- Default Language Selection -->
+            <div class="card" style="margin-bottom: 24px; background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%); border: 2px solid #0EA5E9;">
                 <div class="card-header">
                     <div>
-                        <h2 class="card-title">Create New Template</h2>
-                        <p class="card-subtitle">Customize messages for each customer type and language</p>
+                        <h2 class="card-title">🌍 Default Language Settings</h2>
+                        <p class="card-subtitle">Set your primary language for email templates (used as fallback when specific language templates are missing)</p>
                     </div>
-                    <button class="btn btn-primary" onclick="openCreateTemplateModal()" style="padding: 10px 20px;">
+                </div>
+                <div style="padding: 24px;">
+                    <div class="form-group" style="max-width: 400px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E293B; font-size: 15px;">Default Language:</label>
+                        <select id="defaultLanguageSelectTemplates" onchange="updateDefaultLanguageFromTemplates()" style="width: 100%; padding: 14px 16px; border: 2px solid #E2E8F0; border-radius: 10px; font-size: 15px; background: white; font-weight: 600; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.borderColor='#0EA5E9'" onmouseout="this.style.borderColor='#E2E8F0'">
+                            <option value="en">🇺🇸 English</option>
+                            <option value="it">🇮🇹 Italian</option>
+                            <option value="fr">🇫🇷 French</option>
+                            <option value="es">🇪🇸 Spanish</option>
+                            <option value="de">🇩🇪 German</option>
+                            <option value="pl">🇵🇱 Polish</option>
+                            <option value="bg">🇧🇬 Bulgarian</option>
+                            <option value="hu">🇭🇺 Hungarian</option>
+                            <option value="cs">🇨🇿 Czech</option>
+                            <option value="ru">🇷🇺 Russian</option>
+                            <option value="pt">🇵🇹 Portuguese</option>
+                            <option value="nl">🇳🇱 Dutch</option>
+                            <option value="sv">🇸🇪 Swedish</option>
+                            <option value="no">🇳🇴 Norwegian</option>
+                            <option value="da">🇩🇰 Danish</option>
+                            <option value="fi">🇫🇮 Finnish</option>
+                            <option value="ro">🇷🇴 Romanian</option>
+                            <option value="sk">🇸🇰 Slovak</option>
+                            <option value="hr">🇭🇷 Croatian</option>
+                        </select>
+                        <small style="color: #64748B; margin-top: 8px; display: block; font-size: 13px;">This language will be used when a template is not available in the customer's preferred language.</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Create New Template Card -->
+            <div class="card" style="margin-bottom: 24px; border: 2px solid #E2E8F0;">
+                <div class="card-header" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; padding: 20px 24px; border-radius: 16px 16px 0 0;">
+                    <div style="flex: 1;">
+                        <h2 class="card-title" style="color: white; margin: 0; font-size: 22px;">➕ Create New Template</h2>
+                        <p class="card-subtitle" style="color: rgba(255,255,255,0.9); margin: 4px 0 0 0; font-size: 14px;">Customize professional messages for each customer type and language</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="openCreateTemplateModal()" style="padding: 12px 24px; background: white; color: #10B981; font-weight: 700; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
                         ➕ Create Template
                     </button>
                 </div>
-                <div style="padding: 24px;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <div style="padding: 32px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
                         <div class="form-group">
-                            <label style="display: block; margin-bottom: 6px; font-weight: 600;">Customer Type:</label>
-                            <select id="newTemplateType" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-                                <option value="retail">Retail Customer</option>
-                                <option value="wholesale">Wholesale Customer</option>
-                                <option value="advocate">Advocate/Distributor</option>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E293B; font-size: 14px;">Customer Type: *</label>
+                            <select id="newTemplateType" style="width: 100%; padding: 12px 16px; border: 2px solid #E2E8F0; border-radius: 8px; font-size: 14px; background: white; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.borderColor='#10B981'" onmouseout="this.style.borderColor='#E2E8F0'">
+                                <option value="retail">🛍️ Retail Customer</option>
+                                <option value="wholesale">💼 Wholesale Customer</option>
+                                <option value="advocate">⭐ Advocate/Distributor</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label style="display: block; margin-bottom: 6px; font-weight: 600;">Language:</label>
-                            <select id="newTemplateLanguage" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-                                <option value="en">English</option>
-                                <option value="it">Italian</option>
-                                <option value="fr">French</option>
-                                <option value="de">German</option>
-                                <option value="es">Spanish</option>
-                                <option value="pl">Polish</option>
-                                <option value="bg">Bulgarian</option>
-                                <option value="hu">Hungarian</option>
-                                <option value="cs">Czech</option>
-                                <option value="ru">Russian</option>
-                                <option value="pt">Portuguese</option>
-                                <option value="nl">Dutch</option>
-                                <option value="sv">Swedish</option>
-                                <option value="no">Norwegian</option>
-                                <option value="da">Danish</option>
-                                <option value="fi">Finnish</option>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E293B; font-size: 14px;">Language: *</label>
+                            <select id="newTemplateLanguage" style="width: 100%; padding: 12px 16px; border: 2px solid #E2E8F0; border-radius: 8px; font-size: 14px; background: white; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.borderColor='#10B981'" onmouseout="this.style.borderColor='#E2E8F0'">
+                                <option value="en">🇺🇸 English</option>
+                                <option value="it">🇮🇹 Italian</option>
+                                <option value="fr">🇫🇷 French</option>
+                                <option value="de">🇩🇪 German</option>
+                                <option value="es">🇪🇸 Spanish</option>
+                                <option value="pl">🇵🇱 Polish</option>
+                                <option value="bg">🇧🇬 Bulgarian</option>
+                                <option value="hu">🇭🇺 Hungarian</option>
+                                <option value="cs">🇨🇿 Czech</option>
+                                <option value="ru">🇷🇺 Russian</option>
+                                <option value="pt">🇵🇹 Portuguese</option>
+                                <option value="nl">🇳🇱 Dutch</option>
+                                <option value="sv">🇸🇪 Swedish</option>
+                                <option value="no">🇳🇴 Norwegian</option>
+                                <option value="da">🇩🇰 Danish</option>
+                                <option value="fi">🇫🇮 Finnish</option>
+                                <option value="ro">🇷🇴 Romanian</option>
+                                <option value="sk">🇸🇰 Slovak</option>
+                                <option value="hr">🇭🇷 Croatian</option>
                             </select>
                         </div>
                     </div>
-                    <div class="form-group" style="margin-bottom: 16px;">
-                        <label style="display: block; margin-bottom: 6px; font-weight: 600;">Subject Line:</label>
-                        <input type="text" id="newTemplateSubject" placeholder="Hi {{name}}, special offer for you!" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E293B; font-size: 14px;">Subject Line: *</label>
+                        <input type="text" id="newTemplateSubject" placeholder="Hi {{name}}, special offer for you!" style="width: 100%; padding: 12px 16px; border: 2px solid #E2E8F0; border-radius: 8px; font-size: 14px; transition: all 0.3s;" onfocus="this.style.borderColor='#10B981'; this.style.boxShadow='0 0 0 3px rgba(16,185,129,0.1)'" onblur="this.style.borderColor='#E2E8F0'; this.style.boxShadow='none'">
                     </div>
-                    <div class="form-group" style="margin-bottom: 16px;">
-                        <label style="display: block; margin-bottom: 6px; font-weight: 600;">Email Body:</label>
-                        <textarea id="newTemplateBody" rows="12" placeholder="Hi {{name}},&#10;&#10;As a {{customer_type}} customer, you have access to exclusive benefits...&#10;&#10;Best regards,&#10;{{your_name}}&#10;{{company_name}}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; resize: vertical;"></textarea>
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #1E293B; font-size: 14px;">Email Body: *</label>
+                        <textarea id="newTemplateBody" rows="12" placeholder="Hi {{name}},&#10;&#10;As a {{customer_type}} customer, you have access to exclusive benefits...&#10;&#10;Best regards,&#10;{{your_name}}&#10;{{company_name}}" style="width: 100%; padding: 12px 16px; border: 2px solid #E2E8F0; border-radius: 8px; font-size: 14px; resize: vertical; font-family: inherit; transition: all 0.3s;" onfocus="this.style.borderColor='#10B981'; this.style.boxShadow='0 0 0 3px rgba(16,185,129,0.1)'" onblur="this.style.borderColor='#E2E8F0'; this.style.boxShadow='none'"></textarea>
                     </div>
-                    <div style="padding: 12px; background: #E3F2FD; border-radius: 6px; margin-bottom: 16px;">
-                        <small style="color: #1E293B;">
-                            <strong>Variables:</strong>
-                            <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 0 4px;">{{name}}</code>
-                            <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 0 4px;">{{customer_type}}</code>
-                            <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 0 4px;">{{country}}</code>
-                            <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 0 4px;">{{your_name}}</code>
-                            <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 0 4px;">{{your_email}}</code>
-                            <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 0 4px;">{{your_phone}}</code>
-                            <code style="background: white; padding: 2px 6px; border-radius: 3px; margin: 0 4px;">{{company_name}}</code>
-                        </small>
+                    <div style="padding: 16px; background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%); border-radius: 10px; margin-bottom: 20px; border: 1px solid #90CAF9;">
+                        <div style="font-weight: 600; color: #1E293B; margin-bottom: 10px; font-size: 14px;">📝 Available Variables:</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            <code style="background: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #10B981; border: 1px solid #D1FAE5;">{{name}}</code>
+                            <code style="background: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #10B981; border: 1px solid #D1FAE5;">{{customer_type}}</code>
+                            <code style="background: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #10B981; border: 1px solid #D1FAE5;">{{country}}</code>
+                            <code style="background: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #10B981; border: 1px solid #D1FAE5;">{{your_name}}</code>
+                            <code style="background: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #10B981; border: 1px solid #D1FAE5;">{{your_email}}</code>
+                            <code style="background: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #10B981; border: 1px solid #D1FAE5;">{{your_phone}}</code>
+                            <code style="background: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; color: #10B981; border: 1px solid #D1FAE5;">{{company_name}}</code>
+                        </div>
+                        <small style="color: #64748B; margin-top: 10px; display: block; font-size: 12px;">These variables will be automatically replaced with actual customer and your information when sending emails.</small>
                     </div>
                     <div style="display: flex; gap: 12px;">
-                        <button class="btn btn-primary" onclick="saveNewTemplate()" style="padding: 12px 24px;">
+                        <button class="btn btn-primary" onclick="saveNewTemplate()" style="padding: 14px 28px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 15px; cursor: pointer; box-shadow: 0 4px 12px rgba(16,185,129,0.3); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(16,185,129,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(16,185,129,0.3)'">
                             💾 Save Template
                         </button>
-                        <button class="btn btn-secondary" onclick="clearTemplateForm()" style="padding: 12px 24px;">
-                            Clear
+                        <button class="btn btn-secondary" onclick="clearTemplateForm()" style="padding: 14px 28px; background: white; color: #64748B; border: 2px solid #E2E8F0; border-radius: 10px; font-weight: 600; font-size: 15px; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.borderColor='#10B981'; this.style.color='#10B981'" onmouseout="this.style.borderColor='#E2E8F0'; this.style.color='#64748B'">
+                            🗑️ Clear
                         </button>
                     </div>
                 </div>
             </div>
 
-            <div class="card">
+            <!-- Your Templates Grid -->
+            <div class="card" style="border: 2px solid #E2E8F0;">
                 <div class="card-header">
                     <div>
-                        <h2 class="card-title">Your Templates</h2>
-                        <p class="card-subtitle">Manage existing templates</p>
+                        <h2 class="card-title">📋 Your Templates</h2>
+                        <p class="card-subtitle">Manage and edit your existing email templates</p>
                     </div>
                 </div>
-                <div id="templatesGrid" style="padding: 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+                <div id="templatesGrid" style="padding: 24px; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px;">
                     <!-- Templates will be loaded here -->
                 </div>
             </div>
@@ -2675,9 +2718,10 @@
                     if (section === 'settings') {
                         loadUserSettings();
                         loadUserTemplates();
-                    } else if (section === 'templates') {
-                        loadUserTemplates();
-                    } else if (section === 'dashboard') {
+                    } else                         if (section === 'templates') {
+                            loadUserTemplates();
+                            loadDefaultLanguageForTemplates();
+                        } else if (section === 'dashboard') {
                         loadDashboardStats();
                     } else if (section === 'customers') {
                         loadCustomers();
@@ -2922,6 +2966,183 @@
             document.getElementById('selectedCountStep2').textContent = selected;
             document.getElementById('selectedCountPlural').textContent = selected === 1 ? '' : 's';
             document.getElementById('sendSelectedEmails').disabled = selected === 0;
+        }
+
+        // Send selected emails directly from Step 2
+        async function sendSelectedEmails() {
+            try {
+                const selectedCheckboxes = Array.from(document.querySelectorAll('.extracted-customer-checkbox:checked'));
+                const selectedIndices = selectedCheckboxes.map(cb => parseInt(cb.dataset.index));
+                const selectedCustomers = selectedIndices.map(i => extractedCustomersData[i] || extractedData[i]).filter(c => c);
+                
+                if (selectedCustomers.length === 0) {
+                    showToast('Please select at least one customer', 'error');
+                    return;
+                }
+
+                // Check for missing templates
+                const missingTemplates = [];
+                for (const customer of selectedCustomers) {
+                    const customerType = customer.customer_type || customer.type || 'retail';
+                    const language = customer.language || 'en';
+                    
+                    try {
+                        const token = localStorage.getItem('authToken');
+                        const checkResponse = await fetch(`${API_URL}/templates/check`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                customerType: customerType,
+                                language: language
+                            })
+                        });
+                        
+                        const checkData = await checkResponse.json();
+                        if (!checkData.has_template) {
+                            missingTemplates.push({ customer, type: customerType, lang: language });
+                        }
+                    } catch (err) {
+                        console.error('Error checking template:', err);
+                    }
+                }
+
+                // Show warning if templates are missing
+                if (missingTemplates.length > 0) {
+                    const missingTypes = [...new Set(missingTemplates.map(m => `${m.type}-${m.lang}`))];
+                    const proceed = confirm(
+                        `⚠️ Missing Templates Detected\n\n` +
+                        `${missingTemplates.length} customer(s) don't have templates in their language:\n` +
+                        `${missingTypes.join(', ')}\n\n` +
+                        `Emails will use fallback templates. Continue?`
+                    );
+                    if (!proceed) return;
+                }
+
+                // Confirm send
+                const confirmSend = confirm(
+                    `📧 Send Emails\n\n` +
+                    `You're about to send ${selectedCustomers.length} email(s) to:\n` +
+                    `${selectedCustomers.map(c => `• ${c.name || c.full_name} (${c.email})`).join('\n')}\n\n` +
+                    `Continue?`
+                );
+                if (!confirmSend) return;
+
+                // Disable button and show loading
+                const sendBtn = document.getElementById('sendSelectedEmails');
+                const originalText = sendBtn.innerHTML;
+                sendBtn.disabled = true;
+                sendBtn.innerHTML = '<span class="spinner" style="width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; display: inline-block; animation: spin 0.8s linear infinite; margin-right: 8px;"></span> Sending...';
+
+                let successCount = 0;
+                let failedCount = 0;
+                const errors = [];
+
+                // Send emails one by one
+                for (const customer of selectedCustomers) {
+                    try {
+                        // Get personalized email for this customer
+                        const customerType = customer.customer_type || customer.type || 'retail';
+                        const language = customer.language || 'en';
+                        
+                        // Check if we have edited email
+                        let subject, body;
+                        if (editedEmails[customer.id]) {
+                            subject = editedEmails[customer.id].subject;
+                            body = editedEmails[customer.id].body;
+                        } else {
+                            // Fetch template
+                            const token = localStorage.getItem('authToken');
+                            const previewResponse = await fetch(`${API_URL}/emails/preview`, {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': `Bearer ${token}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    customerType: customerType,
+                                    language: language,
+                                    customerName: customer.name || customer.full_name,
+                                    countryCode: customer.country_code || customer.country || ''
+                                })
+                            });
+
+                            if (previewResponse.ok) {
+                                const previewData = await previewResponse.json();
+                                subject = previewData.subject || `Hello ${(customer.name || customer.full_name).split(' ')[0]}!`;
+                                body = previewData.body || `Hi ${customer.name || customer.full_name},\n\nThank you for your interest!\n\nBest regards`;
+                            } else {
+                                // Fallback
+                                const firstName = (customer.name || customer.full_name || '').split(' ')[0];
+                                subject = `Hello ${firstName}!`;
+                                body = `Hi ${customer.name || customer.full_name},\n\nThank you for your interest in doTERRA!\n\nBest regards`;
+                            }
+                        }
+
+                        // Send email
+                        const sendResponse = await fetch(`${API_URL}/emails/send`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                customer_ids: [customer.id],
+                                template_type: customerType,
+                                subject: subject,
+                                body: body
+                            })
+                        });
+
+                        const sendData = await sendResponse.json();
+                        
+                        if (sendResponse.ok && sendData.success) {
+                            successCount++;
+                        } else {
+                            failedCount++;
+                            errors.push(`${customer.email}: ${sendData.error || sendData.message || 'Failed'}`);
+                            console.error(`Failed to send to ${customer.email}:`, sendData);
+                        }
+                    } catch (error) {
+                        failedCount++;
+                        errors.push(`${customer.email}: ${error.message}`);
+                        console.error(`Error sending to ${customer.email}:`, error);
+                    }
+
+                    // Small delay between emails
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+
+                // Show results
+                if (failedCount === 0) {
+                    showToast(`✅ Successfully sent ${successCount} email(s)!`, 'success');
+                } else {
+                    showToast(`${successCount} sent, ${failedCount} failed. Check console for details.`, 'warning');
+                    console.error('Send errors:', errors);
+                }
+
+                // Refresh customer list
+                if (typeof loadCustomers === 'function') {
+                    await loadCustomers();
+                }
+
+                // Reset button
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = originalText;
+
+            } catch (error) {
+                console.error('Send selected emails error:', error);
+                showToast(error.message || 'Failed to send emails. Please try again.', 'error');
+                
+                // Reset button
+                const sendBtn = document.getElementById('sendSelectedEmails');
+                if (sendBtn) {
+                    sendBtn.disabled = false;
+                    sendBtn.innerHTML = '📧 Send Selected Emails';
+                }
+            }
         }
 
         // Select/Deselect all in Step 2
@@ -3602,11 +3823,20 @@
                     displayTemplates(templates);
                 } else {
                     grid.innerHTML = `
-                        <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
-                            <div class="empty-icon">📝</div>
-                            <p style="font-size: 16px; margin-bottom: 16px; color: #64748B;">No templates yet. Create your first template above!</p>
+                        <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%); border-radius: 16px; border: 2px dashed #CBD5E1;">
+                            <div style="font-size: 64px; margin-bottom: 16px;">📝</div>
+                            <h3 style="font-size: 20px; font-weight: 700; color: #1E293B; margin-bottom: 8px;">No Templates Yet</h3>
+                            <p style="font-size: 15px; color: #64748B; margin-bottom: 24px; max-width: 400px; margin-left: auto; margin-right: auto;">Create your first professional email template above to get started!</p>
+                            <button class="btn btn-primary" onclick="openCreateTemplateModal()" style="padding: 12px 24px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer;">
+                                ➕ Create Your First Template
+                            </button>
                         </div>
                     `;
+                }
+
+                // Also load default language if templates section is visible
+                if (document.getElementById('templates-section') && document.getElementById('templates-section').style.display !== 'none') {
+                    await loadDefaultLanguageForTemplates();
                 }
             } catch (error) {
                 console.error('Error loading templates:', error);
@@ -3614,12 +3844,38 @@
                 const grid = document.getElementById('templatesGrid');
                 if (grid) {
                     grid.innerHTML = `
-                        <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
-                            <div class="empty-icon">❌</div>
-                            <p style="font-size: 16px; margin-bottom: 16px; color: #EF4444;">Failed to load templates. Please try again.</p>
+                        <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: #FEF2F2; border-radius: 16px; border: 2px solid #FEE2E2;">
+                            <div style="font-size: 64px; margin-bottom: 16px;">❌</div>
+                            <h3 style="font-size: 20px; font-weight: 700; color: #DC2626; margin-bottom: 8px;">Failed to Load Templates</h3>
+                            <p style="font-size: 15px; color: #991B1B; margin-bottom: 24px;">Please refresh the page and try again.</p>
+                            <button class="btn btn-secondary" onclick="loadUserTemplates()" style="padding: 12px 24px; background: white; color: #DC2626; border: 2px solid #FEE2E2; border-radius: 10px; font-weight: 600; cursor: pointer;">
+                                🔄 Retry
+                            </button>
                         </div>
                     `;
                 }
+            }
+        }
+
+        // Load default language for templates section
+        async function loadDefaultLanguageForTemplates() {
+            try {
+                const response = await fetch(`${API_URL}/users/me`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data) {
+                        const defaultLang = data.data.default_language || 'en';
+                        const select = document.getElementById('defaultLanguageSelectTemplates');
+                        if (select) {
+                            select.value = defaultLang;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading default language:', error);
             }
         }
 
@@ -3748,13 +4004,18 @@
 
         // Save new template (works from both Templates section and modal)
         async function saveNewTemplate() {
+            console.log('🔵 Saving new template...');
+            
             // Try both IDs (for section form and modal form)
             const typeEl = document.getElementById('newTemplateType');
             const langEl = document.getElementById('newTemplateLanguage') || document.getElementById('newTemplateLang');
             const subjectEl = document.getElementById('newTemplateSubject');
             const bodyEl = document.getElementById('newTemplateBody');
 
+            console.log('Form elements:', { typeEl: !!typeEl, langEl: !!langEl, subjectEl: !!subjectEl, bodyEl: !!bodyEl });
+
             if (!typeEl || !langEl || !subjectEl || !bodyEl) {
+                console.error('❌ Missing form elements');
                 showToast('Template form not found. Please fill in the form.', 'error');
                 return;
             }
@@ -3764,18 +4025,33 @@
             const subject = subjectEl.value.trim();
             const body = bodyEl.value.trim();
 
+            console.log('Form values:', { type, lang, subject: subject.substring(0, 50), body: body.substring(0, 50) });
+
             if (!type || !lang || !subject || !body) {
                 showToast('All fields are required', 'error');
                 return;
+            }
+
+            // Disable save button and show loading
+            const saveBtn = event?.target || document.querySelector('button[onclick="saveNewTemplate()"]');
+            const originalText = saveBtn?.innerHTML || '💾 Save Template';
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<span class="spinner" style="width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; display: inline-block; animation: spin 0.8s linear infinite; margin-right: 8px;"></span> Saving...';
             }
 
             try {
                 const token = localStorage.getItem('authToken');
                 if (!token) {
                     showToast('Please log in', 'error');
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.innerHTML = originalText;
+                    }
                     return;
                 }
 
+                console.log('🔵 Sending API request...');
                 const response = await fetch(`${API_URL}/templates`, {
                     method: 'POST',
                     headers: {
@@ -3790,6 +4066,7 @@
                     })
                 });
 
+                console.log('Response status:', response.status);
                 const data = await response.json();
                 console.log('Save template response:', data);
 
@@ -3802,8 +4079,13 @@
                     throw new Error(data.error || data.message || 'Failed to save template');
                 }
             } catch (error) {
-                console.error('Save template error:', error);
+                console.error('❌ Save template error:', error);
                 showToast(error.message || 'Failed to save template', 'error');
+            } finally {
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = originalText;
+                }
             }
         }
 
@@ -3947,6 +4229,36 @@
 
                 if (response.ok) {
                     showToast('✅ Default language updated', 'success');
+                } else {
+                    throw new Error('Failed to update default language');
+                }
+            } catch (error) {
+                console.error('Update default language error:', error);
+                showToast('Failed to update default language', 'error');
+            }
+        }
+
+        // Update default language from templates section
+        async function updateDefaultLanguageFromTemplates() {
+            const lang = document.getElementById('defaultLanguageSelectTemplates').value;
+            
+            try {
+                const response = await fetch(`${API_URL}/users/update-default-language`, {
+                    method: 'POST',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ default_language: lang })
+                });
+
+                if (response.ok) {
+                    showToast('✅ Default language updated', 'success');
+                    // Also update the settings page selector if it exists
+                    const settingsSelect = document.getElementById('defaultLanguageSelect');
+                    if (settingsSelect) {
+                        settingsSelect.value = lang;
+                    }
                 } else {
                     throw new Error('Failed to update default language');
                 }
