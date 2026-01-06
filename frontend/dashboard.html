@@ -1052,6 +1052,7 @@
                                         <th style="padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Type</th>
                                         <th style="padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Country</th>
                                         <th style="padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Language</th>
+                                        <th style="padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="extractedCustomersBody" style="font-size: 14px;">
@@ -2492,23 +2493,29 @@ Variables: {{firstname}}, {{fullname}}, {{country}}, {{your-name}}, {{your-phone
                 console.log('   Customers array length:', customers.length);
                 console.log('   First customer:', customers[0]);
 
-                // Convert API response to extractedData format
-                extractedData = customers.map(c => ({
-                    id: c.id,
-                    name: c.full_name || c.name,
-                    email: c.email,
-                    type: c.customer_type || c.member_type || 'retail',
-                    country: c.country_code || c.country || 'USA',
-                    language: c.language || mapCountryToLanguage(c.country_code || c.country || 'USA'),
-                    phone: c.phone || null,
-                    selected: true
-                }));
+                    // Convert API response to extractedData format
+                    extractedData = customers.map(c => ({
+                        id: c.id,
+                        name: c.full_name || c.name,
+                        email: c.email,
+                        type: c.customer_type || c.member_type || 'retail',
+                        country: c.country_code || c.country || 'USA',
+                        language: c.language || mapCountryToLanguage(c.country_code || c.country || 'USA'),
+                        phone: c.phone || null,
+                        selected: true,
+                        customer_type: c.customer_type || c.member_type || 'retail',
+                        country_code: c.country_code || c.country || 'USA',
+                        full_name: c.full_name || c.name
+                    }));
+                    
+                    // Also store in extractedCustomersData for modal access
+                    extractedCustomersData = extractedData;
 
-                console.log('✅ Processed customers:', extractedData.length);
-                console.log('   Sample:', extractedData[0]);
-                
-                // Show Step 2 results (extracted customers table)
-                showStep2Results(extractedData);
+                    console.log('✅ Processed customers:', extractedData.length);
+                    console.log('   Sample:', extractedData[0]);
+                    
+                    // Show Step 2 results (extracted customers table)
+                    showStep2Results(extractedData);
                 
                 // Refresh customer list in background (don't redirect)
                 loadCustomers().catch(err => console.error('Background customer refresh failed:', err));
@@ -2569,19 +2576,24 @@ Variables: {{firstname}}, {{fullname}}, {{country}}, {{your-name}}, {{your-phone
             // Build table rows
             const tbody = document.getElementById('extractedCustomersBody');
             tbody.innerHTML = customers.map((c, i) => `
-                <tr style="border-bottom: 1px solid #E2E8F0;">
+                <tr data-customer-id="${c.id}" style="border-bottom: 1px solid #E2E8F0;">
                     <td style="padding: 16px;">
-                        <input type="checkbox" class="extracted-customer-checkbox" checked data-index="${i}" onchange="updateSelectedCountStep2()" style="cursor: pointer;">
+                        <input type="checkbox" class="extracted-customer-checkbox customer-checkbox" checked data-id="${c.id}" data-index="${i}" onchange="updateSelectedCountStep2()" style="cursor: pointer;">
                     </td>
                     <td style="padding: 16px; font-weight: 600; color: #1E293B;">${c.name || 'N/A'}</td>
                     <td style="padding: 16px; color: #64748B;">${c.email || 'N/A'}</td>
                     <td style="padding: 16px;">
-                        <span class="type-badge type-${c.type}" style="padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase;">
+                        <span class="badge badge-${c.type}" style="padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; background: ${c.type === 'retail' ? '#FEF3C7' : c.type === 'wholesale' ? '#DBEAFE' : '#E9D5FF'}; color: ${c.type === 'retail' ? '#92400E' : c.type === 'wholesale' ? '#1E40AF' : '#6B21A8'};">
                             ${c.type === 'retail' ? 'RETAIL' : c.type === 'wholesale' ? 'WHOLESALE' : 'ADVOCATES'}
                         </span>
                     </td>
-                    <td style="padding: 16px; color: #64748B;">${c.country || 'N/A'}</td>
-                    <td style="padding: 16px; color: #64748B;">${getLanguageName(c.language)}</td>
+                    <td style="padding: 16px; color: #64748B;">🌍 ${c.country || 'N/A'}</td>
+                    <td style="padding: 16px; color: #1E293B; font-weight: 600;"><strong>${(c.language || 'en').toUpperCase()}</strong></td>
+                    <td style="padding: 16px;">
+                        <button class="btn-view-email" onclick="viewEmail('${c.id}')" style="padding: 6px 12px; background: #10B981; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">
+                            👁️ View & Edit
+                        </button>
+                    </td>
                 </tr>
             `).join('');
             
@@ -2964,6 +2976,143 @@ Variables: {{firstname}}, {{fullname}}, {{country}}, {{your-name}}, {{your-phone
 
         // Initialize emailData variable
         let emailData = [];
+        
+        // Email preview modal variables
+        let currentEditingCustomer = null;
+        let extractedCustomersData = [];
+        let editedEmails = {};
+
+        // View email preview for a customer
+        async function viewEmail(customerId) {
+            const customer = extractedCustomersData.find(c => c.id === customerId);
+            if (!customer) {
+                // Try to find in extractedData (fallback)
+                const fallbackCustomer = extractedData.find(c => c.id === customerId);
+                if (!fallbackCustomer) {
+                    showToast('Customer not found', 'error');
+                    return;
+                }
+                currentEditingCustomer = fallbackCustomer;
+            } else {
+                currentEditingCustomer = customer;
+            }
+            
+            // Set customer info in modal
+            document.getElementById('modalCustomerName').textContent = currentEditingCustomer.name || currentEditingCustomer.full_name;
+            document.getElementById('modalCustomerEmail').textContent = currentEditingCustomer.email;
+            document.getElementById('modalCustomerType').textContent = (currentEditingCustomer.type || currentEditingCustomer.customer_type || 'retail').toUpperCase();
+            document.getElementById('modalLanguage').textContent = (currentEditingCustomer.language || 'en').toUpperCase();
+            
+            // Check if we have edited version
+            if (editedEmails[customerId]) {
+                document.getElementById('emailSubject').value = editedEmails[customerId].subject;
+                document.getElementById('emailBody').value = editedEmails[customerId].body;
+                document.getElementById('templateBadge').innerHTML = '<span style="background: #FEF3C7; color: #92400E; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">✏️ Edited</span>';
+                document.getElementById('createTemplateBtn').style.display = 'none';
+            } else {
+                // Generate from template
+                await generateEmailPreview(currentEditingCustomer);
+            }
+            
+            // Show modal
+            document.getElementById('emailModal').style.display = 'block';
+        }
+
+        // Generate email preview from template
+        async function generateEmailPreview(customer) {
+            try {
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    showToast('Please log in', 'error');
+                    return;
+                }
+
+                const response = await fetch(`${API_URL}/emails/preview`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        customerId: customer.id,
+                        customerType: customer.customer_type || customer.type || 'retail',
+                        language: customer.language || 'en',
+                        customerName: customer.name || customer.full_name,
+                        country: customer.country || customer.country_code || ''
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch preview');
+                }
+                
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    document.getElementById('emailSubject').value = data.data.subject || 'No subject';
+                    document.getElementById('emailBody').value = data.data.body || 'No template found';
+                    
+                    // Show template status
+                    if (data.data.is_fallback) {
+                        document.getElementById('templateBadge').innerHTML = 
+                            `<span style="background: #FEF3C7; color: #92400E; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">⚠️ Using fallback: ${data.data.template_language.toUpperCase()}</span>`;
+                        document.getElementById('createTemplateBtn').style.display = 'block';
+                    } else {
+                        document.getElementById('templateBadge').innerHTML = 
+                            `<span style="background: #D1FAE5; color: #065F46; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">✓ Template: ${(customer.customer_type || customer.type || 'retail')}-${(customer.language || 'en').toUpperCase()}</span>`;
+                        document.getElementById('createTemplateBtn').style.display = 'none';
+                    }
+                } else {
+                    // Fallback if no template
+                    const firstName = (customer.name || customer.full_name || '').split(' ')[0];
+                    document.getElementById('emailSubject').value = `Hello ${firstName}!`;
+                    document.getElementById('emailBody').value = `Hi ${customer.name || customer.full_name},\n\nThank you for your interest in doTERRA!\n\nBest regards`;
+                    document.getElementById('templateBadge').innerHTML = 
+                        `<span style="background: #FEF3C7; color: #92400E; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600;">⚠️ No template found - using default</span>`;
+                    document.getElementById('createTemplateBtn').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error fetching preview:', error);
+                showToast('Failed to load email preview', 'error');
+                // Fallback
+                const firstName = (customer.name || customer.full_name || '').split(' ')[0];
+                document.getElementById('emailSubject').value = `Hello ${firstName}!`;
+                document.getElementById('emailBody').value = `Hi ${customer.name || customer.full_name},\n\nThank you for your interest in doTERRA!\n\nBest regards`;
+            }
+        }
+
+        // Save edited email
+        function saveEmailChanges() {
+            if (!currentEditingCustomer) return;
+            
+            const subject = document.getElementById('emailSubject').value.trim();
+            const body = document.getElementById('emailBody').value.trim();
+            
+            if (!subject || !body) {
+                showToast('Subject and body are required', 'error');
+                return;
+            }
+            
+            editedEmails[currentEditingCustomer.id] = { subject, body };
+            
+            showToast(`✅ Email saved for ${currentEditingCustomer.name || currentEditingCustomer.full_name}`, 'success');
+            closeEmailModal();
+        }
+
+        // Reset to template
+        async function resetToTemplate() {
+            if (!currentEditingCustomer) return;
+            
+            delete editedEmails[currentEditingCustomer.id];
+            await generateEmailPreview(currentEditingCustomer);
+            showToast('Reset to template', 'success');
+        }
+
+        // Close email modal
+        function closeEmailModal() {
+            document.getElementById('emailModal').style.display = 'none';
+            currentEditingCustomer = null;
+        }
 
         function selectAllCustomers() {
             document.querySelectorAll('.customer-checkbox').forEach(cb => cb.checked = true);
