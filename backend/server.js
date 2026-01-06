@@ -39,27 +39,22 @@ console.log('✅ logger loaded');
 const app = express();
 console.log('✅ Express app created');
 
-// Trust proxy (important for Vercel)
-app.set('trust proxy', 1);
-
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8080;
+console.log(`✅ PORT set to: ${PORT}`);
 
 // ============================================
-// HEALTH CHECK ROUTES (MUST BE FIRST)
+// HEALTH CHECK ROUTES (MUST BE FIRST - BEFORE ANY MIDDLEWARE)
 // ============================================
-// These routes must be BEFORE any middleware for Railway health checks
+// Railway health checks hit /health - must respond INSTANTLY (< 1 second)
+// NO middleware, NO database, NO logging - just return JSON
 
-// Health check for Railway - MUST respond quickly (no logging to reduce noise)
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'production'
+    timestamp: new Date().toISOString()
   });
 });
 
-// Root route for Railway - MUST respond quickly (no logging to reduce noise)
 app.get('/', (req, res) => {
   res.status(200).json({ 
     message: 'NetworkFollowUp API',
@@ -67,6 +62,11 @@ app.get('/', (req, res) => {
     version: '1.0.0'
   });
 });
+
+console.log('✅ Health endpoints registered (before middleware)');
+
+// Trust proxy (important for Railway/Vercel)
+app.set('trust proxy', 1);
 
 // ============================================
 // SECURITY MIDDLEWARE
@@ -336,13 +336,14 @@ console.log('🔵 About to call app.listen()...');
 let server;
 
 try {
-  server = app.listen(PORT, () => {
-    console.log(`✅ Server running on port ${PORT}`);
-    console.log(`✅ Health check available at: http://localhost:${PORT}/health`);
-    console.log(`✅ Root endpoint available at: http://localhost:${PORT}/`);
+  // CRITICAL: Bind to '0.0.0.0' for Railway (not localhost)
+  // Railway needs the server to listen on all interfaces
+  server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`✅✅✅ SERVER READY ON PORT ${PORT} ✅✅✅`);
+    console.log(`✅ Server bound to 0.0.0.0:${PORT} (accessible from Railway)`);
+    console.log(`✅ Health check: http://0.0.0.0:${PORT}/health`);
     console.log(`✅ Environment: ${process.env.NODE_ENV || 'production'}`);
     console.log('✅ Server is ready to accept connections');
-    console.log('✅ Server will stay running - Railway health checks will keep it alive');
   });
   
   // Handle server errors - don't exit on server errors
