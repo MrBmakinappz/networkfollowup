@@ -279,8 +279,114 @@ try {
 try {
   billingRoutes = require('./routes/billing');
   console.log('✅ Billing routes loaded');
+  
+  // BUG 4: Register webhook routes WITHOUT auth (Stripe webhooks don't use auth)
+  // Create a separate router for webhook that doesn't require auth
+  const webhookRouter = express.Router();
+  webhookRouter.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    // Import webhook handler directly
+    const { verifyWebhookSignature } = require('./utils/stripe');
+    const db = require('./config/database');
+    const { log, error } = require('./utils/logger');
+    const { getSubscription } = require('./utils/stripe');
+    
+    const signature = req.headers['stripe-signature'];
+    if (!signature) {
+      return res.status(400).json({ error: 'Missing stripe-signature header' });
+    }
+    
+    try {
+      const event = verifyWebhookSignature(req.body, signature);
+      log('Stripe webhook event:', event.type);
+      
+      // Handle events (same logic as in billing.js)
+      switch (event.type) {
+        case 'checkout.session.completed': {
+          const session = event.data.object;
+          const userId = session.client_reference_id || session.metadata.userId;
+          const customerId = session.customer;
+          const subscriptionId = session.subscription;
+          
+          if (subscriptionId) {
+            const subscription = await getSubscription(subscriptionId);
+            const priceId = subscription.items?.data?.[0]?.price?.id;
+            let plan = 'free';
+            if (priceId === process.env.STRIPE_STARTER_PRICE_ID) plan = 'starter';
+            else if (priceId === process.env.STRIPE_PRO_PRICE_ID) plan = 'pro';
+            else if (priceId === process.env.STRIPE_ENTERPRISE_PRICE_ID) plan = 'enterprise';
+            
+            await db.query(
+              `INSERT INTO public.stripe_customers (user_id, stripe_customer_id, stripe_subscription_id, subscription_status, current_period_start, current_period_end)
+               VALUES ($1, $2, $3, $4, to_timestamp($5), to_timestamp($6))
+               ON CONFLICT (user_id) DO UPDATE SET
+                 stripe_subscription_id = EXCLUDED.stripe_subscription_id,
+                 subscription_status = EXCLUDED.subscription_status,
+                 current_period_start = EXCLUDED.current_period_start,
+                 current_period_end = EXCLUDED.current_period_end,
+                 updated_at = NOW()`,
+              [userId, customerId, subscriptionId, subscription.status, subscription.current_period_start, subscription.current_period_end]
+            );
+            
+            await db.query(
+              `UPDATE public.users 
+               SET subscription_tier = $1,
+                   subscription_expires_at = to_timestamp($2),
+                   updated_at = NOW()
+               WHERE id = $3`,
+              [plan, subscription.current_period_end, userId]
+            );
+            
+            log(`User ${userId} upgraded to ${plan}`);
+          }
+          break;
+        }
+        case 'invoice.payment_succeeded': {
+          const invoice = event.data.object;
+          const subscriptionId = invoice.subscription;
+          if (subscriptionId) {
+            const subscription = await getSubscription(subscriptionId);
+            const customerId = subscription.customer;
+            const result = await db.query(
+              'SELECT user_id FROM public.stripe_customers WHERE stripe_customer_id = $1',
+              [customerId]
+            );
+            if (result.rows.length > 0) {
+              const userId = result.rows[0].user_id;
+              const priceId = subscription.items?.data?.[0]?.price?.id;
+              let plan = 'free';
+              if (priceId === process.env.STRIPE_STARTER_PRICE_ID) plan = 'starter';
+              else if (priceId === process.env.STRIPE_PRO_PRICE_ID) plan = 'pro';
+              else if (priceId === process.env.STRIPE_ENTERPRISE_PRICE_ID) plan = 'enterprise';
+              
+              await db.query(
+                `UPDATE public.users 
+                 SET subscription_tier = $1,
+                     subscription_expires_at = to_timestamp($2)
+                 WHERE id = $3`,
+                [plan, subscription.current_period_end, userId]
+              );
+              log(`Payment succeeded for user ${userId}, plan: ${plan}`);
+            }
+          }
+          break;
+        }
+      }
+      
+      res.json({ received: true });
+    } catch (err) {
+      error('Webhook error:', err);
+      res.status(400).json({ error: 'Webhook error', message: err.message });
+    }
+  });
+  
+  app.use('/api/stripe', webhookRouter);
+  app.use('/api/billing', webhookRouter);
+  console.log('✅ Stripe webhook routes registered (no auth)');
+  
+  // Other billing routes require auth
   app.use('/api/billing', authMiddleware, checkOnboarding, billingRoutes);
-  console.log('✅ /api/billing registered');
+  app.use('/api/stripe', authMiddleware, checkOnboarding, billingRoutes);
+  console.log('✅ /api/billing and /api/stripe registered');
 } catch (err) {
   console.error('❌ Failed to load billing routes:', err.message);
 }

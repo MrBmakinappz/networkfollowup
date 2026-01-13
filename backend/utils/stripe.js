@@ -8,13 +8,15 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
  */
 async function createCheckoutSession(userId, userEmail, plan) {
     try {
+        // BUG 4: Support all plans (Starter, Pro, Enterprise)
         const prices = {
-            pro: process.env.STRIPE_PRO_PRICE_ID || 'price_pro',
-            enterprise: process.env.STRIPE_ENTERPRISE_PRICE_ID || 'price_enterprise'
+            starter: process.env.STRIPE_STARTER_PRICE_ID,
+            pro: process.env.STRIPE_PRO_PRICE_ID,
+            enterprise: process.env.STRIPE_ENTERPRISE_PRICE_ID
         };
 
         if (!prices[plan]) {
-            throw new Error('Invalid plan selected');
+            throw new Error(`Invalid plan selected: ${plan}. Must be starter, pro, or enterprise.`);
         }
 
         const session = await stripe.checkout.sessions.create({
@@ -27,11 +29,17 @@ async function createCheckoutSession(userId, userEmail, plan) {
                 },
             ],
             mode: 'subscription',
-            success_url: `${process.env.FRONTEND_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}&success=true`,
-            cancel_url: `${process.env.FRONTEND_URL}/dashboard?canceled=true`,
+            success_url: `${process.env.FRONTEND_URL || 'https://networkfollowup.netlify.app'}/dashboard.html?session_id={CHECKOUT_SESSION_ID}&success=true`,
+            cancel_url: `${process.env.FRONTEND_URL || 'https://networkfollowup.netlify.app'}/dashboard.html?canceled=true`,
             metadata: {
                 userId: userId,
                 plan: plan
+            },
+            subscription_data: {
+                metadata: {
+                    userId: userId,
+                    plan: plan
+                }
             }
         });
 
