@@ -81,6 +81,44 @@ router.post('/check', async (req, res) => {
 });
 
 /**
+ * GET /api/templates/by-id/:id
+ * Get template by ID
+ */
+router.get('/by-id/:id', async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { id } = req.params;
+
+        const result = await db.query(
+            `SELECT id, customer_type, language, subject, body, created_at, updated_at
+             FROM public.email_templates
+             WHERE id = $1 AND user_id = $2`,
+            [id, userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Template not found',
+                message: 'Template does not exist or you do not have permission to view it'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: result.rows[0]
+        });
+    } catch (err) {
+        error('Get template by ID error:', err);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch template',
+            message: err.message
+        });
+    }
+});
+
+/**
  * GET /api/templates/:type/:language
  * Get specific template for customer type and language
  */

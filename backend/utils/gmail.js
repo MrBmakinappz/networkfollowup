@@ -131,14 +131,43 @@ async function refreshAccessToken(refreshToken) {
  */
 async function createGmailTransporter(accessToken, refreshToken) {
     try {
-        // Check if token is expired and refresh if needed
+        // BUG 9: Enhanced token refresh with proper error handling
         oauth2Client.setCredentials({
             access_token: accessToken,
             refresh_token: refreshToken
         });
 
-        // Check expiry
-        const tokenInfo = await oauth2Client.getAccessToken();
+        let newAccessToken = accessToken;
+        
+        try {
+            // Try to get fresh token (will auto-refresh if expired)
+            const tokenInfo = await oauth2Client.getAccessToken();
+            newAccessToken = tokenInfo.token || accessToken;
+        } catch (tokenError) {
+            error('Token refresh error:', tokenError);
+            
+            // If token refresh fails, try manual refresh
+            try {
+                const { OAuth2Client } = require('google-auth-library');
+                const oauth2ClientManual = new OAuth2Client(
+                    process.env.GOOGLE_CLIENT_ID,
+                    process.env.GOOGLE_CLIENT_SECRET,
+                    process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/emails/gmail-callback'
+                );
+                
+                oauth2ClientManual.setCredentials({
+                    refresh_token: refreshToken
+                });
+                
+                const { credentials } = await oauth2ClientManual.refreshAccessToken();
+                newAccessToken = credentials.access_token;
+                
+                log('Token manually refreshed');
+            } catch (manualRefreshError) {
+                error('Manual token refresh failed:', manualRefreshError);
+                throw new Error('Gmail token expired and refresh failed. Please reconnect Gmail.');
+            }
+        }
         
         const transporter = nodemailer.createTransport({
             service: 'gmail',
@@ -148,17 +177,23 @@ async function createGmailTransporter(accessToken, refreshToken) {
                 clientId: process.env.GOOGLE_CLIENT_ID,
                 clientSecret: process.env.GOOGLE_CLIENT_SECRET,
                 refreshToken: refreshToken,
-                accessToken: tokenInfo.token
+                accessToken: newAccessToken
             }
+        });
+
+        // Test connection
+        await transporter.verify().catch(err => {
+            error('Gmail transporter verification failed:', err);
+            throw new Error('Gmail authentication failed. Please reconnect your Gmail account.');
         });
 
         return {
             transporter,
-            accessToken: tokenInfo.token
+            accessToken: newAccessToken
         };
     } catch (err) {
         error('Error creating transporter:', err);
-        throw new Error('Failed to create email transporter');
+        throw new Error(`Failed to create email transporter: ${err.message}`);
     }
 }
 
@@ -186,9 +221,21 @@ async function sendEmail(transporter, fromEmail, toEmail, subject, body) {
     } catch (err) {
         error(`Failed to send email to ${toEmail}:`, err);
         
+        // BUG 9: Provide specific error messages
+        let errorMessage = err.message;
+        if (err.response) {
+            errorMessage = err.response.body?.error || err.response.text || err.message;
+            error('Gmail API error details:', {
+                status: err.response.status,
+                body: err.response.body,
+                text: err.response.text
+            });
+        }
+        
         return {
             success: false,
-            error: err.message
+            error: errorMessage,
+            requiresReconnect: err.code === 'EAUTH' || err.message?.includes('token') || err.message?.includes('expired')
         };
     }
 }

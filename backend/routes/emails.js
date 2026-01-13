@@ -70,9 +70,12 @@ router.post('/preview', authenticateToken, async (req, res) => {
             });
         }
         
-        // Replace all variables
+        // Replace all variables (BUG 7: Use firstName only for {{name}})
+        const firstName = customerName ? customerName.split(' ')[0] : '';
         const replacements = {
-            '{{name}}': customerName || '',
+            '{{name}}': firstName, // BUG 7: Use firstName only
+            '{{firstname}}': firstName,
+            '{{fullname}}': customerName || '',
             '{{customer_type}}': customerType || '',
             '{{country}}': countryCode || '',
             '{{your_name}}': user.full_name || '',
@@ -85,8 +88,8 @@ router.post('/preview', authenticateToken, async (req, res) => {
         let body = template.rows[0].body;
         
         for (const [key, value] of Object.entries(replacements)) {
-            subject = subject.replace(new RegExp(key, 'g'), value);
-            body = body.replace(new RegExp(key, 'g'), value);
+            subject = subject.replace(new RegExp(key.replace(/[{}]/g, '\\$&'), 'g'), value);
+            body = body.replace(new RegExp(key.replace(/[{}]/g, '\\$&'), 'g'), value);
         }
         
         res.json({ 
@@ -443,18 +446,32 @@ router.post('/send', validateEmailSend, async (req, res) => {
         let successCount = 0;
         let failedCount = 0;
 
-        // Create Gmail transporter (with auto-refresh)
-        const { transporter, accessToken } = await createGmailTransporter(
-            gmailConnection.access_token,
-            gmailConnection.refresh_token
-        );
-
-        // Update access token if refreshed
-        if (accessToken !== gmailConnection.access_token) {
-            await db.query(
-                'UPDATE public.gmail_connections SET access_token = $1, updated_at = NOW() WHERE user_id = $2',
-                [accessToken, userId]
+        // Create Gmail transporter (with auto-refresh) - BUG 9: Enhanced error handling
+        let transporter, accessToken;
+        try {
+            const result = await createGmailTransporter(
+                gmailConnection.access_token,
+                gmailConnection.refresh_token
             );
+            transporter = result.transporter;
+            accessToken = result.accessToken;
+
+            // Update access token if refreshed
+            if (accessToken !== gmailConnection.access_token) {
+                await db.query(
+                    'UPDATE public.gmail_connections SET access_token = $1, updated_at = NOW() WHERE user_id = $2',
+                    [accessToken, userId]
+                );
+                log(`Access token refreshed for user ${userId}`);
+            }
+        } catch (gmailError) {
+            error('Gmail authentication error:', gmailError);
+            return res.status(401).json({
+                success: false,
+                error: 'Gmail authentication failed',
+                message: gmailError.message || 'Gmail token expired. Please reconnect your Gmail account.',
+                requiresReconnect: true
+            });
         }
 
         // Get user info for personalization
@@ -515,23 +532,37 @@ Best regards,
                     }
                 }
 
-                // Personalize template with customer data
-                const firstName = customer.full_name.split(' ')[0];
+                // Personalize template with customer data (BUG 7: Use firstName only for {{name}})
+                const firstName = customer.full_name ? customer.full_name.split(' ')[0] : '';
+                
+                // Replace all variable patterns (BUG 7: {{name}} should be firstName only)
                 const personalizedSubject = emailSubject
+                    .replace(/\{\{name\}\}/g, firstName) // BUG 7: Use firstName only
                     .replace(/\{\{firstname\}\}/g, firstName)
-                    .replace(/\{\{fullname\}\}/g, customer.full_name)
-                    .replace(/\{\{email\}\}/g, customer.email)
+                    .replace(/\{\{fullname\}\}/g, customer.full_name || '')
+                    .replace(/\{\{email\}\}/g, customer.email || '')
+                    .replace(/\{\{customer_type\}\}/g, customer.customer_type || '')
                     .replace(/\{\{country\}\}/g, customer.country_code || '')
+                    .replace(/\{\{your_name\}\}/g, user.full_name || 'Your Advocate')
                     .replace(/\{\{your-name\}\}/g, user.full_name || 'Your Advocate')
-                    .replace(/\{\{your-phone\}\}/g, ''); // Could be retrieved from user profile
+                    .replace(/\{\{your_email\}\}/g, user.email || '')
+                    .replace(/\{\{your_phone\}\}/g, '')
+                    .replace(/\{\{your-phone\}\}/g, '')
+                    .replace(/\{\{company_name\}\}/g, ''); // Could be retrieved from user profile
 
                 const personalizedBody = emailBody
+                    .replace(/\{\{name\}\}/g, firstName) // BUG 7: Use firstName only
                     .replace(/\{\{firstname\}\}/g, firstName)
-                    .replace(/\{\{fullname\}\}/g, customer.full_name)
-                    .replace(/\{\{email\}\}/g, customer.email)
+                    .replace(/\{\{fullname\}\}/g, customer.full_name || '')
+                    .replace(/\{\{email\}\}/g, customer.email || '')
+                    .replace(/\{\{customer_type\}\}/g, customer.customer_type || '')
                     .replace(/\{\{country\}\}/g, customer.country_code || '')
+                    .replace(/\{\{your_name\}\}/g, user.full_name || 'Your Advocate')
                     .replace(/\{\{your-name\}\}/g, user.full_name || 'Your Advocate')
-                    .replace(/\{\{your-phone\}\}/g, ''); // Could be retrieved from user profile
+                    .replace(/\{\{your_email\}\}/g, user.email || '')
+                    .replace(/\{\{your_phone\}\}/g, '')
+                    .replace(/\{\{your-phone\}\}/g, '')
+                    .replace(/\{\{company_name\}\}/g, ''); // Could be retrieved from user profile
 
                 // Send email via Gmail
                 const { sendEmail } = require('../utils/gmail');
@@ -553,7 +584,7 @@ Best regards,
                     [userId, customer.id, customerType, personalizedSubject, personalizedBody, status, errorMessage]
                 );
 
-                // Update customer
+                // Update customer (BUG 5: Only set last_contacted_at when email is actually sent)
                 if (sendResult.success) {
                     await db.query(
                         `UPDATE public.customers 
@@ -564,6 +595,7 @@ Best regards,
                     );
                     successCount++;
                 } else {
+                    // BUG 5: Don't update last_contacted_at if email failed
                     failedCount++;
                 }
 
