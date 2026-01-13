@@ -166,22 +166,22 @@ router.get('/billing', async (req, res) => {
             starter: {
                 name: 'Starter',
                 price: 29,
+                emailsPerMonth: 100,
+                emailsPerDay: 20,
+                uploadsPerMonth: 10,
+                features: ['All email templates', '100 emails/month', '10 uploads/month', 'Priority support']
+            },
+            pro: {
+                name: 'Professional',
+                price: 79,
                 emailsPerMonth: 500,
                 emailsPerDay: 100,
                 uploadsPerMonth: 50,
-                features: ['All email templates', '500 emails/month', '50 uploads/month', 'Priority support']
-            },
-            pro: {
-                name: 'Pro',
-                price: 99,
-                emailsPerMonth: 2000,
-                emailsPerDay: 500,
-                uploadsPerMonth: 200,
-                features: ['All email templates', '2000 emails/month', '200 uploads/month', 'Priority support', 'Advanced analytics']
+                features: ['All email templates', '500 emails/month', '50 uploads/month', 'Priority support', 'Advanced analytics']
             },
             enterprise: {
                 name: 'Enterprise',
-                price: 299,
+                price: 199,
                 emailsPerMonth: 999999,
                 emailsPerDay: 999999,
                 uploadsPerMonth: 999999,
@@ -689,8 +689,8 @@ router.put('/password', async (req, res) => {
             });
         }
 
-        // Hash new password
-        const saltRounds = 10;
+        // BUG 3: Hash new password with saltRounds 12
+        const saltRounds = 12;
         const newPasswordHash = await bcrypt.hash(new_password, saltRounds);
 
         // Update password

@@ -1014,7 +1014,33 @@
                 <p class="welcome-subtext">Upload, extract, and send follow-up emails in minutes</p>
             </div>
 
-            <div class="card">
+            <!-- BUG 4: Gmail Connection Status Cards -->
+            <div id="gmailConnectionCard" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%); border: 2px solid #EF4444; border-radius: 12px; padding: 20px; margin-bottom: 24px; display: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <div style="font-size: 48px;">✉️</div>
+                        <div>
+                            <h3 style="margin: 0 0 8px 0; color: #DC2626; font-size: 20px; font-weight: 700;">Gmail Not Connected</h3>
+                            <p style="margin: 0; color: #991B1B; font-size: 14px;">Connect your Gmail account to enable email automation</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="connectGmail()" style="background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); padding: 12px 32px; font-size: 16px; font-weight: 600; color: white; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3); transition: all 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                        🔗 Connect Gmail
+                    </button>
+                </div>
+            </div>
+
+            <div id="gmailConnectedCard" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%); border: 2px solid #10B981; border-radius: 12px; padding: 20px; margin-bottom: 24px; display: none;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div style="font-size: 48px;">✅</div>
+                    <div>
+                        <h3 style="margin: 0 0 4px 0; color: #059669; font-size: 20px; font-weight: 700;">Gmail Connected</h3>
+                        <p style="margin: 0; color: #047857; font-size: 14px;" id="connectedGmailEmail">Connected as: loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="uploadSection">
                 <div class="wizard-steps">
                     <div class="wizard-step active" id="step1">
                         <div class="step-circle">1</div>
@@ -1412,15 +1438,15 @@
                         </button>
                     </div>
 
-                    <!-- Starter Plan -->
+                    <!-- Starter Plan (BUG 2: Updated prices) -->
                     <div class="pricing-card" style="background: white; border: 2px solid #3B82F6; border-radius: 16px; padding: 32px; text-align: center; position: relative; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 24px rgba(59,130,246,0.2)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
                         <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #3B82F6; color: white; padding: 4px 16px; border-radius: 20px; font-size: 12px; font-weight: 600;">POPULAR</div>
                         <div style="font-size: 20px; font-weight: 700; color: #1E293B; margin-bottom: 8px; margin-top: 8px;">Starter</div>
                         <div style="font-size: 36px; font-weight: 800; color: #3B82F6; margin-bottom: 4px;">$29</div>
                         <div style="font-size: 14px; color: #64748B; margin-bottom: 24px;">per month</div>
                         <ul style="list-style: none; padding: 0; margin: 0 0 24px 0; text-align: left;">
-                            <li style="padding: 8px 0; color: #64748B; font-size: 14px;">✓ 500 emails/month</li>
-                            <li style="padding: 8px 0; color: #64748B; font-size: 14px;">✓ 50 uploads/month</li>
+                            <li style="padding: 8px 0; color: #64748B; font-size: 14px;">✓ 100 emails/month</li>
+                            <li style="padding: 8px 0; color: #64748B; font-size: 14px;">✓ 10 uploads/month</li>
                             <li style="padding: 8px 0; color: #64748B; font-size: 14px;">✓ All templates</li>
                             <li style="padding: 8px 0; color: #64748B; font-size: 14px;">✓ Priority support</li>
                         </ul>
@@ -1429,27 +1455,27 @@
                         </button>
                     </div>
 
-                    <!-- Pro Plan -->
+                    <!-- Professional Plan (BUG 2: Updated prices) -->
                     <div class="pricing-card" style="background: white; border: 2px solid #8B5CF6; border-radius: 16px; padding: 32px; text-align: center; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 24px rgba(139,92,246,0.2)'; this.style.borderColor='#8B5CF6'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'; this.style.borderColor='#E2E8F0'">
-                        <div style="font-size: 20px; font-weight: 700; color: #1E293B; margin-bottom: 8px;">Pro</div>
-                        <div style="font-size: 36px; font-weight: 800; color: #8B5CF6; margin-bottom: 4px;">$99</div>
+                        <div style="font-size: 20px; font-weight: 700; color: #1E293B; margin-bottom: 8px;">Professional</div>
+                        <div style="font-size: 36px; font-weight: 800; color: #8B5CF6; margin-bottom: 4px;">$79</div>
                         <div style="font-size: 14px; color: #64748B; margin-bottom: 24px;">per month</div>
                         <ul style="list-style: none; padding: 0; margin: 0 0 24px 0; text-align: left;">
-                            <li style="padding: 8px 0; color: #64748B; font-size: 14px;">✓ 2000 emails/month</li>
-                            <li style="padding: 8px 0; color: #64748B; font-size: 14px;">✓ 200 uploads/month</li>
+                            <li style="padding: 8px 0; color: #64748B; font-size: 14px;">✓ 500 emails/month</li>
+                            <li style="padding: 8px 0; color: #64748B; font-size: 14px;">✓ 50 uploads/month</li>
                             <li style="padding: 8px 0; color: #64748B; font-size: 14px;">✓ All templates</li>
                             <li style="padding: 8px 0; color: #64748B; font-size: 14px;">✓ Advanced analytics</li>
                             <li style="padding: 8px 0; color: #64748B; font-size: 14px;">✓ Priority support</li>
                         </ul>
                         <button class="btn btn-primary" onclick="upgradePlan('pro')" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                            Upgrade to Pro
+                            Upgrade to Professional
                         </button>
                     </div>
 
-                    <!-- Enterprise Plan -->
+                    <!-- Enterprise Plan (BUG 2: Updated prices) -->
                     <div class="pricing-card" style="background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%); border: 2px solid #F59E0B; border-radius: 16px; padding: 32px; text-align: center; color: white; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 24px rgba(245,158,11,0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
                         <div style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">Enterprise</div>
-                        <div style="font-size: 36px; font-weight: 800; color: #F59E0B; margin-bottom: 4px;">$299</div>
+                        <div style="font-size: 36px; font-weight: 800; color: #F59E0B; margin-bottom: 4px;">$199</div>
                         <div style="font-size: 14px; opacity: 0.8; margin-bottom: 24px;">per month</div>
                         <ul style="list-style: none; padding: 0; margin: 0 0 24px 0; text-align: left;">
                             <li style="padding: 8px 0; font-size: 14px; opacity: 0.9;">✓ Unlimited emails</li>
@@ -1651,7 +1677,6 @@
                 <div style="display: flex; gap: 8px; border-bottom: 2px solid #E2E8F0; margin-bottom: 24px; flex-wrap: wrap;">
                     <button class="settings-tab active" onclick="showSettingsTab('account')" data-tab="account" style="padding: 12px 24px; background: none; border: none; border-bottom: 3px solid #10B981; color: #10B981; font-weight: 600; cursor: pointer; font-size: 15px;">👤 Account</button>
                     <button class="settings-tab" onclick="showSettingsTab('language')" data-tab="language" style="padding: 12px 24px; background: none; border: none; border-bottom: 3px solid transparent; color: #64748B; font-weight: 600; cursor: pointer; font-size: 15px;">🌍 Language & Region</button>
-                    <button class="settings-tab" onclick="showSettingsTab('notifications')" data-tab="notifications" style="padding: 12px 24px; background: none; border: none; border-bottom: 3px solid transparent; color: #64748B; font-weight: 600; cursor: pointer; font-size: 15px;">🔔 Notifications</button>
                     <button class="settings-tab" onclick="showSettingsTab('security')" data-tab="security" style="padding: 12px 24px; background: none; border: none; border-bottom: 3px solid transparent; color: #64748B; font-weight: 600; cursor: pointer; font-size: 15px;">🔒 Security</button>
                     <button class="settings-tab" onclick="showSettingsTab('preferences')" data-tab="preferences" style="padding: 12px 24px; background: none; border: none; border-bottom: 3px solid transparent; color: #64748B; font-weight: 600; cursor: pointer; font-size: 15px;">⚙️ Preferences</button>
                 </div>
@@ -1740,46 +1765,6 @@
                     </div>
                 </div>
 
-                <!-- Notifications Tab -->
-                <div id="settings-tab-notifications" class="settings-tab-content" style="display: none;">
-                    <div class="card">
-                        <div class="card-header">
-                            <div>
-                                <h2 class="card-title">🔔 Email Notifications</h2>
-                                <p class="card-subtitle">Configure when and how you receive notifications</p>
-                            </div>
-                        </div>
-                        <div style="padding: 24px;">
-                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px; background: #F8FAFC; border-radius: 8px; margin-bottom: 16px;">
-                                <div>
-                                    <div style="font-weight: 600; margin-bottom: 4px;">Email Notifications</div>
-                                    <div style="font-size: 13px; color: #64748B;">Receive email notifications for important events</div>
-                                </div>
-                                <label style="position: relative; display: inline-block; width: 50px; height: 26px;">
-                                    <input type="checkbox" id="settingsEmailNotifications" style="opacity: 0; width: 0; height: 0;">
-                                    <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #CBD5E1; border-radius: 26px; transition: 0.3s;">
-                                        <span style="position: absolute; content: ''; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: 0.3s;"></span>
-                                    </span>
-                                </label>
-                            </div>
-                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px; background: #F8FAFC; border-radius: 8px; margin-bottom: 16px;">
-                                <div>
-                                    <div style="font-weight: 600; margin-bottom: 4px;">Daily Reports</div>
-                                    <div style="font-size: 13px; color: #64748B;">Receive daily summary of emails sent and activity</div>
-                                </div>
-                                <label style="position: relative; display: inline-block; width: 50px; height: 26px;">
-                                    <input type="checkbox" id="settingsDailyReports" style="opacity: 0; width: 0; height: 0;">
-                                    <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #CBD5E1; border-radius: 26px; transition: 0.3s;">
-                                        <span style="position: absolute; content: ''; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: 0.3s;"></span>
-                                    </span>
-                                </label>
-                            </div>
-                            <button class="btn btn-primary" onclick="saveNotificationSettings()" style="padding: 12px 24px;">
-                                💾 Save Changes
-                            </button>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Security Tab -->
                 <div id="settings-tab-security" class="settings-tab-content" style="display: none;">
@@ -1791,18 +1776,34 @@
                             </div>
                         </div>
                         <div style="padding: 24px;">
+                            <!-- BUG 3: Password fields with visibility toggle -->
                             <div class="form-group" style="margin-bottom: 20px;">
                                 <label style="display: block; margin-bottom: 8px; font-weight: 600;">Current Password</label>
-                                <input type="password" id="settingsCurrentPassword" style="width: 100%; padding: 12px 16px; border: 2px solid #E2E8F0; border-radius: 8px; font-size: 14px;">
+                                <div style="position: relative;">
+                                    <input type="password" id="settingsCurrentPassword" style="width: 100%; padding: 12px 45px 12px 16px; border: 2px solid #E2E8F0; border-radius: 8px; font-size: 14px;">
+                                    <button type="button" onclick="togglePasswordVisibility('settingsCurrentPassword', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px 8px; color: #64748B;" title="Toggle password visibility">
+                                        👁️
+                                    </button>
+                                </div>
                             </div>
                             <div class="form-group" style="margin-bottom: 20px;">
                                 <label style="display: block; margin-bottom: 8px; font-weight: 600;">New Password</label>
-                                <input type="password" id="settingsNewPassword" style="width: 100%; padding: 12px 16px; border: 2px solid #E2E8F0; border-radius: 8px; font-size: 14px;">
+                                <div style="position: relative;">
+                                    <input type="password" id="settingsNewPassword" style="width: 100%; padding: 12px 45px 12px 16px; border: 2px solid #E2E8F0; border-radius: 8px; font-size: 14px;">
+                                    <button type="button" onclick="togglePasswordVisibility('settingsNewPassword', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px 8px; color: #64748B;" title="Toggle password visibility">
+                                        👁️
+                                    </button>
+                                </div>
                                 <small style="color: #64748B; margin-top: 4px; display: block;">Password must be at least 8 characters</small>
                             </div>
                             <div class="form-group" style="margin-bottom: 20px;">
                                 <label style="display: block; margin-bottom: 8px; font-weight: 600;">Confirm New Password</label>
-                                <input type="password" id="settingsConfirmPassword" style="width: 100%; padding: 12px 16px; border: 2px solid #E2E8F0; border-radius: 8px; font-size: 14px;">
+                                <div style="position: relative;">
+                                    <input type="password" id="settingsConfirmPassword" style="width: 100%; padding: 12px 45px 12px 16px; border: 2px solid #E2E8F0; border-radius: 8px; font-size: 14px;">
+                                    <button type="button" onclick="togglePasswordVisibility('settingsConfirmPassword', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px 8px; color: #64748B;" title="Toggle password visibility">
+                                        👁️
+                                    </button>
+                                </div>
                             </div>
                             <button class="btn btn-primary" onclick="savePasswordSettings()" style="padding: 12px 24px;">
                                 🔒 Change Password
@@ -1829,6 +1830,24 @@
 
                 <!-- Preferences Tab -->
                 <div id="settings-tab-preferences" class="settings-tab-content" style="display: none;">
+                    <!-- BUG 3: Gmail Limits Warning -->
+                    <div style="background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border-left: 4px solid #F59E0B; padding: 16px; border-radius: 8px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);">
+                        <div style="display: flex; align-items: start; gap: 12px;">
+                            <span style="font-size: 24px;">⚠️</span>
+                            <div>
+                                <h4 style="margin: 0 0 8px 0; color: #92400E; font-weight: 600;">
+                                    Gmail Sending Limits Notice
+                                </h4>
+                                <p style="margin: 0; color: #78350F; line-height: 1.6;">
+                                    These limits represent Google's recommended safe sending thresholds to maintain good sender reputation. 
+                                    While you may adjust these settings, please note that exceeding Gmail's guidelines may result in 
+                                    temporary sending restrictions or account limitations. We recommend staying within the default values 
+                                    for optimal deliverability and account health.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="card">
                         <div class="card-header">
                             <div>
@@ -2751,11 +2770,12 @@
                         pro: 'Pro',
                         enterprise: 'Enterprise'
                     };
+                    // BUG 2: Updated plan prices
                     const planPrices = {
                         free: '$0',
                         starter: '$29',
-                        pro: '$99',
-                        enterprise: '$299'
+                        pro: '$79',
+                        enterprise: '$199'
                     };
 
                     document.getElementById('currentPlanName').textContent = planNames[plan] || 'Free';
@@ -2910,25 +2930,53 @@
             }
         }
 
+        // BUG 1: Enhanced loadDashboardStats with timeout, error handling, and proper field mapping
         async function loadDashboardStats() {
             // Show loading skeletons
             showStatsLoading();
             
+            // Set timeout to remove loading state after 3 seconds max
+            const loadingTimeout = setTimeout(() => {
+                hideStatsLoading();
+            }, 3000);
+            
             try {
+                // Verify auth token exists
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    throw new Error('No authentication token found');
+                }
+
+                // BUG 1: Add timeout to fetch request (10 seconds max)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+
                 const response = await fetch(`${API_URL}/users/stats`, {
-                    headers: getAuthHeaders()
+                    headers: getAuthHeaders(),
+                    signal: controller.signal
                 });
 
+                clearTimeout(timeoutId);
+                clearTimeout(loadingTimeout);
+
                 if (!response.ok) {
-                    throw new Error('Failed to load stats');
+                    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                    console.error('Stats API error:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        error: errorData
+                    });
+                    throw new Error(errorData.error || errorData.message || 'Failed to load stats');
                 }
 
                 const data = await response.json();
+                console.log('Stats API response:', data);
 
                 if (data.success && data.data) {
                     const stats = data.data;
                     const customers = stats.customers || {};
                     const emails = stats.emails || {};
+                    const gmail = stats.gmail || {}; // BUG 1: Use correct field path
 
                     // Animate stat updates
                     const animateValue = (element, start, end, duration) => {
@@ -2948,31 +2996,33 @@
                         }, 16);
                     };
 
-                    // Update dashboard stats with animation
-                    const totalCustomers = customers.total || 0;
-                    const totalEmails = emails.sent || 0;
-                    const pending = customers.pending || 0;
-                    const retail = customers.retail || 0;
-                    const wholesale = customers.wholesale || 0;
-                    const advocates = customers.advocates || 0;
-                    const countries = customers.countries || 0;
+                    // BUG 1: Update dashboard stats with proper field mapping
+                    const totalCustomers = parseInt(customers.total || 0);
+                    const totalEmails = parseInt(emails.sent || emails.total || 0);
+                    const pending = parseInt(customers.pending || 0);
+                    const retail = parseInt(customers.retail || 0);
+                    const wholesale = parseInt(customers.wholesale || 0);
+                    const advocates = parseInt(customers.advocates || 0);
+                    const countries = parseInt(customers.countries || 0);
 
-                    // BUG 6: Update stats with animation
-                    animateValue(document.getElementById('totalCustomers'), 0, totalCustomers, 500);
-                    animateValue(document.getElementById('totalEmails'), 0, totalEmails, 500);
+                    // Update main stat cards
+                    const totalCustomersEl = document.getElementById('totalCustomers');
+                    const totalEmailsEl = document.getElementById('totalEmails');
+                    if (totalCustomersEl) animateValue(totalCustomersEl, 0, totalCustomers, 500);
+                    if (totalEmailsEl) animateValue(totalEmailsEl, 0, totalEmails, 500);
                     
-                    // Update emails this month
-                    const emailsThisMonth = emails.thisMonth || 0;
+                    // Update emails this month (BUG 1: Use correct field name)
+                    const emailsThisMonth = parseInt(emails.thisMonth || 0);
                     const emailsThisMonthEl = document.getElementById('emailsThisMonth');
                     if (emailsThisMonthEl) {
                         animateValue(emailsThisMonthEl, 0, emailsThisMonth, 500);
                     }
                     
-                    // Update Gmail status card
+                    // Update Gmail status card (BUG 1: Use correct field path - stats.gmail.connected)
                     const gmailStatusCard = document.getElementById('gmailStatusCard');
                     const gmailStatusValue = document.getElementById('gmailStatusValue');
                     if (gmailStatusCard && gmailStatusValue) {
-                        const gmailConnected = stats.gmail_connected || false;
+                        const gmailConnected = gmail.connected || false;
                         if (gmailConnected) {
                             gmailStatusCard.style.background = 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
                             gmailStatusCard.style.boxShadow = '0 8px 24px rgba(16,185,129,0.3)';
@@ -2984,12 +3034,20 @@
                         }
                     }
                     
-                    animateValue(document.getElementById('followUpsDone'), 0, totalEmails, 500);
-                    animateValue(document.getElementById('pendingFollowUps'), 0, pending, 500);
-                    animateValue(document.getElementById('retailCount'), 0, retail, 500);
-                    animateValue(document.getElementById('wholesaleCount'), 0, wholesale, 500);
-                    animateValue(document.getElementById('advocatesCount'), 0, advocates, 500);
-                    animateValue(document.getElementById('countriesCount'), 0, countries, 500);
+                    // Update other stats (if elements exist)
+                    const followUpsDoneEl = document.getElementById('followUpsDone');
+                    const pendingFollowUpsEl = document.getElementById('pendingFollowUps');
+                    const retailCountEl = document.getElementById('retailCount');
+                    const wholesaleCountEl = document.getElementById('wholesaleCount');
+                    const advocatesCountEl = document.getElementById('advocatesCount');
+                    const countriesCountEl = document.getElementById('countriesCount');
+                    
+                    if (followUpsDoneEl) animateValue(followUpsDoneEl, 0, totalEmails, 500);
+                    if (pendingFollowUpsEl) animateValue(pendingFollowUpsEl, 0, pending, 500);
+                    if (retailCountEl) animateValue(retailCountEl, 0, retail, 500);
+                    if (wholesaleCountEl) animateValue(wholesaleCountEl, 0, wholesale, 500);
+                    if (advocatesCountEl) animateValue(advocatesCountEl, 0, advocates, 500);
+                    if (countriesCountEl) animateValue(countriesCountEl, 0, countries, 500);
 
                     // Load charts
                     await loadCharts();
@@ -3009,16 +3067,31 @@
                     }
                 }
             } catch (error) {
-                console.error('Error loading dashboard stats:', error);
-                // Show zeros on error
-                document.getElementById('totalCustomers').textContent = '0';
-                document.getElementById('totalEmails').textContent = '0';
+                clearTimeout(loadingTimeout);
+                console.error('Stats API error:', error);
+                
+                // BUG 1: Show fallback values and error message
+                const totalCustomersEl = document.getElementById('totalCustomers');
+                const totalEmailsEl = document.getElementById('totalEmails');
                 const emailsThisMonthEl = document.getElementById('emailsThisMonth');
+                const gmailStatusValue = document.getElementById('gmailStatusValue');
+                const followUpsDoneEl = document.getElementById('followUpsDone');
+                const pendingFollowUpsEl = document.getElementById('pendingFollowUps');
+                
+                if (totalCustomersEl) totalCustomersEl.textContent = '0';
+                if (totalEmailsEl) totalEmailsEl.textContent = '0';
                 if (emailsThisMonthEl) emailsThisMonthEl.textContent = '0';
-                document.getElementById('followUpsDone').textContent = '0';
-                document.getElementById('pendingFollowUps').textContent = '0';
+                if (gmailStatusValue) gmailStatusValue.textContent = 'Error';
+                if (followUpsDoneEl) followUpsDoneEl.textContent = '0';
+                if (pendingFollowUpsEl) pendingFollowUpsEl.textContent = '0';
+                
                 hideStatsLoading();
-                showToast('Failed to load dashboard stats', 'error');
+                
+                // Show error message
+                const errorMsg = error.name === 'AbortError' 
+                    ? 'Request timed out. Please refresh the page.' 
+                    : error.message || 'Unable to load stats. Please refresh.';
+                showToast(errorMsg, 'error', 5000);
             }
         }
 
@@ -5281,42 +5354,28 @@
             }
         }
 
-        // Save notification settings
-        async function saveNotificationSettings() {
-            try {
-                const emailNotifications = document.getElementById('settingsEmailNotifications').checked;
-                const dailyReports = document.getElementById('settingsDailyReports').checked;
 
-                const response = await fetch(`${API_URL}/users/notifications`, {
-                    method: 'PUT',
-                    headers: {
-                        ...getAuthHeaders(),
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        email_notifications: emailNotifications,
-                        daily_reports: dailyReports
-                    })
-                });
-
-                if (response.ok) {
-                    showToast('✅ Notification settings saved', 'success');
-                } else {
-                    throw new Error('Failed to save notification settings');
-                }
-            } catch (error) {
-                console.error('Save notification settings error:', error);
-                showToast('Failed to save notification settings', 'error');
+        // BUG 3: Password visibility toggle function
+        function togglePasswordVisibility(fieldId, button) {
+            const field = document.getElementById(fieldId);
+            if (!field) return;
+            
+            const isPassword = field.type === 'password';
+            field.type = isPassword ? 'text' : 'password';
+            
+            if (button) {
+                button.textContent = isPassword ? '👁️‍🗨️' : '👁️';
             }
         }
 
-        // Save password
+        // BUG 3: Enhanced save password with proper error handling
         async function savePasswordSettings() {
             try {
                 const currentPassword = document.getElementById('settingsCurrentPassword').value;
                 const newPassword = document.getElementById('settingsNewPassword').value;
                 const confirmPassword = document.getElementById('settingsConfirmPassword').value;
 
+                // Validation
                 if (!currentPassword || !newPassword || !confirmPassword) {
                     showToast('All password fields are required', 'error');
                     return;
@@ -5340,14 +5399,28 @@
                     },
                     body: JSON.stringify({
                         current_password: currentPassword,
-                        new_password: newPassword
+                        new_password: newPassword,
+                        confirm_password: confirmPassword
                     })
                 });
 
                 const data = await response.json();
 
+                // BUG 3: Handle specific error codes
+                if (response.status === 401) {
+                    showToast('Current password is incorrect', 'error');
+                    return;
+                }
+
+                if (response.status === 400) {
+                    const errorMsg = data.error || data.message || 'Invalid password';
+                    showToast(errorMsg, 'error');
+                    return;
+                }
+
                 if (response.ok && data.success) {
                     showToast('✅ Password changed successfully', 'success');
+                    // Clear input fields after success
                     document.getElementById('settingsCurrentPassword').value = '';
                     document.getElementById('settingsNewPassword').value = '';
                     document.getElementById('settingsConfirmPassword').value = '';
@@ -5356,7 +5429,15 @@
                 }
             } catch (error) {
                 console.error('Save password error:', error);
-                showToast(error.message || 'Failed to change password', 'error');
+                
+                // BUG 3: Handle network errors
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    showToast('Network error. Please check your connection and try again.', 'error');
+                } else if (error.message) {
+                    showToast(error.message, 'error');
+                } else {
+                    showToast('Server error, please try again', 'error');
+                }
             }
         }
 
