@@ -202,14 +202,35 @@ try {
   console.error('❌ Failed to load auth routes:', err.message);
 }
 
-// OAuth routes (MUST be registered FIRST for Vercel routing)
+// STEP 1: Users routes (must be before statsRoutes to take precedence)
+console.log('🔵 Loading users routes...');
+try {
+  const usersRoutes = require('./routes/users');
+  console.log('✅ Users routes loaded');
+  app.use('/api/users', authMiddleware, checkOnboarding, usersRoutes);
+  console.log('✅ /api/users registered');
+} catch (err) {
+  console.error('❌ Failed to load users routes:', err.message);
+}
+
+// STEP 2: OAuth routes (new oauth.js takes precedence)
 console.log('🔵 Loading OAuth routes...');
+try {
+  const oauthRoutes = require('./routes/oauth');
+  console.log('✅ OAuth routes loaded');
+  app.use('/api/oauth', oauthRoutes);
+  console.log('✅ /api/oauth registered (new)');
+} catch (err) {
+  console.error('❌ Failed to load OAuth routes:', err.message);
+}
+
+// Legacy OAuth routes (fallback)
 let googleOAuthRoutes, gmailOAuthRoutes;
 try {
   googleOAuthRoutes = require('./routes/google-oauth');
   console.log('✅ Google OAuth routes loaded');
   app.use('/api/oauth', googleOAuthRoutes);
-  console.log('✅ /api/oauth registered');
+  console.log('✅ /api/oauth registered (legacy)');
 } catch (err) {
   console.error('⚠️ Google OAuth routes not available:', err.message);
 }
