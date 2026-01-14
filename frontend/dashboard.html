@@ -928,6 +928,9 @@
                     <button class="btn btn-primary" onclick="showSection('templates', event)" style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); color: white; border: none; padding: 16px 24px; border-radius: 12px; font-weight: 700; font-size: 15px; cursor: pointer; box-shadow: 0 4px 12px rgba(139,92,246,0.3); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(139,92,246,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(139,92,246,0.3)'">
                         📧 Email Templates
                     </button>
+                    <button class="btn btn-primary" onclick="showSection('history', event)" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: white; border: none; padding: 16px 24px; border-radius: 12px; font-weight: 700; font-size: 15px; cursor: pointer; box-shadow: 0 4px 12px rgba(245,158,11,0.3); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(245,158,11,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(245,158,11,0.3)'">
+                        📜 Email History
+                    </button>
                 </div>
             </div>
 
@@ -962,14 +965,6 @@
                     </div>
                     <div style="padding: 20px;">
                         <canvas id="emailsChart" style="max-height: 300px;"></canvas>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">Revenue Trend (Last 30 Days)</h2>
-                    </div>
-                    <div style="padding: 20px;">
-                        <canvas id="revenueChart" style="max-height: 300px;"></canvas>
                     </div>
                 </div>
             </div>
@@ -1054,66 +1049,63 @@
                 <h1 class="welcome-text">Your Customers 👥</h1>
                 <p class="welcome-subtext">Manage your team and track follow-ups</p>
             </div>
-                    <div id="machineGmailStatus" style="margin-bottom: 24px; padding: 20px; background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border-radius: 12px; border: 2px solid #F59E0B; display: none;">
-                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-                            <div style="font-size: 32px;">⚠️</div>
-                            <div style="flex: 1;">
-                                <div style="font-weight: 700; color: #92400E; font-size: 16px; margin-bottom: 4px;">Gmail Not Connected</div>
-                                <div style="color: #78350F; font-size: 14px;">Please connect your Gmail account before uploading screenshots</div>
-                            </div>
-                            <button class="btn btn-primary" onclick="connectGmail()" style="background: #F59E0B; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;">
-                                ✉️ Connect Gmail
-                            </button>
-                        </div>
+
+            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-label">Total</div>
+                    <div class="stat-value" id="custTotalCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✓</div>
+                    <div class="stat-label">Contacted</div>
+                    <div class="stat-value" id="custContactedCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⏰</div>
+                    <div class="stat-label">Pending</div>
+                    <div class="stat-value" id="custPendingCount">0</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title">Customer List</h2>
+                        <p class="card-subtitle">Filter and manage your customers</p>
                     </div>
-
-                    <!-- BUG 10: Usage Limits Progress Bars -->
-                    <div id="machineUsageLimits" style="margin-bottom: 24px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: none;">
-                        <div style="font-weight: 700; color: #1E293B; font-size: 16px; margin-bottom: 16px;">📊 Usage Limits</div>
-                        
-                        <div style="margin-bottom: 16px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <span style="font-size: 14px; font-weight: 600; color: #64748B;">📊 Daily Limit</span>
-                                <span id="machineDailyUsage" style="font-size: 14px; font-weight: 700; color: #1E293B;">0 / 500</span>
-                            </div>
-                            <div style="width: 100%; height: 8px; background: #E2E8F0; border-radius: 4px; overflow: hidden;">
-                                <div id="machineDailyProgress" style="height: 100%; background: linear-gradient(90deg, #10B981 0%, #059669 100%); transition: width 0.3s; width: 0%;"></div>
-                            </div>
-                            <div id="machineDailyWarning" style="margin-top: 8px; font-size: 12px; color: #F59E0B; display: none;">⚠️ Warning: Approaching daily limit to avoid Google restrictions</div>
-                        </div>
-
-                        <div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <span style="font-size: 14px; font-weight: 600; color: #64748B;">⏱️ Hourly Limit</span>
-                                <span id="machineHourlyUsage" style="font-size: 14px; font-weight: 700; color: #1E293B;">0 / 100</span>
-                            </div>
-                            <div style="width: 100%; height: 8px; background: #E2E8F0; border-radius: 4px; overflow: hidden;">
-                                <div id="machineHourlyProgress" style="height: 100%; background: linear-gradient(90deg, #3B82F6 0%, #2563EB 100%); transition: width 0.3s; width: 0%;"></div>
-                            </div>
-                            <div id="machineHourlyWarning" style="margin-top: 8px; font-size: 12px; color: #F59E0B; display: none;">⚠️ Warning: Approaching hourly limit to avoid Google restrictions</div>
-                        </div>
-                    </div>
-
-                    <h3 style="margin-bottom: 20px; color: #1E293B;">Step 1: Upload Screenshot</h3>
-                    <div class="upload-zone" id="machineUploadZone" onclick="handleMachineUploadClick()" style="position: relative;">
-                        <div id="machineUploadDisabled" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); border-radius: 16px; display: none; align-items: center; justify-content: center; z-index: 10; flex-direction: column; gap: 16px;">
-                            <div style="font-size: 48px;">🔒</div>
-                            <div style="font-weight: 700; color: #DC2626; font-size: 18px;">Gmail Not Connected</div>
-                            <button class="btn btn-primary" onclick="connectGmail()" style="background: #10B981; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer;">
-                                ✉️ Connect Gmail to Continue
-                            </button>
-                        </div>
-                        <div style="font-size: 60px; margin-bottom: 16px;">📷</div>
-                        <div style="font-size: 18px; font-weight: 600; color: #1E293B; margin-bottom: 8px;">
-                            Click or drag to upload screenshot
-                        </div>
-                        <div style="font-size: 14px; color: #64748B;">
-                            PNG, JPG up to 10MB • AI will extract customer data
-                        </div>
-                        <input type="file" id="machineFileInput" accept="image/*" style="display: none;" onchange="handleMachineUpload(event)">
+                    <div style="display: flex; gap: 12px;">
+                        <button class="btn btn-secondary" onclick="openAddCustomerModal()">
+                            ➕ Add Customer
+                        </button>
+                        <button class="btn btn-primary" onclick="showSection('machine', event)">
+                            📤 Upload Screenshot
+                        </button>
                     </div>
                 </div>
 
+                <div class="filters">
+                    <button class="filter-btn active" onclick="filterCustomers('all', event)">All</button>
+                    <button class="filter-btn" onclick="filterCustomers('retail', event)">🛍️ Retail</button>
+                    <button class="filter-btn" onclick="filterCustomers('wholesale', event)">💼 Wholesale</button>
+                    <button class="filter-btn" onclick="filterCustomers('advocates', event)">⭐ Advocates</button>
+                    <button class="filter-btn" onclick="filterCustomers('sent', event)">✓ Email Sent</button>
+                    <button class="filter-btn" onclick="filterCustomers('not-sent', event)">✗ Not Contacted</button>
+                </div>
+
+                <div id="customersTableContainer">
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <p style="font-size: 16px; margin-bottom: 16px;">No customers yet</p>
+                        <button class="btn btn-primary" onclick="showSection('machine', event)">
+                            Upload Screenshot to Get Started
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MACHINE SECTION CONTINUES -->
                 <!-- Step 2: Extract & Display (hidden initially) -->
                 <div id="machineStep2" class="machine-step" style="display: none;">
                     <!-- Loading State -->
@@ -1350,9 +1342,22 @@
             </div>
 
             <div class="card">
-                <div class="empty-state">
-                    <div class="empty-icon">📭</div>
-                    <p style="font-size: 16px;">No emails sent yet</p>
+                <div class="card-header">
+                    <div>
+                        <h2 class="card-title">Email History</h2>
+                        <p class="card-subtitle">View all sent emails</p>
+                    </div>
+                </div>
+                <div id="emailHistoryContainer" style="padding: 24px;">
+                    <div id="emailHistoryLoading" style="text-align: center; padding: 40px;">
+                        <div class="spinner" style="width: 40px; height: 40px; margin: 0 auto;"></div>
+                        <p style="color: #64748B; margin-top: 16px;">Loading email history...</p>
+                    </div>
+                    <div id="emailHistoryList" style="display: none;"></div>
+                    <div id="emailHistoryEmpty" style="display: none; text-align: center; padding: 60px 20px;">
+                        <div class="empty-icon">📭</div>
+                        <p style="font-size: 16px; color: #64748B;">No emails sent yet</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2616,7 +2621,7 @@
             };
         }
 
-        // Check Gmail connection status for Follow-Up Machine
+        // Check Gmail connection status for Follow-Up Machine - Auto-connect if needed
         async function checkGmailConnection() {
             try {
                 console.log('Checking Gmail connection status...');
@@ -2638,7 +2643,7 @@
                 const connectedGmailEmail = document.getElementById('connectedGmailEmail');
                 
                 if (data.connected && !data.expired) {
-                    // Gmail is connected
+                    // Gmail is connected - enable everything
                     if (gmailNotConnectedCard) gmailNotConnectedCard.style.display = 'none';
                     if (gmailConnectedCard) {
                         gmailConnectedCard.style.display = 'block';
@@ -2652,7 +2657,23 @@
                         uploadZone.style.pointerEvents = 'auto';
                     }
                 } else {
-                    // Gmail is not connected or expired
+                    // Gmail is not connected - auto-initiate connection
+                    console.log('Gmail not connected, auto-initiating connection...');
+                    try {
+                        const connectResponse = await fetch(`${API_URL}/oauth/google`, {
+                            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
+                        });
+                        const connectData = await connectResponse.json();
+                        if (connectData.authUrl) {
+                            // Auto-redirect to Gmail OAuth
+                            window.location.href = connectData.authUrl;
+                            return;
+                        }
+                    } catch (connectError) {
+                        console.error('Auto-connect failed:', connectError);
+                    }
+                    
+                    // Fallback: Show not connected state
                     if (gmailNotConnectedCard) gmailNotConnectedCard.style.display = 'block';
                     if (gmailConnectedCard) gmailConnectedCard.style.display = 'none';
                     if (uploadDisabledOverlay) uploadDisabledOverlay.style.display = 'flex';
@@ -2663,6 +2684,20 @@
                 }
             } catch (error) {
                 console.error('Gmail connection check error:', error);
+                // On error, try to auto-connect
+                try {
+                    const connectResponse = await fetch(`${API_URL}/oauth/google`, {
+                        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
+                    });
+                    const connectData = await connectResponse.json();
+                    if (connectData.authUrl) {
+                        window.location.href = connectData.authUrl;
+                        return;
+                    }
+                } catch (connectError) {
+                    console.error('Auto-connect failed:', connectError);
+                }
+                
                 // Show not connected state on error
                 const gmailNotConnectedCard = document.getElementById('gmailNotConnectedCard');
                 const gmailConnectedCard = document.getElementById('gmailConnectedCard');
@@ -2795,7 +2830,6 @@
 
         // Chart instances
         let emailsChart = null;
-        let revenueChart = null;
 
         // BUG 4: Billing functions
         async function loadBillingInfo() {
@@ -3202,6 +3236,62 @@
             }
         }
 
+        // Load Email History for History section
+        async function loadEmailHistory() {
+            try {
+                document.getElementById('emailHistoryLoading').style.display = 'block';
+                document.getElementById('emailHistoryList').style.display = 'none';
+                document.getElementById('emailHistoryEmpty').style.display = 'none';
+
+                const response = await fetch(`${API_URL}/emails/history?limit=100`, {
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load email history');
+                }
+
+                const data = await response.json();
+                document.getElementById('emailHistoryLoading').style.display = 'none';
+
+                if (data.success && data.data && data.data.length > 0) {
+                    const historyList = document.getElementById('emailHistoryList');
+                    historyList.innerHTML = data.data.map(email => {
+                        const sentDate = new Date(email.sent_at || email.created_at);
+                        const timeAgo = getTimeAgo(sentDate);
+                        const customerName = email.customer_name || email.customer?.full_name || 'Unknown';
+                        const statusColor = email.status === 'sent' ? '#10B981' : email.status === 'failed' ? '#EF4444' : '#F59E0B';
+                        const statusIcon = email.status === 'sent' ? '✓' : email.status === 'failed' ? '✗' : '⏳';
+
+                        return `
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px; background: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0; margin-bottom: 12px; transition: all 0.3s;" onmouseover="this.style.background='#F1F5F9'; this.style.borderColor='#10B981'" onmouseout="this.style.background='#F8FAFC'; this.style.borderColor='#E2E8F0'">
+                                <div style="flex: 1;">
+                                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+                                        <span style="font-weight: 700; color: #1E293B; font-size: 15px;">${escapeHtml(customerName)}</span>
+                                        <span style="color: ${statusColor}; font-weight: 600; font-size: 13px;">${statusIcon} ${email.status || 'sent'}</span>
+                                    </div>
+                                    <div style="font-size: 13px; color: #64748B;">${escapeHtml((email.subject || 'No subject').substring(0, 80))}${email.subject && email.subject.length > 80 ? '...' : ''}</div>
+                                    <div style="font-size: 12px; color: #94A3B8; margin-top: 4px;">To: ${escapeHtml(email.recipient_email || email.customer?.email || 'N/A')}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 12px; color: #64748B; font-weight: 600;">${timeAgo}</div>
+                                    <div style="font-size: 11px; color: #94A3B8; margin-top: 2px;">${sentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    historyList.style.display = 'block';
+                } else {
+                    document.getElementById('emailHistoryEmpty').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading email history:', error);
+                document.getElementById('emailHistoryLoading').style.display = 'none';
+                document.getElementById('emailHistoryEmpty').style.display = 'block';
+            }
+        }
+
         // Helper: Get time ago string
         function getTimeAgo(date) {
             const seconds = Math.floor((new Date() - date) / 1000);
@@ -3277,31 +3367,7 @@
                     });
                 }
 
-                // Revenue chart (mock data - replace with real revenue data)
-                const revenueCtx = document.getElementById('revenueChart');
-                if (revenueCtx && typeof Chart !== 'undefined') {
-                    const last30Days = [];
-                    const revenueData = [];
-                    for (let i = 29; i >= 0; i--) {
-                        const date = new Date();
-                        date.setDate(date.getDate() - i);
-                        last30Days.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-                        // Mock revenue - replace with real data
-                        revenueData.push(Math.random() * 1000 + 500);
-                    }
-
-                    if (revenueChart) revenueChart.destroy();
-                    revenueChart = new Chart(revenueCtx, {
-                        type: 'line',
-                        data: {
-                            labels: last30Days,
-                            datasets: [{
-                                label: 'Revenue ($)',
-                                data: revenueData,
-                                borderColor: 'rgba(16, 185, 129, 1)',
-                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                                tension: 0.4,
-                                fill: true
+                // Revenue chart removed per user request
                             }]
                         },
                         options: {
@@ -3497,6 +3563,8 @@
                         loadDashboardStats();
                     } else if (section === 'customers') {
                         loadCustomers();
+                    } else if (section === 'history') {
+                        loadEmailHistory();
                     }
                 } else {
                     console.error('Section not found:', section);
