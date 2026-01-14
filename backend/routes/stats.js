@@ -9,8 +9,14 @@ const { log, error } = require('../utils/logger');
 
 /**
  * GET /api/users/stats
- * Get dashboard statistics for user
- * Cached for 5 minutes
+ * Get dashboard statistics for user.
+ *
+ * BUG 1 hardening:
+ * - Returns both the rich nested structure used by the new dashboard and
+ *   flat fields for legacy/simple dashboards:
+ *   { totalEmails, emailsThisMonth, totalCustomers, gmailConnected, gmailEmail }
+ * - On error, returns zeros instead of a 500 to avoid frontend crashes.
+ * - Still cached for 5 minutes.
  */
 router.get('/stats', cacheMiddleware(5 * 60 * 1000), async (req, res) => {
     try {
@@ -68,11 +74,18 @@ router.get('/stats', cacheMiddleware(5 * 60 * 1000), async (req, res) => {
             [userId]
         );
 
+        // Normalized numeric values and flat stats
+        const totalCustomers = parseInt(customerStats.rows[0].total_customers || 0);
+        const totalEmailsAll = parseInt(emailStats.rows[0].total_emails || 0);
+        const emailsThisMonth = parseInt(emailStats.rows[0].emails_this_month || 0);
+        const gmailConnected = gmailStatus.rows.length > 0;
+        const gmailEmail = gmailStatus.rows[0]?.gmail_email || null;
+
         res.json({
             success: true,
             data: {
                 customers: {
-                    total: parseInt(customerStats.rows[0].total_customers || 0),
+                    total: totalCustomers,
                     retail: parseInt(customerStats.rows[0].retail_count || 0),
                     wholesale: parseInt(customerStats.rows[0].wholesale_count || 0),
                     advocates: parseInt(customerStats.rows[0].advocates_count || 0),
@@ -81,28 +94,65 @@ router.get('/stats', cacheMiddleware(5 * 60 * 1000), async (req, res) => {
                     countries: parseInt(customerStats.rows[0].countries_count || 0)
                 },
                 emails: {
-                    total: parseInt(emailStats.rows[0].total_emails || 0),
+                    total: totalEmailsAll,
                     sent: parseInt(emailStats.rows[0].emails_sent || 0),
                     failed: parseInt(emailStats.rows[0].emails_failed || 0),
                     today: parseInt(emailStats.rows[0].emails_today || 0),
-                    thisMonth: parseInt(emailStats.rows[0].emails_this_month || 0)
+                    thisMonth: emailsThisMonth
                 },
                 gmail: {
-                    connected: gmailStatus.rows.length > 0,
-                    email: gmailStatus.rows[0]?.gmail_email || null
+                    connected: gmailConnected,
+                    email: gmailEmail
                 },
                 countryBreakdown: countryBreakdown.rows,
                 recentActivity: {
                     uploads: parseInt(recentUploads.rows[0].upload_count || 0)
                 }
-            }
+            },
+            // Flat fields for simpler dashboards / legacy clients
+            totalEmails: totalEmailsAll,
+            emailsThisMonth,
+            totalCustomers,
+            gmailConnected,
+            gmailEmail
         });
     } catch (err) {
+        // BUG 1: Never crash the dashboard – log and return safe zeros
         error('Stats error:', err);
-        res.status(500).json({ 
-            success: false,
-            error: 'Failed to fetch statistics',
-            message: err.message
+
+        res.json({
+            success: true,
+            data: {
+                customers: {
+                    total: 0,
+                    retail: 0,
+                    wholesale: 0,
+                    advocates: 0,
+                    contacted: 0,
+                    pending: 0,
+                    countries: 0
+                },
+                emails: {
+                    total: 0,
+                    sent: 0,
+                    failed: 0,
+                    today: 0,
+                    thisMonth: 0
+                },
+                gmail: {
+                    connected: false,
+                    email: null
+                },
+                countryBreakdown: [],
+                recentActivity: {
+                    uploads: 0
+                }
+            },
+            totalEmails: 0,
+            emailsThisMonth: 0,
+            totalCustomers: 0,
+            gmailConnected: false,
+            gmailEmail: null
         });
     }
 });
@@ -185,7 +235,15 @@ router.get('/billing', async (req, res) => {
                 emailsPerMonth: 999999,
                 emailsPerDay: 999999,
                 uploadsPerMonth: 999999,
-                features: ['Unlimited emails', 'Unlimited uploads', 'Dedicated support', 'Custom integrations', 'Advanced analytics']
+                features: [
+                    'Unlimited emails',
+                    'Unlimited uploads',
+                    'AI-powered email personalization',
+                    'Custom email templates',
+                    'Priority support (24/7)',
+                    'Advanced analytics & reporting',
+                    'Dedicated account manager'
+                ]
             }
         };
 
