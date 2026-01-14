@@ -1009,60 +1009,51 @@
 
         <!-- FOLLOW-UP MACHINE SECTION -->
         <div id="machine-section" class="section-content" style="display: none;">
-            <div class="header">
-                <h1 class="welcome-text">Follow-Up Machine 🚀</h1>
-                <p class="welcome-subtext">Upload, extract, and send follow-up emails in minutes</p>
-            </div>
-
-            <!-- BUG 4: Gmail Connection Status Cards -->
-            <div id="gmailConnectionCard" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%); border: 2px solid #EF4444; border-radius: 12px; padding: 20px; margin-bottom: 24px; display: none;">
-                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
-                    <div style="display: flex; align-items: center; gap: 16px;">
-                        <div style="font-size: 48px;">✉️</div>
+            <div id="gmailNotConnectedCard" style="background: linear-gradient(135deg, #FEE2E2, #FECACA); border: 2px solid #EF4444; border-radius: 16px; padding: 32px; margin-bottom: 32px; display: none;">
+                <div style="display: flex; align-items: center; gap: 24px; justify-content: space-between; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 24px;">
+                        <div style="width: 80px; height: 80px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px;">📧</div>
                         <div>
-                            <h3 style="margin: 0 0 8px 0; color: #DC2626; font-size: 20px; font-weight: 700;">Gmail Not Connected</h3>
-                            <p style="margin: 0; color: #991B1B; font-size: 14px;">Connect your Gmail account to enable email automation</p>
+                            <h2 style="margin: 0 0 8px 0; color: #DC2626; font-size: 24px; font-weight: 700;">Gmail Not Connected</h2>
+                            <p style="margin: 0; color: #991B1B; font-size: 16px;">Connect Gmail to unlock automation</p>
                         </div>
                     </div>
-                    <button class="btn btn-primary" onclick="connectGmail()" style="background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); padding: 12px 32px; font-size: 16px; font-weight: 600; color: white; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3); transition: all 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                        🔗 Connect Gmail
-                    </button>
+                    <button onclick="connectGmail()" style="background: linear-gradient(135deg, #EF4444, #DC2626); color: white; border: none; padding: 16px 40px; border-radius: 12px; font-size: 18px; font-weight: 600; cursor: pointer;">🔗 Connect Gmail</button>
                 </div>
             </div>
-
-            <div id="gmailConnectedCard" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%); border: 2px solid #10B981; border-radius: 12px; padding: 20px; margin-bottom: 24px; display: none;">
-                <div style="display: flex; align-items: center; gap: 16px;">
-                    <div style="font-size: 48px;">✅</div>
+            
+            <div id="gmailConnectedCard" style="background: linear-gradient(135deg, #D1FAE5, #A7F3D0); border: 2px solid #10B981; border-radius: 16px; padding: 32px; margin-bottom: 32px; display: none;">
+                <div style="display: flex; align-items: center; gap: 24px;">
+                    <div style="width: 80px; height: 80px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px;">✅</div>
                     <div>
-                        <h3 style="margin: 0 0 4px 0; color: #059669; font-size: 20px; font-weight: 700;">Gmail Connected</h3>
-                        <p style="margin: 0; color: #047857; font-size: 14px;" id="connectedGmailEmail">Connected as: loading...</p>
+                        <h2 style="margin: 0 0 4px 0; color: #059669; font-size: 24px; font-weight: 700;">Gmail Connected</h2>
+                        <p style="margin: 0; color: #047857; font-size: 16px;" id="connectedGmailEmail">Connected as: loading...</p>
                     </div>
                 </div>
             </div>
-
-            <div class="card" id="uploadSection">
-                <div class="wizard-steps">
-                    <div class="wizard-step active" id="step1">
-                        <div class="step-circle">1</div>
-                        <div class="step-label">Upload</div>
-                    </div>
-                    <div class="wizard-step" id="step2">
-                        <div class="step-circle">2</div>
-                        <div class="step-label">Extract</div>
-                    </div>
-                    <div class="wizard-step" id="step3">
-                        <div class="step-circle">3</div>
-                        <div class="step-label">Review</div>
-                    </div>
-                    <div class="wizard-step" id="step4">
-                        <div class="step-circle">4</div>
-                        <div class="step-label">Send</div>
+            
+            <div id="uploadScreenSection" style="position: relative;">
+                <div id="uploadDisabledOverlay" style="position: absolute; inset: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(4px); border-radius: 16px; display: none; align-items: center; justify-content: center; z-index: 10; cursor: not-allowed;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 64px; margin-bottom: 16px;">🔒</div>
+                        <h3 style="color: #EF4444; margin: 0 0 8px 0;">Upload Disabled</h3>
+                        <p style="color: #64748B; margin: 0;">Connect Gmail first</p>
                     </div>
                 </div>
+                <div class="card">
+                    <h2>📸 Upload Screenshot</h2>
+                    <div class="upload-zone"><p>Click to upload</p></div>
+                    <input type="file" id="screenshotUpload" style="display: none;" accept="image/*">
+                </div>
+            </div>
+        </div>
 
-                <!-- Step 1: Upload -->
-                <div id="machineStep1" class="machine-step">
-                    <!-- BUG 10: Gmail Connection Check and Usage Limits -->
+        <!-- CUSTOMERS SECTION -->
+        <div id="customers-section" class="section-content" style="display: none;">
+            <div class="header">
+                <h1 class="welcome-text">Your Customers 👥</h1>
+                <p class="welcome-subtext">Manage your team and track follow-ups</p>
+            </div>
                     <div id="machineGmailStatus" style="margin-bottom: 24px; padding: 20px; background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border-radius: 12px; border: 2px solid #F59E0B; display: none;">
                         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
                             <div style="font-size: 32px;">⚠️</div>
@@ -1289,11 +1280,6 @@
                                 🚀 Send More Follow-Ups
                             </button>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- CUSTOMERS SECTION -->
         <div id="customers-section" class="section-content" style="display: none;">
             <div class="header">
@@ -1438,57 +1424,48 @@
                         </button>
                     </div>
 
-                    <!-- Starter Plan (BUG 2: Updated prices) -->
-                    <div class="pricing-card" style="background: white; border: 2px solid #3B82F6; border-radius: 16px; padding: 32px; text-align: center; position: relative; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 24px rgba(59,130,246,0.2)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-                        <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #3B82F6; color: white; padding: 4px 16px; border-radius: 20px; font-size: 12px; font-weight: 600;">POPULAR</div>
-                        <div style="font-size: 20px; font-weight: 700; color: #1E293B; margin-bottom: 8px; margin-top: 8px;">Starter</div>
-                        <div style="font-size: 36px; font-weight: 800; color: #3B82F6; margin-bottom: 4px;">$29</div>
-                        <div style="font-size: 14px; color: #64748B; margin-bottom: 24px;">per month</div>
-                        <ul style="list-style: none; padding: 0; margin: 0 0 24px 0; text-align: left;">
-                            <li style="padding: 8px 0; color: #64748B; font-size: 14px;">✓ 100 emails/month</li>
-                            <li style="padding: 8px 0; color: #64748B; font-size: 14px;">✓ 10 uploads/month</li>
-                            <li style="padding: 8px 0; color: #64748B; font-size: 14px;">✓ All templates</li>
-                            <li style="padding: 8px 0; color: #64748B; font-size: 14px;">✓ Priority support</li>
+                    <!-- STEP 3: Pricing Cards -->
+                    <div class="pricing-card">
+                        <h3>Starter</h3>
+                        <div class="price">$29<span>/month</span></div>
+                        <ul class="features">
+                            <li>✅ 100 emails per month</li>
+                            <li>✅ 10 screenshot uploads per month</li>
+                            <li>✅ AI-powered personalization</li>
+                            <li>✅ Basic templates</li>
+                            <li>✅ Email support</li>
                         </ul>
-                        <button class="btn btn-primary" onclick="upgradePlan('starter')" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                            Upgrade to Starter
-                        </button>
+                        <button class="btn btn-primary" onclick="upgradePlan('starter')">Upgrade</button>
                     </div>
 
-                    <!-- Professional Plan (BUG 2: Updated prices) -->
-                    <div class="pricing-card" style="background: white; border: 2px solid #8B5CF6; border-radius: 16px; padding: 32px; text-align: center; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 24px rgba(139,92,246,0.2)'; this.style.borderColor='#8B5CF6'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'; this.style.borderColor='#E2E8F0'">
-                        <div style="font-size: 20px; font-weight: 700; color: #1E293B; margin-bottom: 8px;">Professional</div>
-                        <div style="font-size: 36px; font-weight: 800; color: #8B5CF6; margin-bottom: 4px;">$79</div>
-                        <div style="font-size: 14px; color: #64748B; margin-bottom: 24px;">per month</div>
-                        <ul style="list-style: none; padding: 0; margin: 0 0 24px 0; text-align: left;">
-                            <li style="padding: 8px 0; color: #64748B; font-size: 14px;">✓ 500 emails/month</li>
-                            <li style="padding: 8px 0; color: #64748B; font-size: 14px;">✓ 50 uploads/month</li>
-                            <li style="padding: 8px 0; color: #64748B; font-size: 14px;">✓ All templates</li>
-                            <li style="padding: 8px 0; color: #64748B; font-size: 14px;">✓ Advanced analytics</li>
-                            <li style="padding: 8px 0; color: #64748B; font-size: 14px;">✓ Priority support</li>
+                    <div class="pricing-card featured">
+                        <div class="popular-badge">Most Popular</div>
+                        <h3>Professional</h3>
+                        <div class="price">$79<span>/month</span></div>
+                        <ul class="features">
+                            <li>✅ 500 emails per month</li>
+                            <li>✅ 50 screenshot uploads per month</li>
+                            <li>✅ AI-powered personalization</li>
+                            <li>✅ Advanced templates</li>
+                            <li>✅ Priority support</li>
+                            <li>✅ Analytics</li>
                         </ul>
-                        <button class="btn btn-primary" onclick="upgradePlan('pro')" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                            Upgrade to Professional
-                        </button>
+                        <button class="btn btn-primary" onclick="upgradePlan('pro')">Upgrade</button>
                     </div>
 
-                    <!-- Enterprise Plan (BUG 3: Updated features, no custom integrations/API/white-label) -->
-                    <div class="pricing-card" style="background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%); border: 2px solid #F59E0B; border-radius: 16px; padding: 32px; text-align: center; color: white; transition: all 0.3s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 24px rgba(245,158,11,0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-                        <div style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">Enterprise</div>
-                        <div style="font-size: 36px; font-weight: 800; color: #F59E0B; margin-bottom: 4px;">$199</div>
-                        <div style="font-size: 14px; opacity: 0.8; margin-bottom: 24px;">per month</div>
-                        <ul style="list-style: none; padding: 0; margin: 0 0 24px 0; text-align: left;">
-                            <li style="padding: 8px 0; font-size: 14px; opacity: 0.9;">✓ Unlimited emails</li>
-                            <li style="padding: 8px 0; font-size: 14px; opacity: 0.9;">✓ Unlimited screenshot uploads</li>
-                            <li style="padding: 8px 0; font-size: 14px; opacity: 0.9;">✓ AI-powered email personalization</li>
-                            <li style="padding: 8px 0; font-size: 14px; opacity: 0.9;">✓ Custom email templates</li>
-                            <li style="padding: 8px 0; font-size: 14px; opacity: 0.9;">✓ Priority support (24/7)</li>
-                            <li style="padding: 8px 0; font-size: 14px; opacity: 0.9;">✓ Advanced analytics & reporting</li>
-                            <li style="padding: 8px 0; font-size: 14px; opacity: 0.9;">✓ Dedicated account manager</li>
+                    <div class="pricing-card">
+                        <h3>Enterprise</h3>
+                        <div class="price">$199<span>/month</span></div>
+                        <ul class="features">
+                            <li>✅ Unlimited emails</li>
+                            <li>✅ Unlimited uploads</li>
+                            <li>✅ AI-powered personalization</li>
+                            <li>✅ Custom templates</li>
+                            <li>✅ 24/7 Priority support</li>
+                            <li>✅ Advanced analytics</li>
+                            <li>✅ Account manager</li>
                         </ul>
-                        <button class="btn btn-primary" onclick="upgradePlan('enterprise')" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                            Upgrade to Enterprise
-                        </button>
+                        <button class="btn btn-primary" onclick="upgradePlan('enterprise')">Upgrade</button>
                     </div>
                 </div>
             </div>
@@ -2682,22 +2659,51 @@
         }
 
         async function loadDashboard() {
-            if (!checkAuth()) return;
-
-            const userName = localStorage.getItem('userName') || 'User';
-            const userEmail = localStorage.getItem('userEmail') || '';
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
             
-            document.getElementById('userName').textContent = userName;
-            document.getElementById('userEmail').textContent = userEmail;
-            document.getElementById('welcomeName').textContent = userName.split(' ')[0];
-            document.getElementById('userAvatar').textContent = userName.charAt(0).toUpperCase();
-
-            // Check onboarding status and show button if needed
-            await checkOnboardingStatus();
-
-            await checkGmailStatus();
-            await loadDashboardStats();
-            await loadCustomers();
+            document.getElementById('totalEmails').textContent = '...';
+            document.getElementById('emailsThisMonth').textContent = '...';
+            document.getElementById('totalCustomers').textContent = '...';
+            document.getElementById('gmailStatus').textContent = 'Checking...';
+            
+            try {
+                const response = await fetch(API_URL + '/users/stats', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const stats = await response.json();
+                console.log('DASHBOARD STATS:', stats);
+                
+                document.getElementById('totalEmails').textContent = stats.totalEmails || 0;
+                document.getElementById('emailsThisMonth').textContent = stats.emailsThisMonth || 0;
+                document.getElementById('totalCustomers').textContent = stats.totalCustomers || 0;
+                
+                const gmailStatus = document.getElementById('gmailStatus');
+                if (stats.gmailConnected) {
+                    gmailStatus.textContent = '✓ Connected';
+                    gmailStatus.style.color = '#10B981';
+                } else {
+                    gmailStatus.textContent = '✗ Not Connected';
+                    gmailStatus.style.color = '#EF4444';
+                }
+                
+                const userName = localStorage.getItem('userName') || 'User';
+                document.getElementById('userName').textContent = userName;
+            } catch (error) {
+                console.error('DASHBOARD ERROR:', error);
+                document.getElementById('totalEmails').textContent = '0';
+                document.getElementById('emailsThisMonth').textContent = '0';
+                document.getElementById('totalCustomers').textContent = '0';
+                document.getElementById('gmailStatus').textContent = '✗ Error';
+                document.getElementById('gmailStatus').style.color = '#EF4444';
+            }
         }
 
         async function checkOnboardingStatus() {
@@ -3542,80 +3548,43 @@
             }
         }
 
-        // BUG 4: Top-level Gmail connection status cards in Follow-Up Machine
+        // STEP 2: Gmail connection functions
         async function checkGmailConnection() {
             try {
-                const token = localStorage.getItem('authToken');
-                if (!token) {
-                    // If not logged in, show disconnected state
-                    const connCard = document.getElementById('gmailConnectionCard');
-                    const connectedCard = document.getElementById('gmailConnectedCard');
-                    const uploadSection = document.getElementById('uploadSection');
-                    if (connCard) connCard.style.display = 'block';
-                    if (connectedCard) connectedCard.style.display = 'none';
-                    if (uploadSection) {
-                        uploadSection.style.opacity = '0.5';
-                        uploadSection.style.pointerEvents = 'none';
-                    }
-                    return;
-                }
-
-                const response = await fetch(`${API_URL}/oauth/google/status`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
+                const response = await fetch(API_URL + '/oauth/google/status', {
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
                 });
-
-                const data = await response.json().catch(() => ({}));
-
-                const connCard = document.getElementById('gmailConnectionCard');
-                const connectedCard = document.getElementById('gmailConnectedCard');
-                const uploadSection = document.getElementById('uploadSection');
-                const connectedEmailEl = document.getElementById('connectedGmailEmail');
-
-                if (!response.ok || !data || data.connected === undefined) {
-                    console.error('Check Gmail connection error (status):', {
-                        status: response.status,
-                        statusText: response.statusText,
-                        data
-                    });
-                    // Fallback: show disconnected but do not block hard, since BUG 10 already gates uploads
-                    if (connCard) connCard.style.display = 'block';
-                    if (connectedCard) connectedCard.style.display = 'none';
-                    if (uploadSection) {
-                        uploadSection.style.opacity = '0.5';
-                        uploadSection.style.pointerEvents = 'none';
-                    }
-                    return;
-                }
-
+                const data = await response.json();
+                console.log('GMAIL STATUS:', data);
+                
                 if (data.connected) {
-                    if (connCard) connCard.style.display = 'none';
-                    if (connectedCard) connectedCard.style.display = 'block';
-                    if (connectedEmailEl && data.email) {
-                        connectedEmailEl.textContent = `Connected as: ${data.email}`;
-                    }
-                    if (uploadSection) {
-                        uploadSection.style.opacity = '1';
-                        uploadSection.style.pointerEvents = 'auto';
-                    }
+                    document.getElementById('gmailNotConnectedCard').style.display = 'none';
+                    document.getElementById('gmailConnectedCard').style.display = 'block';
+                    document.getElementById('connectedGmailEmail').textContent = 'Connected as: ' + data.email;
+                    document.getElementById('uploadDisabledOverlay').style.display = 'none';
                 } else {
-                    if (connCard) connCard.style.display = 'block';
-                    if (connectedCard) connectedCard.style.display = 'none';
-                    if (uploadSection) {
-                        uploadSection.style.opacity = '0.5';
-                        uploadSection.style.pointerEvents = 'none';
-                    }
+                    document.getElementById('gmailNotConnectedCard').style.display = 'block';
+                    document.getElementById('gmailConnectedCard').style.display = 'none';
+                    document.getElementById('uploadDisabledOverlay').style.display = 'flex';
                 }
             } catch (error) {
-                console.error('Check Gmail connection error:', error);
+                console.error('GMAIL CHECK ERROR:', error);
             }
         }
 
-        // Call Gmail connection check on initial load
-        document.addEventListener('DOMContentLoaded', () => {
-            checkGmailConnection().catch(err => console.error('Initial Gmail status error:', err));
-        });
+        async function connectGmail() {
+            try {
+                const response = await fetch(API_URL + '/oauth/google', {
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
+                });
+                const data = await response.json();
+                if (data.authUrl) window.location.href = data.authUrl;
+            } catch (error) {
+                console.error('GMAIL CONNECT ERROR:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', checkGmailConnection);
 
         // Alias for consistency
         async function loadMachineUsageLimits() {
