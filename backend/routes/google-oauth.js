@@ -7,6 +7,7 @@ const { google } = require('googleapis');
 const jwt = require('jsonwebtoken');
 const db = require('../config/database');
 const bcrypt = require('bcryptjs');
+const { authenticateToken } = require('../middleware/auth');
 const { log, error } = require('../utils/logger');
 
 // Initialize OAuth2 client
@@ -63,6 +64,45 @@ router.get('/google', (req, res) => {
       message: err.message || 'Failed to generate authorization URL',
       details: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
+  }
+});
+
+/**
+ * BUG 2: Gmail connection status
+ *
+ * GET /api/oauth/google/status
+ * Returns whether the authenticated user has a Gmail connection and,
+ * if possible, whether the token appears expired.
+ */
+router.get('/google/status', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // token_expiry column is defined in schema; gmail_email holds the address
+    const result = await db.query(
+      'SELECT gmail_email, token_expiry FROM public.gmail_connections WHERE user_id = $1',
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({ connected: false });
+    }
+
+    const row = result.rows[0];
+    let expired = false;
+    if (row.token_expiry) {
+      const expiresAt = new Date(row.token_expiry).getTime();
+      expired = Number.isFinite(expiresAt) && expiresAt < Date.now();
+    }
+
+    return res.json({
+      connected: true,
+      email: row.gmail_email,
+      expired
+    });
+  } catch (err) {
+    error('Gmail status error:', err);
+    return res.json({ connected: false });
   }
 });
 
