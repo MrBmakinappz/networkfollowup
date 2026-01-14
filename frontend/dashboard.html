@@ -2616,22 +2616,95 @@
             };
         }
 
+        // Check Gmail connection status for Follow-Up Machine
+        async function checkGmailConnection() {
+            try {
+                console.log('Checking Gmail connection status...');
+                const response = await fetch(`${API_URL}/oauth/google/status`, {
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to check Gmail status');
+                }
+                
+                const data = await response.json();
+                console.log('Gmail status:', data);
+                
+                const gmailNotConnectedCard = document.getElementById('gmailNotConnectedCard');
+                const gmailConnectedCard = document.getElementById('gmailConnectedCard');
+                const uploadDisabledOverlay = document.getElementById('uploadDisabledOverlay');
+                const uploadZone = document.getElementById('machineUploadZone');
+                const connectedGmailEmail = document.getElementById('connectedGmailEmail');
+                
+                if (data.connected && !data.expired) {
+                    // Gmail is connected
+                    if (gmailNotConnectedCard) gmailNotConnectedCard.style.display = 'none';
+                    if (gmailConnectedCard) {
+                        gmailConnectedCard.style.display = 'block';
+                        if (connectedGmailEmail) {
+                            connectedGmailEmail.textContent = `Connected as: ${data.email || 'Gmail account'}`;
+                        }
+                    }
+                    if (uploadDisabledOverlay) uploadDisabledOverlay.style.display = 'none';
+                    if (uploadZone) {
+                        uploadZone.style.opacity = '1';
+                        uploadZone.style.pointerEvents = 'auto';
+                    }
+                } else {
+                    // Gmail is not connected or expired
+                    if (gmailNotConnectedCard) gmailNotConnectedCard.style.display = 'block';
+                    if (gmailConnectedCard) gmailConnectedCard.style.display = 'none';
+                    if (uploadDisabledOverlay) uploadDisabledOverlay.style.display = 'flex';
+                    if (uploadZone) {
+                        uploadZone.style.opacity = '0.5';
+                        uploadZone.style.pointerEvents = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Gmail connection check error:', error);
+                // Show not connected state on error
+                const gmailNotConnectedCard = document.getElementById('gmailNotConnectedCard');
+                const gmailConnectedCard = document.getElementById('gmailConnectedCard');
+                const uploadDisabledOverlay = document.getElementById('uploadDisabledOverlay');
+                if (gmailNotConnectedCard) gmailNotConnectedCard.style.display = 'block';
+                if (gmailConnectedCard) gmailConnectedCard.style.display = 'none';
+                if (uploadDisabledOverlay) uploadDisabledOverlay.style.display = 'flex';
+            }
+        }
+
         async function connectGmail() {
             try {
                 const btn = document.getElementById('connectGmailBtn');
-                btn.disabled = true;
-                btn.innerHTML = '<span class="spinner"></span> Connecting...';
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner"></span> Connecting...';
+                }
 
-                // Redirect to OAuth URL (production or development)
-                const oauthUrl = isProduction
-                    ? 'https://networkfollowup-production.up.railway.app/api/oauth/google'
-                    : 'http://localhost:5000/api/oauth/google';
-                console.log('Redirecting to:', oauthUrl);
-                window.location.href = oauthUrl;
+                // Get OAuth URL from backend
+                const response = await fetch(`${API_URL}/oauth/google`, {
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to initiate Gmail connection');
+                }
+                
+                const data = await response.json();
+                if (data.authUrl) {
+                    console.log('Redirecting to Gmail OAuth:', data.authUrl);
+                    window.location.href = data.authUrl;
+                } else {
+                    throw new Error('No auth URL received');
+                }
             } catch (error) {
                 console.error('Connect Gmail error:', error);
                 showToast('Failed to connect Gmail. Please try again.', 'error');
-                document.getElementById('connectGmailBtn').disabled = false;
+                const btn = document.getElementById('connectGmailBtn');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '✉️ Connect Gmail';
+                }
                 document.getElementById('connectGmailBtn').innerHTML = '✉️ Connect Gmail';
             }
         }
@@ -3416,7 +3489,7 @@
                     } else if (section === 'machine') {
                         loadMachineGmailStatus();
                         loadMachineUsageLimits();
-                        checkFollowUpGmail();
+                        checkGmailConnection();
                     } else if (section === 'billing') {
                         loadBillingInfo();
                         loadPaymentHistory();
@@ -3430,39 +3503,6 @@
                 }
             } catch (error) {
                 console.error('Error showing section:', error);
-            }
-        }
-
-        // FIX 1: Gmail connection check for Follow-Up Machine ONLY
-        async function checkFollowUpGmail() {
-            try {
-                const response = await fetch(API_URL + '/oauth/google/status', {
-                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
-                });
-                const data = await response.json();
-                
-                // Show/hide Gmail status in Follow-Up section only
-                const followupSection = document.getElementById('machine-section');
-                if (!followupSection) return;
-                
-                if (!data.connected) {
-                    // Disable upload, show connect message
-                    const uploadZone = followupSection.querySelector('.upload-zone');
-                    if (uploadZone) {
-                        uploadZone.style.opacity = '0.5';
-                        uploadZone.style.pointerEvents = 'none';
-                        uploadZone.innerHTML = '<p>⚠️ Connect Gmail first to upload screenshots</p><button onclick="window.location.href=\'#settings\'">Connect Gmail in Settings</button>';
-                    }
-                } else {
-                    // Re-enable upload if connected
-                    const uploadZone = followupSection.querySelector('.upload-zone');
-                    if (uploadZone) {
-                        uploadZone.style.opacity = '1';
-                        uploadZone.style.pointerEvents = 'auto';
-                    }
-                }
-            } catch (error) {
-                console.error('Gmail check error:', error);
             }
         }
 
@@ -6190,6 +6230,23 @@ Best regards,
 
             console.log('✅ Auth token found, loading dashboard...');
             loadDashboard();
+            
+            // Handle Gmail OAuth callback
+            const urlParams = new URLSearchParams(window.location.search);
+            const gmailStatus = urlParams.get('gmail');
+            if (gmailStatus === 'connected') {
+                showToast('Gmail connected successfully!', 'success');
+                // Refresh Gmail status if on machine section
+                if (document.getElementById('machine-section')?.style.display !== 'none') {
+                    checkGmailConnection();
+                }
+                // Clean URL
+                window.history.replaceState({}, '', 'dashboard.html');
+            } else if (gmailStatus === 'error') {
+                showToast('Failed to connect Gmail. Please try again.', 'error');
+                // Clean URL
+                window.history.replaceState({}, '', 'dashboard.html');
+            }
             
             // Add ripple effects to all buttons
             document.querySelectorAll('.btn').forEach(btn => {

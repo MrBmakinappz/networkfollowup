@@ -204,23 +204,23 @@ try {
 
 // OAuth routes (MUST be registered FIRST for Vercel routing)
 console.log('🔵 Loading OAuth routes...');
-let googleOAuthRoutes, gmailOAuthRoutes;
+let oauthRoutes;
 try {
-  googleOAuthRoutes = require('./routes/google-oauth');
-  console.log('✅ Google OAuth routes loaded');
-  app.use('/api/oauth', googleOAuthRoutes);
+  oauthRoutes = require('./routes/oauth');
+  console.log('✅ OAuth routes loaded');
+  app.use('/api/oauth', oauthRoutes);
   console.log('✅ /api/oauth registered');
 } catch (err) {
-  console.error('⚠️ Google OAuth routes not available:', err.message);
-}
-
-try {
-  gmailOAuthRoutes = require('./routes/gmail-oauth');
-  console.log('✅ Gmail OAuth routes loaded');
-  app.use('/api/oauth/gmail', gmailOAuthRoutes);
-  console.log('✅ /api/oauth/gmail registered');
-} catch (err) {
-  console.error('⚠️ Gmail OAuth routes not available:', err.message);
+  console.error('⚠️ OAuth routes not available:', err.message);
+  // Fallback to old routes if new one fails
+  try {
+    const googleOAuthRoutes = require('./routes/google-oauth');
+    console.log('✅ Fallback: Google OAuth routes loaded');
+    app.use('/api/oauth', googleOAuthRoutes);
+    console.log('✅ /api/oauth registered (fallback)');
+  } catch (fallbackErr) {
+    console.error('⚠️ Fallback OAuth routes also failed:', fallbackErr.message);
+  }
 }
 
 // Onboarding middleware
