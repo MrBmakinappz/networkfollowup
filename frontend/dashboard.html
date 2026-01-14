@@ -2659,51 +2659,22 @@
         }
 
         async function loadDashboard() {
-            const token = localStorage.getItem('authToken');
-            if (!token) {
-                window.location.href = 'login.html';
-                return;
-            }
+            if (!checkAuth()) return;
+
+            const userName = localStorage.getItem('userName') || 'User';
+            const userEmail = localStorage.getItem('userEmail') || '';
             
-            document.getElementById('totalEmails').textContent = '...';
-            document.getElementById('emailsThisMonth').textContent = '...';
-            document.getElementById('totalCustomers').textContent = '...';
-            document.getElementById('gmailStatus').textContent = 'Checking...';
-            
-            try {
-                const response = await fetch(API_URL + '/users/stats', {
-                    headers: {
-                        'Authorization': 'Bearer ' + token,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                const stats = await response.json();
-                console.log('DASHBOARD STATS:', stats);
-                
-                document.getElementById('totalEmails').textContent = stats.totalEmails || 0;
-                document.getElementById('emailsThisMonth').textContent = stats.emailsThisMonth || 0;
-                document.getElementById('totalCustomers').textContent = stats.totalCustomers || 0;
-                
-                const gmailStatus = document.getElementById('gmailStatus');
-                if (stats.gmailConnected) {
-                    gmailStatus.textContent = '✓ Connected';
-                    gmailStatus.style.color = '#10B981';
-                } else {
-                    gmailStatus.textContent = '✗ Not Connected';
-                    gmailStatus.style.color = '#EF4444';
-                }
-                
-                const userName = localStorage.getItem('userName') || 'User';
-                document.getElementById('userName').textContent = userName;
-            } catch (error) {
-                console.error('DASHBOARD ERROR:', error);
-                document.getElementById('totalEmails').textContent = '0';
-                document.getElementById('emailsThisMonth').textContent = '0';
-                document.getElementById('totalCustomers').textContent = '0';
-                document.getElementById('gmailStatus').textContent = '✗ Error';
-                document.getElementById('gmailStatus').style.color = '#EF4444';
-            }
+            document.getElementById('userName').textContent = userName;
+            document.getElementById('userEmail').textContent = userEmail;
+            document.getElementById('welcomeName').textContent = userName.split(' ')[0];
+            document.getElementById('userAvatar').textContent = userName.charAt(0).toUpperCase();
+
+            // Check onboarding status and show button if needed
+            await checkOnboardingStatus();
+
+            await checkGmailStatus();
+            await loadDashboardStats();
+            await loadCustomers();
         }
 
         async function checkOnboardingStatus() {
@@ -3445,6 +3416,7 @@
                     } else if (section === 'machine') {
                         loadMachineGmailStatus();
                         loadMachineUsageLimits();
+                        checkFollowUpGmail();
                     } else if (section === 'billing') {
                         loadBillingInfo();
                         loadPaymentHistory();
@@ -3458,6 +3430,39 @@
                 }
             } catch (error) {
                 console.error('Error showing section:', error);
+            }
+        }
+
+        // FIX 1: Gmail connection check for Follow-Up Machine ONLY
+        async function checkFollowUpGmail() {
+            try {
+                const response = await fetch(API_URL + '/oauth/google/status', {
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
+                });
+                const data = await response.json();
+                
+                // Show/hide Gmail status in Follow-Up section only
+                const followupSection = document.getElementById('machine-section');
+                if (!followupSection) return;
+                
+                if (!data.connected) {
+                    // Disable upload, show connect message
+                    const uploadZone = followupSection.querySelector('.upload-zone');
+                    if (uploadZone) {
+                        uploadZone.style.opacity = '0.5';
+                        uploadZone.style.pointerEvents = 'none';
+                        uploadZone.innerHTML = '<p>⚠️ Connect Gmail first to upload screenshots</p><button onclick="window.location.href=\'#settings\'">Connect Gmail in Settings</button>';
+                    }
+                } else {
+                    // Re-enable upload if connected
+                    const uploadZone = followupSection.querySelector('.upload-zone');
+                    if (uploadZone) {
+                        uploadZone.style.opacity = '1';
+                        uploadZone.style.pointerEvents = 'auto';
+                    }
+                }
+            } catch (error) {
+                console.error('Gmail check error:', error);
             }
         }
 
@@ -3548,43 +3553,6 @@
             }
         }
 
-        // STEP 2: Gmail connection functions
-        async function checkGmailConnection() {
-            try {
-                const response = await fetch(API_URL + '/oauth/google/status', {
-                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
-                });
-                const data = await response.json();
-                console.log('GMAIL STATUS:', data);
-                
-                if (data.connected) {
-                    document.getElementById('gmailNotConnectedCard').style.display = 'none';
-                    document.getElementById('gmailConnectedCard').style.display = 'block';
-                    document.getElementById('connectedGmailEmail').textContent = 'Connected as: ' + data.email;
-                    document.getElementById('uploadDisabledOverlay').style.display = 'none';
-                } else {
-                    document.getElementById('gmailNotConnectedCard').style.display = 'block';
-                    document.getElementById('gmailConnectedCard').style.display = 'none';
-                    document.getElementById('uploadDisabledOverlay').style.display = 'flex';
-                }
-            } catch (error) {
-                console.error('GMAIL CHECK ERROR:', error);
-            }
-        }
-
-        async function connectGmail() {
-            try {
-                const response = await fetch(API_URL + '/oauth/google', {
-                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
-                });
-                const data = await response.json();
-                if (data.authUrl) window.location.href = data.authUrl;
-            } catch (error) {
-                console.error('GMAIL CONNECT ERROR:', error);
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', checkGmailConnection);
 
         // Alias for consistency
         async function loadMachineUsageLimits() {
