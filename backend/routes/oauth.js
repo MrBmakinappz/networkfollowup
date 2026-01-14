@@ -6,6 +6,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const db = require('../config/database');
 const bcrypt = require('bcryptjs');
+const { authenticateToken } = require('../middleware/auth');
 const { log, error, warn } = require('../utils/logger');
 const {
     getAuthUrl,
@@ -371,6 +372,47 @@ router.post('/google/refresh', async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to refresh token',
+            message: err.message
+        });
+    }
+});
+
+/**
+ * BUG 4: Gmail connection status
+ *
+ * GET /api/oauth/google/status
+ * Return whether the current authenticated user has a Gmail connection.
+ *
+ * Response shape matches frontend expectations:
+ * { connected: boolean, email?: string }
+ */
+router.get('/google/status', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        const result = await db.query(
+            'SELECT gmail_email FROM public.gmail_connections WHERE user_id = $1',
+            [userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.json({
+                success: true,
+                connected: false
+            });
+        }
+
+        return res.json({
+            success: true,
+            connected: true,
+            email: result.rows[0].gmail_email
+        });
+    } catch (err) {
+        error('Google status error:', err);
+        return res.status(500).json({
+            success: false,
+            connected: false,
+            error: 'Failed to check Gmail connection status',
             message: err.message
         });
     }

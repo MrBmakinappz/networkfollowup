@@ -3540,6 +3540,81 @@
             }
         }
 
+        // BUG 4: Top-level Gmail connection status cards in Follow-Up Machine
+        async function checkGmailConnection() {
+            try {
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    // If not logged in, show disconnected state
+                    const connCard = document.getElementById('gmailConnectionCard');
+                    const connectedCard = document.getElementById('gmailConnectedCard');
+                    const uploadSection = document.getElementById('uploadSection');
+                    if (connCard) connCard.style.display = 'block';
+                    if (connectedCard) connectedCard.style.display = 'none';
+                    if (uploadSection) {
+                        uploadSection.style.opacity = '0.5';
+                        uploadSection.style.pointerEvents = 'none';
+                    }
+                    return;
+                }
+
+                const response = await fetch(`${API_URL}/oauth/google/status`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json().catch(() => ({}));
+
+                const connCard = document.getElementById('gmailConnectionCard');
+                const connectedCard = document.getElementById('gmailConnectedCard');
+                const uploadSection = document.getElementById('uploadSection');
+                const connectedEmailEl = document.getElementById('connectedGmailEmail');
+
+                if (!response.ok || !data || data.connected === undefined) {
+                    console.error('Check Gmail connection error (status):', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        data
+                    });
+                    // Fallback: show disconnected but do not block hard, since BUG 10 already gates uploads
+                    if (connCard) connCard.style.display = 'block';
+                    if (connectedCard) connectedCard.style.display = 'none';
+                    if (uploadSection) {
+                        uploadSection.style.opacity = '0.5';
+                        uploadSection.style.pointerEvents = 'none';
+                    }
+                    return;
+                }
+
+                if (data.connected) {
+                    if (connCard) connCard.style.display = 'none';
+                    if (connectedCard) connectedCard.style.display = 'block';
+                    if (connectedEmailEl && data.email) {
+                        connectedEmailEl.textContent = `Connected as: ${data.email}`;
+                    }
+                    if (uploadSection) {
+                        uploadSection.style.opacity = '1';
+                        uploadSection.style.pointerEvents = 'auto';
+                    }
+                } else {
+                    if (connCard) connCard.style.display = 'block';
+                    if (connectedCard) connectedCard.style.display = 'none';
+                    if (uploadSection) {
+                        uploadSection.style.opacity = '0.5';
+                        uploadSection.style.pointerEvents = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Check Gmail connection error:', error);
+            }
+        }
+
+        // Call Gmail connection check on initial load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkGmailConnection().catch(err => console.error('Initial Gmail status error:', err));
+        });
+
         // Alias for consistency
         async function loadMachineUsageLimits() {
             await loadMachineGmailStatus();
