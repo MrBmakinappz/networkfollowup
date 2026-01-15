@@ -962,31 +962,31 @@
         <div class="logo">NFU</div>
         
         <nav>
-            <a class="nav-item active" href="javascript:void(0)" onclick="showSection('dashboard', event); return false;">
+            <a class="nav-item active" href="#" onclick="showSection('dashboard'); return false;">
                 <span class="nav-icon">📊</span>
                 <span>Dashboard</span>
             </a>
-            <a class="nav-item" href="javascript:void(0)" onclick="showSection('followup', event); return false;">
+            <a class="nav-item" href="#" onclick="showSection('followup'); return false;">
                 <span class="nav-icon">🚀</span>
                 <span>Follow-Up Machine</span>
             </a>
-            <a class="nav-item" href="javascript:void(0)" onclick="showSection('customers', event); return false;">
+            <a class="nav-item" href="#" onclick="showSection('customers'); return false;">
                 <span class="nav-icon">👥</span>
                 <span>Customers</span>
             </a>
-            <a class="nav-item" href="javascript:void(0)" onclick="showSection('history', event); return false;">
+            <a class="nav-item" href="#" onclick="showSection('history'); return false;">
                 <span class="nav-icon">📜</span>
                 <span>History</span>
             </a>
-            <a class="nav-item" href="javascript:void(0)" onclick="showSection('billing', event); return false;">
+            <a class="nav-item" href="#" onclick="showSection('billing'); return false;">
                 <span class="nav-icon">💳</span>
                 <span>Billing</span>
             </a>
-            <a class="nav-item" href="javascript:void(0)" onclick="showSection('templates', event); return false;">
+            <a class="nav-item" href="#" onclick="showSection('templates'); return false;">
                 <span class="nav-icon">📧</span>
                 <span>Email Templates</span>
             </a>
-            <a class="nav-item" href="javascript:void(0)" onclick="showSection('settings', event); return false;">
+            <a class="nav-item" href="#" onclick="showSection('settings'); return false;">
                 <span class="nav-icon">⚙️</span>
                 <span>Settings</span>
             </a>
@@ -3634,20 +3634,9 @@
                     if (data.success && data.data) {
                         const { gmail_connected, usage, warnings } = data.data;
 
-                        // Show/hide Gmail warning
-                        const gmailStatusDiv = document.getElementById('machineGmailStatus');
-                        const uploadDisabled = document.getElementById('machineUploadDisabled');
-                        const uploadZone = document.getElementById('machineUploadZone');
-                        
-                        if (!gmail_connected) {
-                            if (gmailStatusDiv) gmailStatusDiv.style.display = 'block';
-                            if (uploadDisabled) uploadDisabled.style.display = 'flex';
-                            if (uploadZone) uploadZone.style.pointerEvents = 'none';
-                        } else {
-                            if (gmailStatusDiv) gmailStatusDiv.style.display = 'none';
-                            if (uploadDisabled) uploadDisabled.style.display = 'none';
-                            if (uploadZone) uploadZone.style.pointerEvents = 'auto';
-                        }
+                        // Gmail blocking removed - upload zone is always enabled
+                        // Upload works without Gmail connection
+                        // Gmail is only required when sending emails
 
                         // Update usage limits display
                         const usageDiv = document.getElementById('machineUsageLimits');
@@ -6561,5 +6550,44 @@ Best regards,
             </div>
         </div>
     </div>
+    
+    <script>
+        // Simple showSection function for menu navigation
+        function showSection(sectionName) {
+            console.log('[NAV] Switching to:', sectionName);
+            
+            // Hide all sections
+            document.querySelectorAll('.section-content').forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Show target section
+            const target = document.getElementById(sectionName + '-section');
+            if (target) {
+                target.style.display = 'block';
+            } else {
+                console.error('[NAV] Section not found:', sectionName);
+            }
+            
+            // Update active menu
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Find and activate the clicked menu item
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                const onclick = item.getAttribute('onclick') || '';
+                if (onclick.includes("'" + sectionName + "'") || onclick.includes('"' + sectionName + '"')) {
+                    item.classList.add('active');
+                }
+            });
+        }
+        
+        // Show dashboard on load
+        document.addEventListener('DOMContentLoaded', () => {
+            showSection('dashboard');
+        });
+    </script>
 </body>
 </html>
