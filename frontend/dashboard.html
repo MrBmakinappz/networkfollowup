@@ -10,9 +10,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
-        // CRITICAL: Define showSection EARLY so navigation works
+        // CRITICAL: Define showSection EARLY so navigation works - EXACT SPECIFICATION
         function showSection(sectionName, event) {
-            console.log('showSection called:', sectionName);
+            console.log('Showing section:', sectionName);
             
             // Prevent default
             if (event) {
@@ -21,60 +21,79 @@
             }
             
             // Hide all sections
-            const allSections = document.querySelectorAll('.section-content');
-            allSections.forEach(section => {
+            const sections = document.querySelectorAll('.section-content');
+            sections.forEach(section => {
                 section.style.display = 'none';
             });
             
             // Show target section
-            const targetId = sectionName + '-section';
-            const target = document.getElementById(targetId);
-            if (!target) {
-                console.error('Section not found:', targetId);
-                alert('Section not found: ' + targetId);
+            const targetSection = document.getElementById(sectionName + '-section');
+            if (targetSection) {
+                targetSection.style.display = 'block';
+            } else {
+                console.error('Section not found:', sectionName + '-section');
                 return;
             }
-            target.style.display = 'block';
-            console.log('Section shown:', targetId);
             
-            // Update active menu - remove all active
-            document.querySelectorAll('.nav-item').forEach(item => {
+            // Update active menu state
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
                 item.classList.remove('active');
             });
             
-            // Find and activate clicked menu item
-            let activated = false;
-            if (event) {
-                // Try to get the element from event
-                const targetEl = event.target || event.currentTarget;
-                if (targetEl) {
-                    const navItem = targetEl.closest('.nav-item');
-                    if (navItem) {
-                        navItem.classList.add('active');
-                        activated = true;
-                    }
+            // Add active to clicked item
+            if (event && event.target) {
+                const navItem = event.target.closest('.nav-item');
+                if (navItem) {
+                    navItem.classList.add('active');
+                } else {
+                    // Fallback: find by onclick
+                    navItems.forEach(item => {
+                        const onclick = item.getAttribute('onclick') || '';
+                        if (onclick.includes("'" + sectionName + "'")) {
+                            item.classList.add('active');
+                        }
+                    });
                 }
-            }
-            
-            // Fallback: find by onclick attribute
-            if (!activated) {
-                document.querySelectorAll('.nav-item').forEach(item => {
+            } else {
+                // Fallback: find by onclick
+                navItems.forEach(item => {
                     const onclick = item.getAttribute('onclick') || '';
-                    if (onclick.includes("'" + sectionName + "'") || onclick.includes('"' + sectionName + '"')) {
+                    if (onclick.includes("'" + sectionName + "'")) {
                         item.classList.add('active');
-                        activated = true;
                     }
                 });
             }
             
-            if (!activated) {
-                console.warn('Could not activate menu item for:', sectionName);
+            // Load section data if needed
+            switch(sectionName) {
+                case 'dashboard':
+                    if (typeof loadDashboardStats === 'function') loadDashboardStats();
+                    break;
+                case 'customers':
+                    if (typeof loadCustomers === 'function') loadCustomers();
+                    break;
+                case 'history':
+                    if (typeof loadEmailHistory === 'function') loadEmailHistory();
+                    break;
+                case 'templates':
+                    if (typeof loadTemplates === 'function') {
+                        loadTemplates();
+                    } else if (typeof loadUserTemplates === 'function') {
+                        loadUserTemplates();
+                    }
+                    break;
+                case 'billing':
+                    if (typeof loadBillingInfo === 'function') loadBillingInfo();
+                    break;
+                case 'settings':
+                    if (typeof loadUserSettings === 'function') loadUserSettings();
+                    break;
             }
         }
         
         // Make globally available
         window.showSection = showSection;
-        console.log('showSection function loaded');
     </script>
     <style>
         * {
@@ -890,7 +909,7 @@
                 <span class="nav-icon">📊</span>
                 <span>Dashboard</span>
             </a>
-            <a class="nav-item" href="javascript:void(0)" onclick="showSection('machine', event); return false;">
+            <a class="nav-item" href="javascript:void(0)" onclick="showSection('followup', event); return false;">
                 <span class="nav-icon">🚀</span>
                 <span>Follow-Up Machine</span>
             </a>
@@ -986,7 +1005,7 @@
                     </div>
                 </div>
                 <div style="padding: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-                    <button class="btn btn-primary" onclick="showSection('machine', event)" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; border: none; padding: 16px 24px; border-radius: 12px; font-weight: 700; font-size: 15px; cursor: pointer; box-shadow: 0 4px 12px rgba(16,185,129,0.3); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(16,185,129,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(16,185,129,0.3)'">
+                    <button class="btn btn-primary" onclick="showSection('followup', event)" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; border: none; padding: 16px 24px; border-radius: 12px; font-weight: 700; font-size: 15px; cursor: pointer; box-shadow: 0 4px 12px rgba(16,185,129,0.3); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(16,185,129,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(16,185,129,0.3)'">
                         📤 Upload Screenshot
                     </button>
                     <button class="btn btn-primary" onclick="showSection('customers', event)" style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); color: white; border: none; padding: 16px 24px; border-radius: 12px; font-weight: 700; font-size: 15px; cursor: pointer; box-shadow: 0 4px 12px rgba(59,130,246,0.3); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(59,130,246,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(59,130,246,0.3)'">
@@ -1070,7 +1089,7 @@
         </div>
 
         <!-- FOLLOW-UP MACHINE SECTION -->
-        <div id="machine-section" class="section-content" style="display: none;">
+        <div id="followup-section" class="section-content" style="display: none;">
             <div id="gmailNotConnectedCard" style="background: linear-gradient(135deg, #FEE2E2, #FECACA); border: 2px solid #EF4444; border-radius: 16px; padding: 32px; margin-bottom: 32px; display: none;">
                 <div style="display: flex; align-items: center; gap: 24px; justify-content: space-between; flex-wrap: wrap;">
                     <div style="display: flex; align-items: center; gap: 24px;">
@@ -3104,58 +3123,78 @@
         }
 
         // BUG 1: Enhanced loadDashboardStats with timeout, error handling, and proper field mapping
+        // Load dashboard stats - EXACT SPECIFICATION
         async function loadDashboardStats() {
-            // Show loading skeletons
-            showStatsLoading();
-            
-            // Set timeout to remove loading state after 3 seconds max
-            const loadingTimeout = setTimeout(() => {
-                hideStatsLoading();
-            }, 3000);
-            
             try {
-                // Verify auth token exists
-                const token = localStorage.getItem('authToken');
-                if (!token) {
-                    throw new Error('No authentication token found');
-                }
-
-                // BUG 1: Add timeout to fetch request (10 seconds max)
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-                const response = await fetch(`${API_URL}/users/stats`, {
-                    headers: getAuthHeaders(),
-                    signal: controller.signal
+                const response = await fetch(API_URL + '/users/stats', {
+                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
                 });
-
-                clearTimeout(timeoutId);
-                clearTimeout(loadingTimeout);
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-                    console.error('Stats API error:', {
-                        status: response.status,
-                        statusText: response.statusText,
-                        error: errorData
-                    });
-                    throw new Error(errorData.error || errorData.message || 'Failed to load stats');
-                }
-
-                const data = await response.json();
-                console.log('Stats API response:', data);
-
-                // Handle both response formats: {success: true, data: {...}} or direct {...}
-                const stats = data.success && data.data ? data.data : data;
-                const customers = stats.customers || {};
-                const emails = stats.emails || {};
-                const gmail = stats.gmail || {}; // BUG 1: Use correct field path
                 
-                // Also check for direct fields if nested structure doesn't exist
-                const totalCustomersDirect = stats.totalCustomers || stats.total_customers || 0;
-                const totalEmailsDirect = stats.totalEmails || stats.total_emails || 0;
-                const emailsThisMonthDirect = stats.emailsThisMonth || stats.emails_this_month || 0;
-                const gmailConnectedDirect = stats.gmailConnected !== undefined ? stats.gmailConnected : (stats.gmail_connected !== undefined ? stats.gmail_connected : null);
+                let stats;
+                if (response.ok) {
+                    const data = await response.json();
+                    // Handle both formats: {success: true, data: {...}} or direct {...}
+                    stats = data.success && data.data ? data.data : data;
+                } else {
+                    throw new Error('Failed to load stats');
+                }
+                
+                // Update stat cards - use flat fields from spec
+                document.getElementById('totalEmails').textContent = stats.totalEmails || stats.total_emails || 0;
+                document.getElementById('emailsThisMonth').textContent = stats.emailsThisMonth || stats.emails_this_month || 0;
+                document.getElementById('totalCustomers').textContent = stats.totalCustomers || stats.total_customers || 0;
+                
+                // Update Gmail status
+                const gmailStatus = document.getElementById('gmailStatusValue');
+                if (gmailStatus) {
+                    const gmailConnected = stats.gmailConnected !== undefined ? stats.gmailConnected : (stats.gmail_connected !== undefined ? stats.gmail_connected : false);
+                    if (gmailConnected) {
+                        gmailStatus.textContent = '✓ Connected';
+                        gmailStatus.style.color = '#10B981';
+                        // Update card background to green
+                        const gmailCard = document.getElementById('gmailStatusCard');
+                        if (gmailCard) {
+                            gmailCard.style.background = 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
+                        }
+                    } else {
+                        gmailStatus.textContent = '✗ Not Connected';
+                        gmailStatus.style.color = '#EF4444';
+                    }
+                }
+            } catch (error) {
+                console.error('Stats error:', error);
+                // Show zeros on error (per spec)
+                document.getElementById('totalEmails').textContent = '0';
+                document.getElementById('emailsThisMonth').textContent = '0';
+                document.getElementById('totalCustomers').textContent = '0';
+                const gmailStatus = document.getElementById('gmailStatusValue');
+                if (gmailStatus) {
+                    gmailStatus.textContent = '✗ Not Connected';
+                    gmailStatus.style.color = '#EF4444';
+                }
+            }
+        }
+        
+        // Legacy function for compatibility - redirects to new one
+        async function loadDashboard() {
+            if (!checkAuth()) return;
+
+            const userName = localStorage.getItem('userName') || 'User';
+            const userEmail = localStorage.getItem('userEmail') || '';
+            
+            const welcomeNameEl = document.getElementById('welcomeName');
+            if (welcomeNameEl) welcomeNameEl.textContent = userName.split(' ')[0];
+            
+            const userNameEl = document.getElementById('userName');
+            if (userNameEl) userNameEl.textContent = userName;
+            
+            const userEmailEl = document.getElementById('userEmail');
+            if (userEmailEl) userEmailEl.textContent = userEmail;
+            
+            const userAvatarEl = document.getElementById('userAvatar');
+            if (userAvatarEl) userAvatarEl.textContent = userName.charAt(0).toUpperCase();
+
+            await loadDashboardStats();
 
                     // Animate stat updates
                     const animateValue = (element, start, end, duration) => {
@@ -6358,36 +6397,25 @@ Best regards,
             }
         }
 
-        // Initialize on page load
+        // Initialize on page load - EXACT SPECIFICATION
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('=== PAGE LOADED ===');
-            
-            // Verify showSection is available
-            if (typeof showSection !== 'function' && typeof window.showSection !== 'function') {
-                console.error('❌ showSection function not available!');
-                alert('ERROR: Navigation broken. Please refresh the page.');
-            } else {
-                console.log('✅ showSection function is available');
-            }
-            
             // Check auth first
             if (!checkAuth()) {
-                console.error('❌ Authentication check failed on page load');
                 return;
             }
             
-            // Show dashboard by default (navigation only, no data loading)
-            console.log('Initializing dashboard...');
+            // Show dashboard by default
             showSection('dashboard');
             
-            // Load dashboard data after navigation is confirmed
+            // Load user info
+            const userName = localStorage.getItem('userName') || 'User';
+            const welcomeNameEl = document.getElementById('welcomeName');
+            if (welcomeNameEl) welcomeNameEl.textContent = userName.split(' ')[0];
+            
+            // Load dashboard stats (will be called by showSection, but ensure it runs)
             setTimeout(() => {
-                try {
-                    if (typeof loadDashboardStats === 'function') {
-                        loadDashboardStats();
-                    }
-                } catch (err) {
-                    console.error('Error loading dashboard stats:', err);
+                if (typeof loadDashboardStats === 'function') {
+                    loadDashboardStats();
                 }
             }, 100);
 
