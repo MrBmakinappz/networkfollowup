@@ -1878,9 +1878,15 @@
     <script src="https://js.stripe.com/v3/"></script>
     <!-- CRITICAL: Define showSection IMMEDIATELY so buttons work -->
     <script>
-        // CRITICAL: showSection function - must work for all menu navigation
+        // CRITICAL: Simple, reliable showSection function for menu navigation
         function showSection(sectionName, event) {
             console.log('Switching to section:', sectionName);
+            
+            // Prevent default link behavior
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
             
             // Hide all sections
             const sections = document.querySelectorAll('.section-content');
@@ -1892,40 +1898,41 @@
             const targetSection = document.getElementById(sectionName + '-section');
             if (targetSection) {
                 targetSection.style.display = 'block';
+                console.log('Section shown:', sectionName + '-section');
             } else {
                 console.error('Section not found:', sectionName + '-section');
+                alert('Section not found: ' + sectionName);
+                return;
             }
             
-            // Update active menu state
+            // Update active menu state - remove all active classes
             const menuItems = document.querySelectorAll('.nav-item');
             menuItems.forEach(item => {
                 item.classList.remove('active');
             });
             
-            // Add active class to clicked menu
+            // Add active class to the clicked menu item
+            let activeItem = null;
             if (event && event.target) {
-                const navItem = event.target.closest('.nav-item');
-                if (navItem) {
-                    navItem.classList.add('active');
-                } else {
-                    // Fallback: find nav item by onclick attribute
-                    menuItems.forEach(item => {
-                        const onclick = item.getAttribute('onclick');
-                        if (onclick && onclick.includes("'" + sectionName + "'")) {
-                            item.classList.add('active');
-                        }
-                    });
-                }
-            } else {
-                // Fallback: find nav item by onclick attribute
+                activeItem = event.target.closest('.nav-item');
+            }
+            
+            if (!activeItem) {
+                // Fallback: find by onclick attribute
                 menuItems.forEach(item => {
                     const onclick = item.getAttribute('onclick');
                     if (onclick && onclick.includes("'" + sectionName + "'")) {
-                        item.classList.add('active');
+                        activeItem = item;
                     }
                 });
             }
+            
+            if (activeItem) {
+                activeItem.classList.add('active');
+            }
         }
+        
+        // Make it globally available
         window.showSection = showSection;
     </script>
     
@@ -3598,11 +3605,14 @@
         // Enhance showSection to load data after navigation
         const originalShowSection = window.showSection;
         window.showSection = function(sectionName, event) {
+            // Call original function to show/hide sections
             if (originalShowSection) {
                 originalShowSection(sectionName, event);
             }
-            // Load section data after showing section
-            setTimeout(() => loadSectionData(sectionName), 100);
+            // Load section-specific data after showing section
+            setTimeout(() => {
+                loadSectionData(sectionName);
+            }, 100);
         };
 
         // BUG 10: Load Gmail status and usage limits for Follow-Up Machine
