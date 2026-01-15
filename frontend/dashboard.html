@@ -99,10 +99,7 @@
                                 }
                                 break;
                             case 'followup':
-                                if (typeof checkGmailConnection === 'function') {
-                                    console.log('Checking Gmail connection...');
-                                    checkGmailConnection();
-                                }
+                                // Follow-Up Machine ready - no Gmail check needed for upload
                                 break;
                             case 'customers':
                                 if (typeof loadCustomers === 'function') {
@@ -1150,56 +1147,17 @@
 
         <!-- FOLLOW-UP MACHINE SECTION -->
         <div id="followup-section" class="section-content" style="display: none;">
-            <div id="gmailNotConnectedCard" style="background: linear-gradient(135deg, #FEE2E2, #FECACA); border: 2px solid #EF4444; border-radius: 16px; padding: 32px; margin-bottom: 32px; display: none;">
-                <div style="display: flex; align-items: center; gap: 24px; justify-content: space-between; flex-wrap: wrap;">
-                    <div style="display: flex; align-items: center; gap: 24px;">
-                        <div style="width: 80px; height: 80px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px;">📧</div>
-                        <div>
-                            <h2 style="margin: 0 0 8px 0; color: #DC2626; font-size: 24px; font-weight: 700;">Gmail Not Connected</h2>
-                            <p style="margin: 0; color: #991B1B; font-size: 16px;">Connect Gmail to unlock automation</p>
-                        </div>
+            <div class="card">
+                <h2>📸 Upload Screenshot</h2>
+                <div class="upload-zone" id="machineUploadZone" onclick="handleMachineUploadClick()">
+                    <div style="font-size: 60px; margin-bottom: 16px;">📷</div>
+                    <div style="font-size: 18px; font-weight: 600; color: #1E293B; margin-bottom: 8px;">
+                        Click or drag to upload screenshot
                     </div>
-                    <button onclick="connectGmail()" style="background: linear-gradient(135deg, #EF4444, #DC2626); color: white; border: none; padding: 16px 40px; border-radius: 12px; font-size: 18px; font-weight: 600; cursor: pointer;">🔗 Connect Gmail</button>
-                </div>
-            </div>
-            
-            <div id="gmailConnectedCard" style="background: linear-gradient(135deg, #D1FAE5, #A7F3D0); border: 2px solid #10B981; border-radius: 16px; padding: 32px; margin-bottom: 32px; display: none;">
-                <div style="display: flex; align-items: center; gap: 24px;">
-                    <div style="width: 80px; height: 80px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px;">✅</div>
-                    <div>
-                        <h2 style="margin: 0 0 4px 0; color: #059669; font-size: 24px; font-weight: 700;">Gmail Connected</h2>
-                        <p style="margin: 0; color: #047857; font-size: 16px;" id="connectedGmailEmail">Connected as: loading...</p>
+                    <div style="font-size: 14px; color: #64748B;">
+                        PNG, JPG up to 10MB • AI will extract customer data
                     </div>
-                </div>
-            </div>
-            
-            <div id="uploadScreenSection" style="position: relative;">
-                <div id="uploadDisabledOverlay" style="position: absolute; inset: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(4px); border-radius: 16px; display: none; align-items: center; justify-content: center; z-index: 10; cursor: not-allowed;">
-                    <div style="text-align: center;">
-                        <div style="font-size: 64px; margin-bottom: 16px;">🔒</div>
-                        <h3 style="color: #EF4444; margin: 0 0 8px 0;">Upload Disabled</h3>
-                        <p style="color: #64748B; margin: 0;">Connect Gmail first</p>
-                    </div>
-                </div>
-                <div class="card">
-                    <h2>📸 Upload Screenshot</h2>
-                    <div class="upload-zone" id="machineUploadZone" onclick="handleMachineUploadClick()" style="position: relative;">
-                        <div id="machineUploadDisabled" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); border-radius: 16px; display: none; align-items: center; justify-content: center; z-index: 10; flex-direction: column; gap: 16px;">
-                            <div style="font-size: 48px;">🔒</div>
-                            <div style="font-weight: 700; color: #DC2626; font-size: 18px;">Gmail Not Connected</div>
-                            <button class="btn btn-primary" onclick="connectGmail()" style="background: #10B981; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer;">
-                                ✉️ Connect Gmail to Continue
-                            </button>
-                        </div>
-                        <div style="font-size: 60px; margin-bottom: 16px;">📷</div>
-                        <div style="font-size: 18px; font-weight: 600; color: #1E293B; margin-bottom: 8px;">
-                            Click or drag to upload screenshot
-                        </div>
-                        <div style="font-size: 14px; color: #64748B;">
-                            PNG, JPG up to 10MB • AI will extract customer data
-                        </div>
-                        <input type="file" id="machineFileInput" accept="image/*" style="display: none;" onchange="handleMachineUpload(event)">
-                    </div>
+                    <input type="file" id="machineFileInput" accept="image/*" style="display: none;" onchange="handleMachineUpload(event)">
                 </div>
             </div>
 
@@ -2038,7 +1996,7 @@
                         if (sectionName === 'dashboard' && typeof loadDashboardStats === 'function') {
                             loadDashboardStats();
                         } else if (sectionName === 'followup') {
-                            if (typeof checkGmailConnection === 'function') checkGmailConnection();
+                            // Follow-Up Machine ready - no Gmail check needed for upload
                         } else if (sectionName === 'customers' && typeof loadCustomers === 'function') {
                             loadCustomers();
                         } else if (sectionName === 'history' && typeof loadEmailHistory === 'function') {
@@ -3730,7 +3688,7 @@
                 } else if (sectionName === 'followup') {
                     if (typeof loadMachineGmailStatus === 'function') loadMachineGmailStatus();
                     if (typeof loadMachineUsageLimits === 'function') loadMachineUsageLimits();
-                    if (typeof checkGmailConnection === 'function') checkGmailConnection();
+                    // No Gmail check needed for upload - only needed when sending
                 } else if (sectionName === 'billing') {
                     if (typeof loadBillingInfo === 'function') loadBillingInfo();
                     if (typeof loadPaymentHistory === 'function') loadPaymentHistory();
@@ -3854,11 +3812,6 @@
 
         // BUG 10: Handle machine upload click (check Gmail first)
         function handleMachineUploadClick() {
-            const uploadDisabled = document.getElementById('machineUploadDisabled');
-            if (uploadDisabled && uploadDisabled.style.display === 'flex') {
-                showToast('Please connect Gmail before uploading screenshots', 'error');
-                return;
-            }
             document.getElementById('machineFileInput').click();
         }
 
@@ -3866,22 +3819,17 @@
             const file = event.target.files[0];
             if (!file) return;
 
-            // BUG 10: Check Gmail connection before upload
-            try {
-                const response = await fetch(`${API_URL}/users/usage-limits`, {
-                    headers: getAuthHeaders()
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success && data.data && !data.data.gmail_connected) {
-                        showToast('Please connect Gmail before uploading screenshots', 'error');
-                        document.getElementById('machineFileInput').value = '';
-                        return;
-                    }
-                }
-            } catch (error) {
-                console.error('Error checking Gmail status:', error);
+            // Validate file
+            if (!file.type.startsWith('image/')) {
+                showToast('Please select an image file', 'error');
+                document.getElementById('machineFileInput').value = '';
+                return;
+            }
+            
+            if (file.size > 10 * 1024 * 1024) {
+                showToast('File too large. Max 10MB', 'error');
+                document.getElementById('machineFileInput').value = '';
+                return;
             }
 
             // Show step 2
@@ -4650,6 +4598,30 @@
                 return;
             }
             
+            // Check Gmail connection before sending
+            try {
+                const statusResponse = await fetch(`${API_URL}/oauth/google/status`, {
+                    headers: getAuthHeaders()
+                });
+                
+                if (statusResponse.ok) {
+                    const statusData = await statusResponse.json();
+                    if (!statusData.connected || statusData.expired) {
+                        showToast('Gmail not connected. Please connect Gmail in Settings to send emails.', 'error', 8000);
+                        // Show summary again
+                        document.getElementById('sendSummary').style.display = 'block';
+                        document.getElementById('sendProgress').style.display = 'none';
+                        return;
+                    }
+                } else {
+                    // If status check fails, try to send anyway - backend will handle error
+                    console.warn('Could not check Gmail status, proceeding anyway');
+                }
+            } catch (error) {
+                console.error('Error checking Gmail status:', error);
+                // Continue anyway - backend will handle error
+            }
+            
             // Hide summary, show progress
             document.getElementById('sendSummary').style.display = 'none';
             document.getElementById('sendProgress').style.display = 'block';
@@ -4657,6 +4629,7 @@
             
             let sentCount = 0;
             let failedCount = 0;
+            let gmailError = false;
             
             for (let i = 0; i < emailData.length; i++) {
                 const email = emailData[i];
@@ -4683,8 +4656,12 @@
                     if (response.ok) {
                         sentCount++;
                     } else {
+                        const errorData = await response.json().catch(() => ({}));
+                        if (errorData.error && errorData.error.includes('Gmail') || errorData.error && errorData.error.includes('not connected')) {
+                            gmailError = true;
+                        }
                         failedCount++;
-                        console.error(`Failed to send to ${email.customer.email}`);
+                        console.error(`Failed to send to ${email.customer.email}:`, errorData);
                     }
                 } catch (err) {
                     failedCount++;
@@ -4695,12 +4672,14 @@
                 await new Promise(resolve => setTimeout(resolve, 300));
             }
             
-            // Show success
+            // Show success or error
             document.getElementById('sendProgress').style.display = 'none';
             document.getElementById('sendSuccess').style.display = 'block';
             document.getElementById('sentCount').textContent = sentCount;
             
-            if (failedCount > 0) {
+            if (gmailError) {
+                showToast('Gmail not connected. Please connect Gmail in Settings to send emails.', 'error', 8000);
+            } else if (failedCount > 0) {
                 showToast(`${sentCount} sent, ${failedCount} failed`, 'warning');
             } else {
                 showToast(`✅ ${sentCount} emails sent successfully!`, 'success');
@@ -6459,6 +6438,49 @@ Best regards,
         document.addEventListener('DOMContentLoaded', () => {
             console.log('%c=== DOMContentLoaded FIRED ===', 'background: #8B5CF6; color: white; padding: 4px 8px; font-weight: bold;', new Date().toISOString());
             
+            // Add drag-and-drop support to upload zone
+            const uploadZone = document.getElementById('machineUploadZone');
+            const fileInput = document.getElementById('machineFileInput');
+            
+            if (uploadZone && fileInput) {
+                // Prevent default drag behaviors
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    uploadZone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    });
+                });
+                
+                // Highlight drop zone on drag over
+                uploadZone.addEventListener('dragover', () => {
+                    uploadZone.style.borderColor = '#3B82F6';
+                    uploadZone.style.backgroundColor = '#F0F9FF';
+                });
+                
+                // Remove highlight on drag leave
+                uploadZone.addEventListener('dragleave', () => {
+                    uploadZone.style.borderColor = '#D1D5DB';
+                    uploadZone.style.backgroundColor = '';
+                });
+                
+                // Handle file drop
+                uploadZone.addEventListener('drop', (e) => {
+                    uploadZone.style.borderColor = '#D1D5DB';
+                    uploadZone.style.backgroundColor = '';
+                    
+                    const file = e.dataTransfer.files[0];
+                    if (file) {
+                        // Create a fake event object for handleMachineUpload
+                        const fakeEvent = {
+                            target: {
+                                files: [file]
+                            }
+                        };
+                        handleMachineUpload(fakeEvent);
+                    }
+                });
+            }
+            
             // Verify showSection exists
             if (typeof showSection !== 'function' && typeof window.showSection !== 'function') {
                 console.error('%c❌ CRITICAL: showSection function NOT FOUND!', 'background: #EF4444; color: white; padding: 4px 8px; font-weight: bold;');
@@ -6553,10 +6575,7 @@ Best regards,
             const gmailStatus = urlParams.get('gmail');
             if (gmailStatus === 'connected') {
                 showToast('Gmail connected successfully!', 'success');
-                // Refresh Gmail status if on followup section
-                if (document.getElementById('followup-section')?.style.display !== 'none') {
-                    checkGmailConnection();
-                }
+                // No Gmail check needed - upload works without Gmail connection
                 // Clean URL
                 window.history.replaceState({}, '', 'dashboard.html');
             } else if (gmailStatus === 'error') {
