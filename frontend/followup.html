@@ -317,7 +317,13 @@
     <div class="notification" id="notification"></div>
     
     <script>
-        const API_URL = 'https://networkfollowup-backend.vercel.app/api';
+        // Auto-detect environment
+        const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+        const API_URL = isProduction 
+            ? 'https://networkfollowup-backend.vercel.app/api'
+            : 'http://localhost:5000/api';
+        console.log('Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT');
+        console.log('API URL:', API_URL);
         let extractedCustomers = [];
         
         // Elements
