@@ -819,31 +819,31 @@
         <div class="logo">NFU</div>
         
         <nav>
-            <a class="nav-item active" onclick="showSection('dashboard', event)">
+            <a class="nav-item active" href="#" onclick="showSection('dashboard', event); return false;">
                 <span class="nav-icon">📊</span>
                 <span>Dashboard</span>
             </a>
-            <a class="nav-item" onclick="showSection('machine', event)">
+            <a class="nav-item" href="#" onclick="showSection('machine', event); return false;">
                 <span class="nav-icon">🚀</span>
                 <span>Follow-Up Machine</span>
             </a>
-            <a class="nav-item" onclick="showSection('customers', event)">
+            <a class="nav-item" href="#" onclick="showSection('customers', event); return false;">
                 <span class="nav-icon">👥</span>
                 <span>Customers</span>
             </a>
-            <a class="nav-item" onclick="showSection('history', event)">
+            <a class="nav-item" href="#" onclick="showSection('history', event); return false;">
                 <span class="nav-icon">📜</span>
                 <span>History</span>
             </a>
-            <a class="nav-item" onclick="showSection('billing', event)">
+            <a class="nav-item" href="#" onclick="showSection('billing', event); return false;">
                 <span class="nav-icon">💳</span>
                 <span>Billing</span>
             </a>
-            <a class="nav-item" onclick="showSection('templates', event)">
+            <a class="nav-item" href="#" onclick="showSection('templates', event); return false;">
                 <span class="nav-icon">📧</span>
                 <span>Email Templates</span>
             </a>
-            <a class="nav-item" onclick="showSection('settings', event)">
+            <a class="nav-item" href="#" onclick="showSection('settings', event); return false;">
                 <span class="nav-icon">⚙️</span>
                 <span>Settings</span>
             </a>
@@ -2621,7 +2621,7 @@
             };
         }
 
-        // Check Gmail connection status for Follow-Up Machine - Auto-connect if needed
+        // Check Gmail connection status for Follow-Up Machine
         async function checkGmailConnection() {
             try {
                 console.log('Checking Gmail connection status...');
@@ -2657,23 +2657,7 @@
                         uploadZone.style.pointerEvents = 'auto';
                     }
                 } else {
-                    // Gmail is not connected - auto-initiate connection
-                    console.log('Gmail not connected, auto-initiating connection...');
-                    try {
-                        const connectResponse = await fetch(`${API_URL}/oauth/google`, {
-                            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
-                        });
-                        const connectData = await connectResponse.json();
-                        if (connectData.authUrl) {
-                            // Auto-redirect to Gmail OAuth
-                            window.location.href = connectData.authUrl;
-                            return;
-                        }
-                    } catch (connectError) {
-                        console.error('Auto-connect failed:', connectError);
-                    }
-                    
-                    // Fallback: Show not connected state
+                    // Gmail is not connected - show message but don't auto-redirect
                     if (gmailNotConnectedCard) gmailNotConnectedCard.style.display = 'block';
                     if (gmailConnectedCard) gmailConnectedCard.style.display = 'none';
                     if (uploadDisabledOverlay) uploadDisabledOverlay.style.display = 'flex';
@@ -2684,20 +2668,6 @@
                 }
             } catch (error) {
                 console.error('Gmail connection check error:', error);
-                // On error, try to auto-connect
-                try {
-                    const connectResponse = await fetch(`${API_URL}/oauth/google`, {
-                        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
-                    });
-                    const connectData = await connectResponse.json();
-                    if (connectData.authUrl) {
-                        window.location.href = connectData.authUrl;
-                        return;
-                    }
-                } catch (connectError) {
-                    console.error('Auto-connect failed:', connectError);
-                }
-                
                 // Show not connected state on error
                 const gmailNotConnectedCard = document.getElementById('gmailNotConnectedCard');
                 const gmailConnectedCard = document.getElementById('gmailConnectedCard');
@@ -3058,11 +3028,17 @@
                 const data = await response.json();
                 console.log('Stats API response:', data);
 
-                if (data.success && data.data) {
-                    const stats = data.data;
-                    const customers = stats.customers || {};
-                    const emails = stats.emails || {};
-                    const gmail = stats.gmail || {}; // BUG 1: Use correct field path
+                // Handle both response formats: {success: true, data: {...}} or direct {...}
+                const stats = data.success && data.data ? data.data : data;
+                const customers = stats.customers || {};
+                const emails = stats.emails || {};
+                const gmail = stats.gmail || {}; // BUG 1: Use correct field path
+                
+                // Also check for direct fields if nested structure doesn't exist
+                const totalCustomersDirect = stats.totalCustomers || stats.total_customers || 0;
+                const totalEmailsDirect = stats.totalEmails || stats.total_emails || 0;
+                const emailsThisMonthDirect = stats.emailsThisMonth || stats.emails_this_month || 0;
+                const gmailConnectedDirect = stats.gmailConnected !== undefined ? stats.gmailConnected : (stats.gmail_connected !== undefined ? stats.gmail_connected : null);
 
                     // Animate stat updates
                     const animateValue = (element, start, end, duration) => {
@@ -3083,8 +3059,8 @@
                     };
 
                     // BUG 1: Update dashboard stats with proper field mapping
-                    const totalCustomers = parseInt(customers.total || 0);
-                    const totalEmails = parseInt(emails.sent || emails.total || 0);
+                    const totalCustomers = parseInt(customers.total || totalCustomersDirect || 0);
+                    const totalEmails = parseInt(emails.sent || emails.total || totalEmailsDirect || 0);
                     const pending = parseInt(customers.pending || 0);
                     const retail = parseInt(customers.retail || 0);
                     const wholesale = parseInt(customers.wholesale || 0);
@@ -3098,7 +3074,7 @@
                     if (totalEmailsEl) animateValue(totalEmailsEl, 0, totalEmails, 500);
                     
                     // Update emails this month (BUG 1: Use correct field name)
-                    const emailsThisMonth = parseInt(emails.thisMonth || 0);
+                    const emailsThisMonth = parseInt(emails.thisMonth || emailsThisMonthDirect || 0);
                     const emailsThisMonthEl = document.getElementById('emailsThisMonth');
                     if (emailsThisMonthEl) {
                         animateValue(emailsThisMonthEl, 0, emailsThisMonth, 500);
@@ -3108,7 +3084,7 @@
                     const gmailStatusCard = document.getElementById('gmailStatusCard');
                     const gmailStatusValue = document.getElementById('gmailStatusValue');
                     if (gmailStatusCard && gmailStatusValue) {
-                        const gmailConnected = gmail.connected || false;
+                        const gmailConnected = gmailConnectedDirect !== null ? gmailConnectedDirect : (gmail.connected || false);
                         if (gmailConnected) {
                             gmailStatusCard.style.background = 'linear-gradient(135deg, #10B981 0%, #059669 100%)';
                             gmailStatusCard.style.boxShadow = '0 8px 24px rgba(16,185,129,0.3)';
@@ -3526,51 +3502,81 @@
         }
 
         function showSection(section, event) {
+            console.log('showSection called with:', section, event);
             try {
+                // Prevent default if event exists
+                if (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                
+                // Update navigation active state
                 document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
                 if (event && event.target) {
                     const navItem = event.target.closest('.nav-item');
-                    if (navItem) navItem.classList.add('active');
+                    if (navItem) {
+                        navItem.classList.add('active');
+                    } else {
+                        // Try to find by onclick attribute
+                        document.querySelectorAll('.nav-item').forEach(item => {
+                            if (item.getAttribute('onclick') && item.getAttribute('onclick').includes("'" + section + "'")) {
+                                item.classList.add('active');
+                            }
+                        });
+                    }
                 } else {
                     // Find nav item by section
                     document.querySelectorAll('.nav-item').forEach(item => {
-                        if (item.getAttribute('onclick') && item.getAttribute('onclick').includes(section)) {
+                        const onclick = item.getAttribute('onclick');
+                        if (onclick && onclick.includes("'" + section + "'")) {
                             item.classList.add('active');
                         }
                     });
                 }
 
-                document.querySelectorAll('.section-content').forEach(content => content.style.display = 'none');
+                // Hide all sections
+                document.querySelectorAll('.section-content').forEach(content => {
+                    content.style.display = 'none';
+                });
+                
+                // Show target section
                 const targetSection = document.getElementById(section + '-section');
                 if (targetSection) {
                     targetSection.style.display = 'block';
+                    console.log('Section displayed:', section);
                     
                     // Load data for specific sections
-                    if (section === 'settings') {
-                        loadUserSettings();
-                        loadUserTemplates();
-                    } else if (section === 'templates') {
-                        loadUserTemplates();
-                        loadDefaultLanguageForTemplates();
-                    } else if (section === 'machine') {
-                        loadMachineGmailStatus();
-                        loadMachineUsageLimits();
-                        checkGmailConnection();
-                    } else if (section === 'billing') {
-                        loadBillingInfo();
-                        loadPaymentHistory();
-                    } else if (section === 'dashboard') {
-                        loadDashboardStats();
-                    } else if (section === 'customers') {
-                        loadCustomers();
-                    } else if (section === 'history') {
-                        loadEmailHistory();
+                    try {
+                        if (section === 'settings') {
+                            if (typeof loadUserSettings === 'function') loadUserSettings();
+                            if (typeof loadUserTemplates === 'function') loadUserTemplates();
+                        } else if (section === 'templates') {
+                            if (typeof loadUserTemplates === 'function') loadUserTemplates();
+                            if (typeof loadDefaultLanguageForTemplates === 'function') loadDefaultLanguageForTemplates();
+                        } else if (section === 'machine') {
+                            if (typeof loadMachineGmailStatus === 'function') loadMachineGmailStatus();
+                            if (typeof loadMachineUsageLimits === 'function') loadMachineUsageLimits();
+                            if (typeof checkGmailConnection === 'function') checkGmailConnection();
+                        } else if (section === 'billing') {
+                            if (typeof loadBillingInfo === 'function') loadBillingInfo();
+                            if (typeof loadPaymentHistory === 'function') loadPaymentHistory();
+                        } else if (section === 'dashboard') {
+                            if (typeof loadDashboardStats === 'function') loadDashboardStats();
+                        } else if (section === 'customers') {
+                            if (typeof loadCustomers === 'function') loadCustomers();
+                        } else if (section === 'history') {
+                            if (typeof loadEmailHistory === 'function') loadEmailHistory();
+                        }
+                    } catch (loadError) {
+                        console.error('Error loading section data:', loadError);
                     }
                 } else {
-                    console.error('Section not found:', section);
+                    console.error('Section not found:', section + '-section');
+                    showToast('Section not found: ' + section, 'error');
                 }
             } catch (error) {
                 console.error('Error showing section:', error);
+                showToast('Error loading section: ' + error.message, 'error');
             }
         }
 
