@@ -1116,8 +1116,8 @@
                                 <span id="selectedCountStep2">0</span> customer<span id="selectedCountPlural">s</span> selected
                             </div>
                         </div>
-                        <button id="sendSelectedEmails" class="btn btn-primary" onclick="sendSelectedEmails()" style="background: white; color: #10B981; font-weight: 600; padding: 12px 32px; border: none;">
-                            📧 Send Selected Emails
+                        <button id="sendSelectedEmails" class="btn btn-primary" onclick="proceedToReview()" style="background: white; color: #10B981; font-weight: 600; padding: 12px 32px; border: none;">
+                            📧 Review Selected Emails →
                         </button>
                     </div>
                 </div>
@@ -1878,62 +1878,94 @@
     <script src="https://js.stripe.com/v3/"></script>
     <!-- CRITICAL: Define showSection IMMEDIATELY so buttons work -->
     <script>
-        // CRITICAL: Simple, reliable showSection function for menu navigation
-        function showSection(sectionName, event) {
-            console.log('Switching to section:', sectionName);
-            
-            // Prevent default link behavior
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            
-            // Hide all sections
-            const sections = document.querySelectorAll('.section-content');
-            sections.forEach(section => {
-                section.style.display = 'none';
-            });
-            
-            // Show requested section
-            const targetSection = document.getElementById(sectionName + '-section');
-            if (targetSection) {
+        // BULLETPROOF showSection - MUST WORK FOR ALL MENUS
+        function showSection(sectionName, evt) {
+            try {
+                console.log('=== showSection called ===', sectionName);
+                
+                // Handle event
+                const event = evt || window.event;
+                if (event) {
+                    if (event.preventDefault) event.preventDefault();
+                    if (event.stopPropagation) event.stopPropagation();
+                }
+                
+                // Hide ALL sections first
+                const allSections = document.querySelectorAll('.section-content');
+                console.log('Found sections:', allSections.length);
+                allSections.forEach(sec => {
+                    sec.style.display = 'none';
+                });
+                
+                // Show target section
+                const sectionId = sectionName + '-section';
+                const targetSection = document.getElementById(sectionId);
+                
+                if (!targetSection) {
+                    console.error('❌ Section NOT FOUND:', sectionId);
+                    console.log('Available sections:', Array.from(allSections).map(s => s.id));
+                    alert('Error: Section "' + sectionId + '" not found!');
+                    return false;
+                }
+                
                 targetSection.style.display = 'block';
-                console.log('Section shown:', sectionName + '-section');
-            } else {
-                console.error('Section not found:', sectionName + '-section');
-                alert('Section not found: ' + sectionName);
-                return;
-            }
-            
-            // Update active menu state - remove all active classes
-            const menuItems = document.querySelectorAll('.nav-item');
-            menuItems.forEach(item => {
-                item.classList.remove('active');
-            });
-            
-            // Add active class to the clicked menu item
-            let activeItem = null;
-            if (event && event.target) {
-                activeItem = event.target.closest('.nav-item');
-            }
-            
-            if (!activeItem) {
-                // Fallback: find by onclick attribute
-                menuItems.forEach(item => {
-                    const onclick = item.getAttribute('onclick');
-                    if (onclick && onclick.includes("'" + sectionName + "'")) {
-                        activeItem = item;
+                console.log('✅ Section shown:', sectionId);
+                
+                // Update menu active state
+                const navItems = document.querySelectorAll('.nav-item');
+                navItems.forEach(item => item.classList.remove('active'));
+                
+                // Find and activate the correct nav item
+                let found = false;
+                navItems.forEach(item => {
+                    const onclick = item.getAttribute('onclick') || '';
+                    if (onclick.includes("'" + sectionName + "'") || onclick.includes('"' + sectionName + '"')) {
+                        item.classList.add('active');
+                        found = true;
+                        console.log('✅ Menu item activated');
                     }
                 });
-            }
-            
-            if (activeItem) {
-                activeItem.classList.add('active');
+                
+                if (!found) {
+                    console.warn('⚠️ Could not find nav item for:', sectionName);
+                }
+                
+                // Load section-specific data
+                setTimeout(() => {
+                    try {
+                        if (sectionName === 'dashboard' && typeof loadDashboardStats === 'function') {
+                            loadDashboardStats();
+                        } else if (sectionName === 'machine') {
+                            if (typeof checkGmailConnection === 'function') checkGmailConnection();
+                            if (typeof loadMachineGmailStatus === 'function') loadMachineGmailStatus();
+                        } else if (sectionName === 'customers' && typeof loadCustomers === 'function') {
+                            loadCustomers();
+                        } else if (sectionName === 'history' && typeof loadEmailHistory === 'function') {
+                            loadEmailHistory();
+                        } else if (sectionName === 'billing') {
+                            if (typeof loadBillingInfo === 'function') loadBillingInfo();
+                            if (typeof loadPaymentHistory === 'function') loadPaymentHistory();
+                        } else if (sectionName === 'templates' && typeof loadUserTemplates === 'function') {
+                            loadUserTemplates();
+                        } else if (sectionName === 'settings' && typeof loadUserSettings === 'function') {
+                            loadUserSettings();
+                        }
+                    } catch (err) {
+                        console.error('Error loading section data:', err);
+                    }
+                }, 50);
+                
+                return true;
+            } catch (error) {
+                console.error('❌ ERROR in showSection:', error);
+                alert('Error switching section: ' + error.message);
+                return false;
             }
         }
         
-        // Make it globally available
+        // Make globally available
         window.showSection = showSection;
+        console.log('✅ showSection function loaded');
     </script>
     
     <style>
@@ -6316,6 +6348,8 @@ Best regards,
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('=== PAGE LOADED ===');
+            
             // Verify showSection is available
             if (typeof showSection !== 'function' && typeof window.showSection !== 'function') {
                 console.error('❌ showSection function not available!');
@@ -6324,11 +6358,26 @@ Best regards,
                 console.log('✅ showSection function is available');
             }
             
+            // Verify all sections exist
+            const requiredSections = ['dashboard', 'machine', 'customers', 'history', 'billing', 'templates', 'settings'];
+            requiredSections.forEach(section => {
+                const sectionEl = document.getElementById(section + '-section');
+                if (!sectionEl) {
+                    console.error('❌ Missing section:', section + '-section');
+                } else {
+                    console.log('✅ Section found:', section + '-section');
+                }
+            });
+            
             // Check auth first
             if (!checkAuth()) {
                 console.error('❌ Authentication check failed on page load');
                 return;
             }
+            
+            // Show dashboard by default
+            console.log('Showing dashboard...');
+            showSection('dashboard');
 
             // Verify token exists
             const token = localStorage.getItem('authToken');
