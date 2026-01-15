@@ -9,6 +9,73 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        // CRITICAL: Define showSection EARLY so navigation works
+        function showSection(sectionName, event) {
+            console.log('showSection called:', sectionName);
+            
+            // Prevent default
+            if (event) {
+                if (event.preventDefault) event.preventDefault();
+                if (event.stopPropagation) event.stopPropagation();
+            }
+            
+            // Hide all sections
+            const allSections = document.querySelectorAll('.section-content');
+            allSections.forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Show target section
+            const targetId = sectionName + '-section';
+            const target = document.getElementById(targetId);
+            if (!target) {
+                console.error('Section not found:', targetId);
+                alert('Section not found: ' + targetId);
+                return;
+            }
+            target.style.display = 'block';
+            console.log('Section shown:', targetId);
+            
+            // Update active menu - remove all active
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Find and activate clicked menu item
+            let activated = false;
+            if (event) {
+                // Try to get the element from event
+                const targetEl = event.target || event.currentTarget;
+                if (targetEl) {
+                    const navItem = targetEl.closest('.nav-item');
+                    if (navItem) {
+                        navItem.classList.add('active');
+                        activated = true;
+                    }
+                }
+            }
+            
+            // Fallback: find by onclick attribute
+            if (!activated) {
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    const onclick = item.getAttribute('onclick') || '';
+                    if (onclick.includes("'" + sectionName + "'") || onclick.includes('"' + sectionName + '"')) {
+                        item.classList.add('active');
+                        activated = true;
+                    }
+                });
+            }
+            
+            if (!activated) {
+                console.warn('Could not activate menu item for:', sectionName);
+            }
+        }
+        
+        // Make globally available
+        window.showSection = showSection;
+        console.log('showSection function loaded');
+    </script>
     <style>
         * {
             margin: 0;
@@ -819,31 +886,31 @@
         <div class="logo">NFU</div>
         
         <nav>
-            <a class="nav-item active" href="javascript:void(0)" onclick="showSection('dashboard', event)">
+            <a class="nav-item active" href="javascript:void(0)" onclick="showSection('dashboard', event); return false;">
                 <span class="nav-icon">📊</span>
                 <span>Dashboard</span>
             </a>
-            <a class="nav-item" href="javascript:void(0)" onclick="showSection('machine', event)">
+            <a class="nav-item" href="javascript:void(0)" onclick="showSection('machine', event); return false;">
                 <span class="nav-icon">🚀</span>
                 <span>Follow-Up Machine</span>
             </a>
-            <a class="nav-item" href="javascript:void(0)" onclick="showSection('customers', event)">
+            <a class="nav-item" href="javascript:void(0)" onclick="showSection('customers', event); return false;">
                 <span class="nav-icon">👥</span>
                 <span>Customers</span>
             </a>
-            <a class="nav-item" href="javascript:void(0)" onclick="showSection('history', event)">
+            <a class="nav-item" href="javascript:void(0)" onclick="showSection('history', event); return false;">
                 <span class="nav-icon">📜</span>
                 <span>History</span>
             </a>
-            <a class="nav-item" href="javascript:void(0)" onclick="showSection('billing', event)">
+            <a class="nav-item" href="javascript:void(0)" onclick="showSection('billing', event); return false;">
                 <span class="nav-icon">💳</span>
                 <span>Billing</span>
             </a>
-            <a class="nav-item" href="javascript:void(0)" onclick="showSection('templates', event)">
+            <a class="nav-item" href="javascript:void(0)" onclick="showSection('templates', event); return false;">
                 <span class="nav-icon">📧</span>
                 <span>Email Templates</span>
             </a>
-            <a class="nav-item" href="javascript:void(0)" onclick="showSection('settings', event)">
+            <a class="nav-item" href="javascript:void(0)" onclick="showSection('settings', event); return false;">
                 <span class="nav-icon">⚙️</span>
                 <span>Settings</span>
             </a>
@@ -1878,66 +1945,21 @@
     <script src="https://js.stripe.com/v3/"></script>
     <!-- CRITICAL: Define showSection IMMEDIATELY so buttons work -->
     <script>
-        // BULLETPROOF showSection - MUST WORK FOR ALL MENUS
-        function showSection(sectionName, evt) {
-            try {
-                console.log('=== showSection called ===', sectionName);
+        // showSection is already defined in <head>, this is just for data loading
+        // Add data loading after navigation
+        const originalShowSection = window.showSection;
+        if (originalShowSection) {
+            window.showSection = function(sectionName, event) {
+                // Call original navigation
+                originalShowSection(sectionName, event);
                 
-                // Handle event
-                const event = evt || window.event;
-                if (event) {
-                    if (event.preventDefault) event.preventDefault();
-                    if (event.stopPropagation) event.stopPropagation();
-                }
-                
-                // Hide ALL sections first
-                const allSections = document.querySelectorAll('.section-content');
-                console.log('Found sections:', allSections.length);
-                allSections.forEach(sec => {
-                    sec.style.display = 'none';
-                });
-                
-                // Show target section
-                const sectionId = sectionName + '-section';
-                const targetSection = document.getElementById(sectionId);
-                
-                if (!targetSection) {
-                    console.error('❌ Section NOT FOUND:', sectionId);
-                    console.log('Available sections:', Array.from(allSections).map(s => s.id));
-                    alert('Error: Section "' + sectionId + '" not found!');
-                    return false;
-                }
-                
-                targetSection.style.display = 'block';
-                console.log('✅ Section shown:', sectionId);
-                
-                // Update menu active state
-                const navItems = document.querySelectorAll('.nav-item');
-                navItems.forEach(item => item.classList.remove('active'));
-                
-                // Find and activate the correct nav item
-                let found = false;
-                navItems.forEach(item => {
-                    const onclick = item.getAttribute('onclick') || '';
-                    if (onclick.includes("'" + sectionName + "'") || onclick.includes('"' + sectionName + '"')) {
-                        item.classList.add('active');
-                        found = true;
-                        console.log('✅ Menu item activated');
-                    }
-                });
-                
-                if (!found) {
-                    console.warn('⚠️ Could not find nav item for:', sectionName);
-                }
-                
-                // Load section-specific data
+                // Load data after navigation (non-blocking)
                 setTimeout(() => {
                     try {
                         if (sectionName === 'dashboard' && typeof loadDashboardStats === 'function') {
                             loadDashboardStats();
                         } else if (sectionName === 'machine') {
                             if (typeof checkGmailConnection === 'function') checkGmailConnection();
-                            if (typeof loadMachineGmailStatus === 'function') loadMachineGmailStatus();
                         } else if (sectionName === 'customers' && typeof loadCustomers === 'function') {
                             loadCustomers();
                         } else if (sectionName === 'history' && typeof loadEmailHistory === 'function') {
@@ -1953,19 +1975,9 @@
                     } catch (err) {
                         console.error('Error loading section data:', err);
                     }
-                }, 50);
-                
-                return true;
-            } catch (error) {
-                console.error('❌ ERROR in showSection:', error);
-                alert('Error switching section: ' + error.message);
-                return false;
-            }
+                }, 100);
+            };
         }
-        
-        // Make globally available
-        window.showSection = showSection;
-        console.log('✅ showSection function loaded');
     </script>
     
     <style>
@@ -6358,26 +6370,26 @@ Best regards,
                 console.log('✅ showSection function is available');
             }
             
-            // Verify all sections exist
-            const requiredSections = ['dashboard', 'machine', 'customers', 'history', 'billing', 'templates', 'settings'];
-            requiredSections.forEach(section => {
-                const sectionEl = document.getElementById(section + '-section');
-                if (!sectionEl) {
-                    console.error('❌ Missing section:', section + '-section');
-                } else {
-                    console.log('✅ Section found:', section + '-section');
-                }
-            });
-            
             // Check auth first
             if (!checkAuth()) {
                 console.error('❌ Authentication check failed on page load');
                 return;
             }
             
-            // Show dashboard by default
-            console.log('Showing dashboard...');
+            // Show dashboard by default (navigation only, no data loading)
+            console.log('Initializing dashboard...');
             showSection('dashboard');
+            
+            // Load dashboard data after navigation is confirmed
+            setTimeout(() => {
+                try {
+                    if (typeof loadDashboardStats === 'function') {
+                        loadDashboardStats();
+                    }
+                } catch (err) {
+                    console.error('Error loading dashboard stats:', err);
+                }
+            }, 100);
 
             // Verify token exists
             const token = localStorage.getItem('authToken');
@@ -6394,8 +6406,15 @@ Best regards,
                 return;
             }
 
-            console.log('✅ Auth token found, loading dashboard...');
-            loadDashboard();
+            console.log('✅ Auth token found');
+            // Load dashboard data separately (navigation already handled above)
+            if (typeof loadDashboard === 'function') {
+                try {
+                    loadDashboard();
+                } catch (err) {
+                    console.error('Error in loadDashboard:', err);
+                }
+            }
             
             // Handle Gmail OAuth callback
             const urlParams = new URLSearchParams(window.location.search);
