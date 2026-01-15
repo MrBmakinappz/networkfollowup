@@ -2568,10 +2568,11 @@
         // Auto-detect environment: production or development
         const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
         const API_URL = isProduction 
-            ? 'https://networkfollowup-production.up.railway.app/api'
+            ? 'https://networkfollowup-backend.vercel.app/api'
             : 'http://localhost:5000/api';
         console.log('Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT');
         console.log('API URL:', API_URL);
+        console.log('✅ Using Vercel backend:', API_URL);
         
         // Initialize Stripe
         // Note: In production, this should be loaded from environment variable or config
