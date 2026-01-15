@@ -1377,65 +1377,6 @@
         </div>
 
         <!-- BILLING SECTION -->
-                        <button class="btn btn-secondary" onclick="openAddCustomerModal()">
-                            ➕ Add Customer
-                        </button>
-                        <button class="btn btn-primary" onclick="showSection('machine', event)">
-                            📤 Upload Screenshot
-                        </button>
-                    </div>
-                </div>
-
-                <div class="filters">
-                    <button class="filter-btn active" onclick="filterCustomers('all', event)">All</button>
-                    <button class="filter-btn" onclick="filterCustomers('retail', event)">🛍️ Retail</button>
-                    <button class="filter-btn" onclick="filterCustomers('wholesale', event)">💼 Wholesale</button>
-                    <button class="filter-btn" onclick="filterCustomers('advocates', event)">⭐ Advocates</button>
-                    <button class="filter-btn" onclick="filterCustomers('sent', event)">✓ Email Sent</button>
-                    <button class="filter-btn" onclick="filterCustomers('not-sent', event)">✗ Not Contacted</button>
-                </div>
-
-                <div id="customersTableContainer">
-                    <div class="empty-state">
-                        <div class="empty-icon">📭</div>
-                        <p style="font-size: 16px; margin-bottom: 16px;">No customers yet</p>
-                        <button class="btn btn-primary" onclick="showSection('machine', event)">
-                            Upload Screenshot to Get Started
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- HISTORY SECTION -->
-        <div id="history-section" class="section-content" style="display: none;">
-            <div class="header">
-                <h1 class="welcome-text">Email History 📜</h1>
-                <p class="welcome-subtext">Track all sent follow-up emails</p>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <div>
-                        <h2 class="card-title">Email History</h2>
-                        <p class="card-subtitle">View all sent emails</p>
-                    </div>
-                </div>
-                <div id="emailHistoryContainer" style="padding: 24px;">
-                    <div id="emailHistoryLoading" style="text-align: center; padding: 40px;">
-                        <div class="spinner" style="width: 40px; height: 40px; margin: 0 auto;"></div>
-                        <p style="color: #64748B; margin-top: 16px;">Loading email history...</p>
-                    </div>
-                    <div id="emailHistoryList" style="display: none;"></div>
-                    <div id="emailHistoryEmpty" style="display: none; text-align: center; padding: 60px 20px;">
-                        <div class="empty-icon">📭</div>
-                        <p style="font-size: 16px; color: #64748B;">No emails sent yet</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- BILLING SECTION -->
         <div id="billing-section" class="section-content" style="display: none;">
             <div class="header">
                 <h1 class="welcome-text">Billing & Subscription 💳</h1>
@@ -1935,6 +1876,35 @@
 
     <!-- Stripe.js -->
     <script src="https://js.stripe.com/v3/"></script>
+    <!-- CRITICAL: Define showSection IMMEDIATELY so buttons work -->
+    <script>
+        // Define showSection function IMMEDIATELY - must be available before page loads
+        function showSection(section, event) {
+            try {
+                if (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                const allSections = document.querySelectorAll('.section-content');
+                allSections.forEach(content => content.style.display = 'none');
+                const targetSection = document.getElementById(section + '-section');
+                if (targetSection) {
+                    targetSection.style.display = 'block';
+                    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+                    document.querySelectorAll('.nav-item').forEach(item => {
+                        const onclick = item.getAttribute('onclick');
+                        if (onclick && onclick.includes("'" + section + "'")) {
+                            item.classList.add('active');
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error in showSection:', error);
+                alert('Error loading section: ' + section);
+            }
+        }
+        window.showSection = showSection;
+    </script>
     
     <style>
         /* Enhanced Toast Notifications */
@@ -3574,46 +3544,16 @@
             }
         }
 
-        // Make showSection globally accessible
+        // Enhanced showSection with data loading (extends the early definition)
+        const originalShowSection = window.showSection;
         window.showSection = function(section, event) {
-            console.log('showSection called:', section);
+            // Call the original function first
+            if (originalShowSection) {
+                originalShowSection(section, event);
+            }
+            
+            // Then load section-specific data
             try {
-                if (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
-                
-                // Hide all sections
-                const allSections = document.querySelectorAll('.section-content');
-                allSections.forEach(content => {
-                    content.style.display = 'none';
-                });
-                
-                // Show target section
-                const targetSection = document.getElementById(section + '-section');
-                if (!targetSection) {
-                    console.error('Section not found:', section + '-section');
-                    console.error('Available sections:', Array.from(document.querySelectorAll('.section-content')).map(s => s.id));
-                    return;
-                }
-                
-                targetSection.style.display = 'block';
-                console.log('Section displayed successfully:', section);
-                
-                // Update navigation active state
-                document.querySelectorAll('.nav-item').forEach(item => {
-                    item.classList.remove('active');
-                });
-                
-                // Find and activate the correct nav item
-                document.querySelectorAll('.nav-item').forEach(item => {
-                    const onclick = item.getAttribute('onclick');
-                    if (onclick && onclick.includes("'" + section + "'")) {
-                        item.classList.add('active');
-                    }
-                });
-                
-                // Load section data
                 if (section === 'settings' && typeof loadUserSettings === 'function') {
                     loadUserSettings();
                     if (typeof loadUserTemplates === 'function') loadUserTemplates();
@@ -3634,8 +3574,8 @@
                 } else if (section === 'history' && typeof loadEmailHistory === 'function') {
                     loadEmailHistory();
                 }
-            } catch (error) {
-                console.error('Error in showSection:', error);
+            } catch (loadError) {
+                console.error('Error loading section data:', loadError);
             }
         };
 
@@ -6341,8 +6281,9 @@ Best regards,
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
             // Verify showSection is available
-            if (typeof window.showSection !== 'function') {
+            if (typeof showSection !== 'function' && typeof window.showSection !== 'function') {
                 console.error('❌ showSection function not available!');
+                alert('ERROR: Navigation broken. Please refresh the page.');
             } else {
                 console.log('✅ showSection function is available');
             }
