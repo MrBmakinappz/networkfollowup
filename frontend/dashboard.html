@@ -2777,61 +2777,7 @@
         }
 
         // Check Gmail connection status for Follow-Up Machine
-        async function checkGmailConnection() {
-            try {
-                console.log('Checking Gmail connection status...');
-                const response = await fetch(`${API_URL}/oauth/google/status`, {
-                    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to check Gmail status');
-                }
-                
-                const data = await response.json();
-                console.log('Gmail status:', data);
-                
-                const gmailNotConnectedCard = document.getElementById('gmailNotConnectedCard');
-                const gmailConnectedCard = document.getElementById('gmailConnectedCard');
-                const uploadDisabledOverlay = document.getElementById('uploadDisabledOverlay');
-                const uploadZone = document.getElementById('machineUploadZone');
-                const connectedGmailEmail = document.getElementById('connectedGmailEmail');
-                
-                if (data.connected && !data.expired) {
-                    // Gmail is connected - enable everything
-                    if (gmailNotConnectedCard) gmailNotConnectedCard.style.display = 'none';
-                    if (gmailConnectedCard) {
-                        gmailConnectedCard.style.display = 'block';
-                        if (connectedGmailEmail) {
-                            connectedGmailEmail.textContent = `Connected as: ${data.email || 'Gmail account'}`;
-                        }
-                    }
-                    if (uploadDisabledOverlay) uploadDisabledOverlay.style.display = 'none';
-                    if (uploadZone) {
-                        uploadZone.style.opacity = '1';
-                        uploadZone.style.pointerEvents = 'auto';
-                    }
-                } else {
-                    // Gmail is not connected - show message but don't auto-redirect
-                    if (gmailNotConnectedCard) gmailNotConnectedCard.style.display = 'block';
-                    if (gmailConnectedCard) gmailConnectedCard.style.display = 'none';
-                    if (uploadDisabledOverlay) uploadDisabledOverlay.style.display = 'flex';
-                    if (uploadZone) {
-                        uploadZone.style.opacity = '0.5';
-                        uploadZone.style.pointerEvents = 'none';
-                    }
-                }
-            } catch (error) {
-                console.error('Gmail connection check error:', error);
-                // Show not connected state on error
-                const gmailNotConnectedCard = document.getElementById('gmailNotConnectedCard');
-                const gmailConnectedCard = document.getElementById('gmailConnectedCard');
-                const uploadDisabledOverlay = document.getElementById('uploadDisabledOverlay');
-                if (gmailNotConnectedCard) gmailNotConnectedCard.style.display = 'block';
-                if (gmailConnectedCard) gmailConnectedCard.style.display = 'none';
-                if (uploadDisabledOverlay) uploadDisabledOverlay.style.display = 'flex';
-            }
-        }
+        // checkGmailConnection() function removed - upload no longer requires Gmail connection
 
         async function connectGmail() {
             try {
@@ -4598,95 +4544,79 @@
                 return;
             }
             
-            // Check Gmail connection before sending
-            try {
-                const statusResponse = await fetch(`${API_URL}/oauth/google/status`, {
-                    headers: getAuthHeaders()
-                });
-                
-                if (statusResponse.ok) {
-                    const statusData = await statusResponse.json();
-                    if (!statusData.connected || statusData.expired) {
-                        showToast('Gmail not connected. Please connect Gmail in Settings to send emails.', 'error', 8000);
-                        // Show summary again
-                        document.getElementById('sendSummary').style.display = 'block';
-                        document.getElementById('sendProgress').style.display = 'none';
-                        return;
-                    }
-                } else {
-                    // If status check fails, try to send anyway - backend will handle error
-                    console.warn('Could not check Gmail status, proceeding anyway');
-                }
-            } catch (error) {
-                console.error('Error checking Gmail status:', error);
-                // Continue anyway - backend will handle error
-            }
-            
             // Hide summary, show progress
             document.getElementById('sendSummary').style.display = 'none';
             document.getElementById('sendProgress').style.display = 'block';
             document.getElementById('sendSuccess').style.display = 'none';
             
-            let sentCount = 0;
-            let failedCount = 0;
-            let gmailError = false;
+            // Update progress
+            document.getElementById('currentEmail').textContent = '1';
+            document.getElementById('progressFill').style.width = '0%';
             
-            for (let i = 0; i < emailData.length; i++) {
-                const email = emailData[i];
+            try {
+                // Extract customer objects from emailData for send-bulk endpoint
+                const customers = emailData.map(email => ({
+                    id: email.customer.id,
+                    full_name: email.customer.full_name || email.customer.name,
+                    email: email.customer.email,
+                    customer_type: email.customer.customer_type || email.customer.type || 'retail',
+                    country_code: email.customer.country_code || email.customer.country || 'USA',
+                    language: email.customer.language || 'en'
+                }));
                 
-                // Update progress
-                document.getElementById('currentEmail').textContent = i + 1;
-                const progress = ((i + 1) / emailData.length) * 100;
-                document.getElementById('progressFill').style.width = progress + '%';
+                // Call send-bulk endpoint - backend will check Gmail connection
+                const response = await fetch(`${API_URL}/emails/send-bulk`, {
+                    method: 'POST',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ customers })
+                });
                 
-                try {
-                    const response = await fetch(`${API_URL}/emails/send`, {
-                        method: 'POST',
-                        headers: {
-                            ...getAuthHeaders(),
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            customerId: email.customerId,
-                            subject: email.subject,
-                            body: email.body
-                        })
-                    });
-                    
-                    if (response.ok) {
-                        sentCount++;
+                const result = await response.json();
+                
+                // Update progress to 100%
+                document.getElementById('progressFill').style.width = '100%';
+                
+                // Hide progress, show success
+                document.getElementById('sendProgress').style.display = 'none';
+                document.getElementById('sendSuccess').style.display = 'block';
+                
+                if (!response.ok) {
+                    // Backend returns error if Gmail not connected
+                    if (result.error && (result.error.includes('Gmail') || result.error.includes('not connected'))) {
+                        showToast('⚠️ Gmail not connected. Go to Settings → Security → Connect Gmail', 'error', 10000);
+                        document.getElementById('sentCount').textContent = '0';
                     } else {
-                        const errorData = await response.json().catch(() => ({}));
-                        if (errorData.error && errorData.error.includes('Gmail') || errorData.error && errorData.error.includes('not connected')) {
-                            gmailError = true;
-                        }
-                        failedCount++;
-                        console.error(`Failed to send to ${email.customer.email}:`, errorData);
+                        showToast('Error: ' + (result.error || result.message || 'Failed to send emails'), 'error');
+                        document.getElementById('sentCount').textContent = '0';
                     }
-                } catch (err) {
-                    failedCount++;
-                    console.error(`Error sending to ${email.customer.email}:`, err);
+                    // Show summary again so user can retry
+                    document.getElementById('sendSummary').style.display = 'block';
+                    return;
                 }
                 
-                // Small delay to show progress
-                await new Promise(resolve => setTimeout(resolve, 300));
+                // Success
+                const sentCount = result.sent || 0;
+                const failedCount = result.failed || 0;
+                document.getElementById('sentCount').textContent = sentCount;
+                
+                if (failedCount > 0) {
+                    showToast(`✅ Sent ${sentCount} emails. ${failedCount} failed.`, 'warning');
+                } else {
+                    showToast(`✅ Successfully sent ${sentCount} emails!`, 'success');
+                }
+                
+                // Refresh customer list
+                await loadCustomers();
+                
+            } catch (error) {
+                console.error('Send emails error:', error);
+                document.getElementById('sendProgress').style.display = 'none';
+                document.getElementById('sendSummary').style.display = 'block';
+                showToast('Failed to send emails: ' + error.message, 'error');
             }
-            
-            // Show success or error
-            document.getElementById('sendProgress').style.display = 'none';
-            document.getElementById('sendSuccess').style.display = 'block';
-            document.getElementById('sentCount').textContent = sentCount;
-            
-            if (gmailError) {
-                showToast('Gmail not connected. Please connect Gmail in Settings to send emails.', 'error', 8000);
-            } else if (failedCount > 0) {
-                showToast(`${sentCount} sent, ${failedCount} failed`, 'warning');
-            } else {
-                showToast(`✅ ${sentCount} emails sent successfully!`, 'success');
-            }
-            
-            // Refresh customer list
-            await loadCustomers();
         }
 
         // Schedule emails (placeholder)
