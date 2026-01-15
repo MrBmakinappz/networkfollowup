@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Follow-Up Machine - NetworkFollowUp</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            padding: 40px 20px;
+            background: #F3F4F6;
+            color: #1F2937;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #111827;
+        }
+        
+        .subtitle {
+            color: #6B7280;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .upload-card {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .upload-zone {
+            border: 2px dashed #D1D5DB;
+            border-radius: 12px;
+            padding: 60px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #FAFAFA;
+        }
+        
+        .upload-zone:hover { 
+            border-color: #3B82F6; 
+            background: #EFF6FF; 
+        }
+        
+        .upload-zone.dragging { 
+            border-color: #3B82F6; 
+            background: #DBEAFE; 
+        }
+        
+        .upload-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+        
+        .upload-text {
+            font-size: 18px;
+            color: #374151;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .upload-hint {
+            font-size: 14px;
+            color: #9CA3AF;
+        }
+        
+        .customers-table {
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            display: none;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .customers-table.show { display: block; }
+        
+        .table-header {
+            padding: 24px;
+            border-bottom: 2px solid #E5E7EB;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #F9FAFB;
+        }
+        
+        .table-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #111827;
+        }
+        
+        .customer-count {
+            color: #10B981;
+            font-weight: 600;
+        }
+        
+        .table-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+        }
+        
+        th { 
+            background: #F9FAFB; 
+            padding: 16px; 
+            text-align: left; 
+            font-weight: 600; 
+            border-bottom: 2px solid #E5E7EB;
+            color: #374151;
+            font-size: 14px;
+        }
+        
+        td { 
+            padding: 16px; 
+            border-bottom: 1px solid #E5E7EB; 
+            color: #1F2937;
+        }
+        
+        tr:hover {
+            background: #F9FAFB;
+        }
+        
+        .btn {
+            background: #3B82F6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .btn:hover { 
+            background: #2563EB; 
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn:disabled { 
+            background: #9CA3AF; 
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-secondary {
+            background: #6B7280;
+        }
+        
+        .btn-secondary:hover {
+            background: #4B5563;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 60px 40px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .loading.show { display: block; }
+        
+        .spinner {
+            border: 4px solid #F3F4F6;
+            border-top: 4px solid #3B82F6;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+        
+        .loading-text {
+            color: #6B7280;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: none;
+            z-index: 1000;
+            max-width: 400px;
+            border-left: 4px solid #3B82F6;
+        }
+        
+        .notification.show { 
+            display: block; 
+            animation: slideIn 0.3s ease-out; 
+        }
+        
+        .notification.success { 
+            border-left-color: #10B981; 
+        }
+        
+        .notification.error { 
+            border-left-color: #EF4444; 
+        }
+        
+        @keyframes slideIn { 
+            from { 
+                transform: translateX(400px); 
+                opacity: 0;
+            } 
+            to { 
+                transform: translateX(0); 
+                opacity: 1;
+            } 
+        }
+        
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge-retail {
+            background: #DBEAFE;
+            color: #1E40AF;
+        }
+        
+        .badge-wholesale {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+        
+        .badge-advocate {
+            background: #FCE7F3;
+            color: #831843;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Follow-Up Machine</h1>
+        <p class="subtitle">Upload a doTERRA screenshot to extract customer data and send personalized emails</p>
+        
+        <!-- Upload Card -->
+        <div class="upload-card">
+            <h2 style="margin-bottom: 20px; font-size: 20px; color: #111827;">📸 Upload doTERRA Screenshot</h2>
+            <div class="upload-zone" id="uploadZone">
+                <div class="upload-icon">📷</div>
+                <p class="upload-text">Click or drag image here</p>
+                <p class="upload-hint">PNG or JPG, max 10MB</p>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" style="display: none;">
+        </div>
+        
+        <!-- Loading State -->
+        <div class="loading" id="loadingState">
+            <div class="spinner"></div>
+            <p class="loading-text">Extracting customer data with AI...</p>
+        </div>
+        
+        <!-- Customers Table -->
+        <div class="customers-table" id="customersTable">
+            <div class="table-header">
+                <h2>✅ Extracted <span class="customer-count" id="customerCount">0</span> Customers</h2>
+                <div class="table-actions">
+                    <button class="btn btn-secondary" id="selectAllBtn">Select All</button>
+                    <button class="btn" id="sendEmailsBtn" disabled>📧 Send Emails</button>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 50px;"><input type="checkbox" id="masterCheckbox"></th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Type</th>
+                        <th>Country</th>
+                    </tr>
+                </thead>
+                <tbody id="customersBody"></tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+    
+    <script>
+        const API_URL = 'https://networkfollowup-backend.vercel.app/api';
+        let extractedCustomers = [];
+        
+        // Elements
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const loadingState = document.getElementById('loadingState');
+        const customersTable = document.getElementById('customersTable');
+        const customersBody = document.getElementById('customersBody');
+        const customerCount = document.getElementById('customerCount');
+        const sendEmailsBtn = document.getElementById('sendEmailsBtn');
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const masterCheckbox = document.getElementById('masterCheckbox');
+        
+        // Check authentication
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            showNotification('Please login first', 'error');
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 2000);
+        }
+        
+        // Upload zone click
+        uploadZone.addEventListener('click', () => fileInput.click());
+        
+        // Drag and drop
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragging');
+        });
+        
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragging');
+        });
+        
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragging');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleFileUpload(file);
+            } else {
+                showNotification('Please drop an image file', 'error');
+            }
+        });
+        
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFileUpload(file);
+        });
+        
+        // Handle file upload
+        async function handleFileUpload(file) {
+            console.log('Uploading file:', file.name);
+            
+            // Validate file
+            if (!file.type.startsWith('image/')) {
+                showNotification('Please upload an image file', 'error');
+                return;
+            }
+            
+            if (file.size > 10 * 1024 * 1024) {
+                showNotification('File too large. Max 10MB', 'error');
+                return;
+            }
+            
+            // Show loading
+            loadingState.classList.add('show');
+            customersTable.classList.remove('show');
+            uploadZone.style.pointerEvents = 'none';
+            uploadZone.style.opacity = '0.5';
+            
+            // Create FormData
+            const formData = new FormData();
+            formData.append('screenshot', file);
+            
+            try {
+                // Get auth token
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    showNotification('Please login first', 'error');
+                    loadingState.classList.remove('show');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                // Upload to backend
+                const response = await fetch(API_URL + '/uploads/screenshot', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || errorData.error || 'Upload failed: ' + response.status);
+                }
+                
+                const data = await response.json();
+                console.log('OCR response:', data);
+                
+                // Hide loading
+                loadingState.classList.remove('show');
+                uploadZone.style.pointerEvents = 'auto';
+                uploadZone.style.opacity = '1';
+                
+                // Check if customers extracted
+                if (!data.customers || data.customers.length === 0) {
+                    showNotification('No customers found in screenshot', 'error');
+                    return;
+                }
+                
+                // Store customers
+                extractedCustomers = data.customers;
+                
+                // Display customers
+                displayCustomers(data.customers);
+                
+                // Show success
+                showNotification(`✅ Extracted ${data.customers.length} customers!`, 'success');
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                loadingState.classList.remove('show');
+                uploadZone.style.pointerEvents = 'auto';
+                uploadZone.style.opacity = '1';
+                showNotification('Failed to extract customers: ' + error.message, 'error');
+            }
+        }
+        
+        // Display customers in table
+        function displayCustomers(customers) {
+            customersBody.innerHTML = '';
+            customerCount.textContent = customers.length;
+            
+            customers.forEach((customer, index) => {
+                const row = document.createElement('tr');
+                
+                // Determine badge class
+                const type = (customer.customer_type || '').toLowerCase();
+                let badgeClass = 'badge-retail';
+                if (type.includes('wholesale')) badgeClass = 'badge-wholesale';
+                if (type.includes('advocate')) badgeClass = 'badge-advocate';
+                
+                row.innerHTML = `
+                    <td><input type="checkbox" class="customer-checkbox" data-index="${index}"></td>
+                    <td><strong>${customer.full_name || 'N/A'}</strong></td>
+                    <td>${customer.email || 'N/A'}</td>
+                    <td><span class="badge ${badgeClass}">${customer.customer_type || 'N/A'}</span></td>
+                    <td>${customer.country_code || 'N/A'}</td>
+                `;
+                customersBody.appendChild(row);
+            });
+            
+            // Show table
+            customersTable.classList.add('show');
+            
+            // Add checkbox listeners
+            document.querySelectorAll('.customer-checkbox').forEach(cb => {
+                cb.addEventListener('change', updateSendButton);
+            });
+            
+            // Reset master checkbox
+            masterCheckbox.checked = false;
+        }
+        
+        // Master checkbox (select all)
+        masterCheckbox.addEventListener('change', (e) => {
+            document.querySelectorAll('.customer-checkbox').forEach(cb => {
+                cb.checked = e.target.checked;
+            });
+            updateSendButton();
+        });
+        
+        // Select all button
+        selectAllBtn.addEventListener('click', () => {
+            masterCheckbox.checked = true;
+            document.querySelectorAll('.customer-checkbox').forEach(cb => {
+                cb.checked = true;
+            });
+            updateSendButton();
+        });
+        
+        // Update send button state
+        function updateSendButton() {
+            const checkedCount = document.querySelectorAll('.customer-checkbox:checked').length;
+            sendEmailsBtn.disabled = checkedCount === 0;
+            sendEmailsBtn.textContent = checkedCount > 0 
+                ? `📧 Send Emails (${checkedCount})` 
+                : '📧 Send Emails';
+        }
+        
+        // Send emails
+        sendEmailsBtn.addEventListener('click', async () => {
+            const selectedIndexes = Array.from(document.querySelectorAll('.customer-checkbox:checked'))
+                .map(cb => parseInt(cb.dataset.index));
+            
+            const selectedCustomers = selectedIndexes.map(i => extractedCustomers[i]);
+            
+            if (selectedCustomers.length === 0) {
+                showNotification('Please select customers first', 'error');
+                return;
+            }
+            
+            console.log('Sending emails to:', selectedCustomers);
+            
+            sendEmailsBtn.disabled = true;
+            sendEmailsBtn.textContent = 'Sending...';
+            
+            try {
+                const token = localStorage.getItem('authToken');
+                
+                const response = await fetch(API_URL + '/emails/send-bulk', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        customers: selectedCustomers
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || errorData.error || 'Send failed: ' + response.status);
+                }
+                
+                const result = await response.json();
+                console.log('Send result:', result);
+                
+                const sentCount = result.sent || result.data?.success || 0;
+                showNotification(`✅ Sent ${sentCount} emails successfully!`, 'success');
+                
+                // Reset
+                sendEmailsBtn.textContent = '📧 Send Emails';
+                sendEmailsBtn.disabled = false;
+                
+                // Clear selection
+                document.querySelectorAll('.customer-checkbox').forEach(cb => {
+                    cb.checked = false;
+                });
+                masterCheckbox.checked = false;
+                updateSendButton();
+                
+            } catch (error) {
+                console.error('Send error:', error);
+                showNotification('Failed to send emails: ' + error.message, 'error');
+                sendEmailsBtn.textContent = '📧 Send Emails';
+                sendEmailsBtn.disabled = false;
+            }
+        });
+        
+        // Show notification
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = 'notification ' + type + ' show';
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
+

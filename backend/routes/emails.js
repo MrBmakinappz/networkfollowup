@@ -833,4 +833,243 @@ router.get('/history', async (req, res) => {
     }
 });
 
+/**
+ * POST /api/emails/send-bulk
+ * Send bulk emails to customers from Follow-Up Machine
+ * Accepts array of customer objects (from screenshot extraction)
+ */
+router.post('/send-bulk', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { customers } = req.body;
+        
+        if (!customers || customers.length === 0) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'No customers provided',
+                message: 'Please select at least one customer to email'
+            });
+        }
+        
+        console.log('[EMAIL] Sending bulk emails to', customers.length, 'customers');
+        
+        // Check Gmail connection
+        const gmailResult = await db.query(
+            'SELECT * FROM public.gmail_connections WHERE user_id = $1',
+            [userId]
+        );
+        
+        if (gmailResult.rows.length === 0) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Gmail not connected',
+                message: 'Please connect your Gmail account first'
+            });
+        }
+        
+        const gmailConnection = gmailResult.rows[0];
+        
+        // Get user info for personalization
+        const userResult = await db.query(
+            'SELECT full_name, email FROM public.users WHERE id = $1',
+            [userId]
+        );
+        const user = userResult.rows[0];
+        
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                error: 'User not found'
+            });
+        }
+        
+        // Create Gmail transporter
+        let transporter, accessToken;
+        try {
+            const result = await createGmailTransporter(
+                gmailConnection.access_token,
+                gmailConnection.refresh_token
+            );
+            transporter = result.transporter;
+            accessToken = result.accessToken;
+            
+            // Update access token if refreshed
+            if (accessToken !== gmailConnection.access_token) {
+                await db.query(
+                    'UPDATE public.gmail_connections SET access_token = $1, updated_at = NOW() WHERE user_id = $2',
+                    [accessToken, userId]
+                );
+                log(`Access token refreshed for user ${userId}`);
+            }
+        } catch (gmailError) {
+            error('Gmail authentication error:', gmailError);
+            return res.status(401).json({
+                success: false,
+                error: 'Gmail authentication failed',
+                message: gmailError.message || 'Gmail token expired. Please reconnect your Gmail account.',
+                requiresReconnect: true
+            });
+        }
+        
+        let sent = 0;
+        let failed = 0;
+        const results = [];
+        
+        // Send emails to each customer
+        for (const customer of customers) {
+            try {
+                // Validate customer has email
+                if (!customer.email) {
+                    console.log('[EMAIL] Skipping customer without email:', customer.full_name);
+                    failed++;
+                    results.push({
+                        customer: customer.full_name || 'Unknown',
+                        email: null,
+                        success: false,
+                        error: 'No email address'
+                    });
+                    continue;
+                }
+                
+                // Get or find customer in database
+                let dbCustomer;
+                const existingCustomer = await db.query(
+                    'SELECT id, language FROM public.customers WHERE user_id = $1 AND email = $2',
+                    [userId, customer.email.toLowerCase()]
+                );
+                
+                if (existingCustomer.rows.length > 0) {
+                    dbCustomer = existingCustomer.rows[0];
+                } else {
+                    // Create customer record if doesn't exist
+                    const newCustomer = await db.query(
+                        `INSERT INTO public.customers (user_id, full_name, email, customer_type, country_code, source)
+                         VALUES ($1, $2, $3, $4, $5, 'followup_machine')
+                         RETURNING id, language`,
+                        [
+                            userId,
+                            customer.full_name,
+                            customer.email.toLowerCase(),
+                            customer.customer_type || 'retail',
+                            customer.country_code || 'USA'
+                        ]
+                    );
+                    dbCustomer = newCustomer.rows[0];
+                }
+                
+                // Get appropriate template
+                const customerType = customer.customer_type || 'retail';
+                const customerLanguage = dbCustomer.language || customer.language || 'en';
+                
+                const templateResult = await db.query(
+                    `SELECT subject, body FROM public.email_templates 
+                     WHERE user_id = $1 AND customer_type = $2 AND language = $3 
+                     ORDER BY created_at DESC LIMIT 1`,
+                    [userId, customerType.toLowerCase(), customerLanguage.toLowerCase()]
+                );
+                
+                let subject, body;
+                
+                if (templateResult.rows.length > 0) {
+                    subject = templateResult.rows[0].subject;
+                    body = templateResult.rows[0].body;
+                } else {
+                    // Default template
+                    const firstName = customer.full_name ? customer.full_name.split(' ')[0] : 'there';
+                    subject = `Follow-up from ${user.full_name}`;
+                    body = `Hi ${firstName},\n\nI wanted to follow up with you regarding your doTERRA membership.\n\nBest regards,\n${user.full_name}`;
+                }
+                
+                // Replace variables
+                const firstName = customer.full_name ? customer.full_name.split(' ')[0] : 'there';
+                subject = subject.replace(/\{\{name\}\}/g, firstName)
+                                .replace(/\{\{firstname\}\}/g, firstName)
+                                .replace(/\{\{fullname\}\}/g, customer.full_name || '')
+                                .replace(/\{\{customer_type\}\}/g, customerType)
+                                .replace(/\{\{country\}\}/g, customer.country_code || '')
+                                .replace(/\{\{your_name\}\}/g, user.full_name || '')
+                                .replace(/\{\{your-name\}\}/g, user.full_name || '');
+                
+                body = body.replace(/\{\{name\}\}/g, firstName)
+                           .replace(/\{\{firstname\}\}/g, firstName)
+                           .replace(/\{\{fullname\}\}/g, customer.full_name || '')
+                           .replace(/\{\{customer_type\}\}/g, customerType)
+                           .replace(/\{\{country\}\}/g, customer.country_code || '')
+                           .replace(/\{\{your_name\}\}/g, user.full_name || '')
+                           .replace(/\{\{your-name\}\}/g, user.full_name || '');
+                
+                // Send email via Gmail
+                const { sendEmail } = require('../utils/gmail');
+                const sendResult = await sendEmail(
+                    transporter,
+                    gmailConnection.gmail_email,
+                    customer.email,
+                    subject,
+                    body
+                );
+                
+                if (sendResult.success) {
+                    // Log success
+                    await db.query(
+                        `INSERT INTO public.email_sends (user_id, customer_id, message_type, subject_line, email_body, status, sent_at)
+                         VALUES ($1, $2, $3, $4, $5, 'sent', NOW())`,
+                        [userId, dbCustomer.id, customerType, subject, body]
+                    );
+                    
+                    // Update customer
+                    await db.query(
+                        `UPDATE public.customers 
+                         SET last_contacted_at = NOW(), 
+                             total_emails_sent = COALESCE(total_emails_sent, 0) + 1
+                         WHERE id = $1`,
+                        [dbCustomer.id]
+                    );
+                    
+                    sent++;
+                    console.log('[EMAIL] Sent to:', customer.email);
+                } else {
+                    throw new Error(sendResult.error || 'Failed to send email');
+                }
+                
+                results.push({
+                    customer: customer.full_name || 'Unknown',
+                    email: customer.email,
+                    success: true
+                });
+                
+                // Small delay between emails
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+            } catch (emailError) {
+                console.error('[EMAIL] Failed to send to:', customer.email, emailError);
+                failed++;
+                results.push({
+                    customer: customer.full_name || 'Unknown',
+                    email: customer.email,
+                    success: false,
+                    error: emailError.message
+                });
+            }
+        }
+        
+        console.log('[EMAIL] Bulk send complete. Sent:', sent, 'Failed:', failed);
+        
+        res.json({
+            success: true,
+            message: `Sent ${sent} emails successfully${failed > 0 ? `, ${failed} failed` : ''}`,
+            sent,
+            failed,
+            results
+        });
+        
+    } catch (error) {
+        console.error('[EMAIL] Bulk send error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Failed to send emails', 
+            message: error.message 
+        });
+    }
+});
+
 module.exports = router;
