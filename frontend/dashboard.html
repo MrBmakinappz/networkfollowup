@@ -3,97 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>NetworkFollowUp - Dashboard</title>
     <meta name="description" content="NetworkFollowUp - AI-Powered Follow-Up Automation for MLM">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
-        // CRITICAL: Define showSection EARLY so navigation works - EXACT SPECIFICATION
+        // VERSION: 2024-12-19-FIXED-NAVIGATION
+        console.log('=== DASHBOARD LOADED - VERSION 2024-12-19-FIXED ===');
+        
+        // CRITICAL: BULLETPROOF showSection - MUST WORK
         function showSection(sectionName, event) {
-            console.log('Showing section:', sectionName);
+            const timestamp = new Date().toISOString();
+            console.log('%c=== showSection CALLED ===', 'background: #3B82F6; color: white; padding: 2px 6px;', sectionName, timestamp);
             
-            // Prevent default
-            if (event) {
-                if (event.preventDefault) event.preventDefault();
-                if (event.stopPropagation) event.stopPropagation();
-            }
-            
-            // Hide all sections
-            const sections = document.querySelectorAll('.section-content');
-            sections.forEach(section => {
-                section.style.display = 'none';
-            });
-            
-            // Show target section
-            const targetSection = document.getElementById(sectionName + '-section');
-            if (targetSection) {
+            try {
+                // Prevent default
+                if (event) {
+                    if (event.preventDefault) event.preventDefault();
+                    if (event.stopPropagation) event.stopPropagation();
+                }
+                
+                // Hide all sections
+                const sections = document.querySelectorAll('.section-content');
+                console.log('Found', sections.length, 'sections to hide');
+                sections.forEach(section => {
+                    section.style.display = 'none';
+                });
+                
+                // Show target section
+                const sectionId = sectionName + '-section';
+                const targetSection = document.getElementById(sectionId);
+                
+                if (!targetSection) {
+                    console.error('%c❌ SECTION NOT FOUND:', 'background: #EF4444; color: white; padding: 2px 6px;', sectionId);
+                    const allSections = document.querySelectorAll('[id$="-section"]');
+                    const availableIds = Array.from(allSections).map(s => s.id);
+                    console.error('Available sections:', availableIds);
+                    alert('ERROR: Section "' + sectionId + '" not found!\n\nAvailable: ' + availableIds.join(', ') + '\n\nRefresh page (Ctrl+Shift+R)');
+                    return false;
+                }
+                
                 targetSection.style.display = 'block';
-            } else {
-                console.error('Section not found:', sectionName + '-section');
-                return;
-            }
-            
-            // Update active menu state
-            const navItems = document.querySelectorAll('.nav-item');
-            navItems.forEach(item => {
-                item.classList.remove('active');
-            });
-            
-            // Add active to clicked item
-            if (event && event.target) {
-                const navItem = event.target.closest('.nav-item');
-                if (navItem) {
-                    navItem.classList.add('active');
-                } else {
-                    // Fallback: find by onclick
+                console.log('%c✅ Section shown:', 'background: #10B981; color: white; padding: 2px 6px;', sectionId);
+                
+                // Update active menu state
+                const navItems = document.querySelectorAll('.nav-item');
+                console.log('Found', navItems.length, 'nav items');
+                navItems.forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                // Add active to clicked item
+                let activated = false;
+                if (event && event.target) {
+                    const navItem = event.target.closest('.nav-item');
+                    if (navItem) {
+                        navItem.classList.add('active');
+                        activated = true;
+                        console.log('%c✅ Menu activated via event', 'background: #10B981; color: white; padding: 2px 6px;');
+                    }
+                }
+                
+                // Fallback: find by onclick
+                if (!activated) {
                     navItems.forEach(item => {
                         const onclick = item.getAttribute('onclick') || '';
-                        if (onclick.includes("'" + sectionName + "'")) {
+                        if (onclick.includes("'" + sectionName + "'") || onclick.includes('"' + sectionName + '"')) {
                             item.classList.add('active');
+                            activated = true;
+                            console.log('%c✅ Menu activated via onclick fallback', 'background: #10B981; color: white; padding: 2px 6px;');
                         }
                     });
                 }
-            } else {
-                // Fallback: find by onclick
-                navItems.forEach(item => {
-                    const onclick = item.getAttribute('onclick') || '';
-                    if (onclick.includes("'" + sectionName + "'")) {
-                        item.classList.add('active');
+                
+                if (!activated) {
+                    console.warn('%c⚠️ Could not activate menu item', 'background: #F59E0B; color: white; padding: 2px 6px;', 'for:', sectionName);
+                }
+                
+                // Load section data if needed (non-blocking)
+                setTimeout(() => {
+                    try {
+                        switch(sectionName) {
+                            case 'dashboard':
+                                if (typeof loadDashboardStats === 'function') {
+                                    console.log('Loading dashboard stats...');
+                                    loadDashboardStats();
+                                }
+                                break;
+                            case 'followup':
+                                if (typeof checkGmailConnection === 'function') {
+                                    console.log('Checking Gmail connection...');
+                                    checkGmailConnection();
+                                }
+                                break;
+                            case 'customers':
+                                if (typeof loadCustomers === 'function') {
+                                    console.log('Loading customers...');
+                                    loadCustomers();
+                                }
+                                break;
+                            case 'history':
+                                if (typeof loadEmailHistory === 'function') {
+                                    console.log('Loading email history...');
+                                    loadEmailHistory();
+                                }
+                                break;
+                            case 'templates':
+                                if (typeof loadTemplates === 'function') {
+                                    loadTemplates();
+                                } else if (typeof loadUserTemplates === 'function') {
+                                    console.log('Loading templates...');
+                                    loadUserTemplates();
+                                }
+                                break;
+                            case 'billing':
+                                if (typeof loadBillingInfo === 'function') {
+                                    console.log('Loading billing info...');
+                                    loadBillingInfo();
+                                }
+                                break;
+                            case 'settings':
+                                if (typeof loadUserSettings === 'function') {
+                                    console.log('Loading user settings...');
+                                    loadUserSettings();
+                                }
+                                break;
+                        }
+                    } catch (err) {
+                        console.error('Error loading section data:', err);
                     }
-                });
-            }
-            
-            // Load section data if needed
-            switch(sectionName) {
-                case 'dashboard':
-                    if (typeof loadDashboardStats === 'function') loadDashboardStats();
-                    break;
-                case 'customers':
-                    if (typeof loadCustomers === 'function') loadCustomers();
-                    break;
-                case 'history':
-                    if (typeof loadEmailHistory === 'function') loadEmailHistory();
-                    break;
-                case 'templates':
-                    if (typeof loadTemplates === 'function') {
-                        loadTemplates();
-                    } else if (typeof loadUserTemplates === 'function') {
-                        loadUserTemplates();
-                    }
-                    break;
-                case 'billing':
-                    if (typeof loadBillingInfo === 'function') loadBillingInfo();
-                    break;
-                case 'settings':
-                    if (typeof loadUserSettings === 'function') loadUserSettings();
-                    break;
+                }, 50);
+                
+                console.log('%c✅ showSection COMPLETE', 'background: #10B981; color: white; padding: 2px 6px;', sectionName);
+                return true;
+            } catch (error) {
+                console.error('%c❌ ERROR in showSection:', 'background: #EF4444; color: white; padding: 2px 6px;', error);
+                alert('Navigation error: ' + error.message + '\n\nPlease refresh (Ctrl+Shift+R)');
+                return false;
             }
         }
         
         // Make globally available
         window.showSection = showSection;
+        console.log('%c✅ showSection function registered globally', 'background: #10B981; color: white; padding: 2px 6px;');
     </script>
     <style>
         * {
@@ -6397,27 +6453,73 @@ Best regards,
             }
         }
 
-        // Initialize on page load - EXACT SPECIFICATION
+        // Initialize on page load - BULLETPROOF VERSION
         document.addEventListener('DOMContentLoaded', () => {
-            // Check auth first
-            if (!checkAuth()) {
+            console.log('%c=== DOMContentLoaded FIRED ===', 'background: #8B5CF6; color: white; padding: 4px 8px; font-weight: bold;', new Date().toISOString());
+            
+            // Verify showSection exists
+            if (typeof showSection !== 'function' && typeof window.showSection !== 'function') {
+                console.error('%c❌ CRITICAL: showSection function NOT FOUND!', 'background: #EF4444; color: white; padding: 4px 8px; font-weight: bold;');
+                alert('CRITICAL ERROR: Navigation broken!\n\nPlease:\n1. Hard refresh (Ctrl+Shift+R or Cmd+Shift+R)\n2. Clear browser cache\n3. Try again');
                 return;
             }
+            console.log('%c✅ showSection function verified', 'background: #10B981; color: white; padding: 2px 6px;');
+            
+            // Verify all sections exist
+            const requiredSections = ['dashboard', 'followup', 'customers', 'history', 'billing', 'templates', 'settings'];
+            const missingSections = [];
+            requiredSections.forEach(section => {
+                const el = document.getElementById(section + '-section');
+                if (!el) {
+                    missingSections.push(section + '-section');
+                    console.error('%c❌ Missing section:', 'background: #EF4444; color: white; padding: 2px 6px;', section + '-section');
+                } else {
+                    console.log('%c✅ Section found:', 'background: #10B981; color: white; padding: 2px 6px;', section + '-section');
+                }
+            });
+            
+            if (missingSections.length > 0) {
+                console.error('%c❌ MISSING SECTIONS:', 'background: #EF4444; color: white; padding: 4px 8px; font-weight: bold;', missingSections);
+                alert('ERROR: Missing sections:\n' + missingSections.join('\n') + '\n\nPlease refresh the page (Ctrl+Shift+R)');
+            }
+            
+            // Check auth first
+            if (!checkAuth()) {
+                console.error('%c❌ Auth check failed', 'background: #EF4444; color: white; padding: 2px 6px;');
+                return;
+            }
+            console.log('%c✅ Auth check passed', 'background: #10B981; color: white; padding: 2px 6px;');
             
             // Show dashboard by default
-            showSection('dashboard');
+            console.log('%cShowing dashboard...', 'background: #3B82F6; color: white; padding: 2px 6px;');
+            try {
+                showSection('dashboard');
+                console.log('%c✅ Dashboard shown', 'background: #10B981; color: white; padding: 2px 6px;');
+            } catch (error) {
+                console.error('%c❌ Error showing dashboard:', 'background: #EF4444; color: white; padding: 2px 6px;', error);
+                alert('Error showing dashboard: ' + error.message + '\n\nPlease refresh the page (Ctrl+Shift+R)');
+            }
             
             // Load user info
             const userName = localStorage.getItem('userName') || 'User';
             const welcomeNameEl = document.getElementById('welcomeName');
-            if (welcomeNameEl) welcomeNameEl.textContent = userName.split(' ')[0];
+            if (welcomeNameEl) {
+                welcomeNameEl.textContent = userName.split(' ')[0];
+                console.log('%c✅ User name set:', 'background: #10B981; color: white; padding: 2px 6px;', userName.split(' ')[0]);
+            }
             
-            // Load dashboard stats (will be called by showSection, but ensure it runs)
+            // Load dashboard stats
             setTimeout(() => {
                 if (typeof loadDashboardStats === 'function') {
+                    console.log('%cLoading dashboard stats...', 'background: #3B82F6; color: white; padding: 2px 6px;');
                     loadDashboardStats();
+                } else {
+                    console.error('%c❌ loadDashboardStats function not found', 'background: #EF4444; color: white; padding: 2px 6px;');
                 }
             }, 100);
+            
+            console.log('%c=== INITIALIZATION COMPLETE ===', 'background: #10B981; color: white; padding: 4px 8px; font-weight: bold;');
+        });
 
             // Verify token exists
             const token = localStorage.getItem('authToken');
