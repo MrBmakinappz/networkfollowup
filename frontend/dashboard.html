@@ -12,8 +12,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
-        // VERSION: 2024-12-19-FIXED-NAVIGATION
-        console.log('=== DASHBOARD LOADED - VERSION 2024-12-19-FIXED ===');
+        // VERSION: 2024-12-19-FOLLOWUP-MACHINE-FIXED-v3
+        // CACHE-BUST: v3-20241219-1430
+        console.log('%c=== DASHBOARD LOADED ===', 'background: #10B981; color: white; padding: 4px 8px; font-weight: bold;');
+        console.log('%cVERSION: 2024-12-19-FOLLOWUP-MACHINE-FIXED-v3', 'background: #3B82F6; color: white; padding: 2px 6px;');
+        console.log('%cCACHE-BUST: v3-20241219-1430', 'background: #F59E0B; color: white; padding: 2px 6px;');
+        console.log('If you see this, the new version is loaded! ✅');
         
         // CRITICAL: BULLETPROOF showSection - MUST WORK
         function showSection(sectionName, event) {
@@ -4264,79 +4268,76 @@
                 let failedCount = 0;
                 const errors = [];
 
-                // Send emails one by one
-                for (const customer of selectedCustomers) {
-                    try {
-                        // Get personalized email for this customer
-                        const customerType = customer.customer_type || customer.type || 'retail';
-                        const language = customer.language || 'en';
-                        
-                        // Check if we have edited email
-                        let subject, body;
-                        if (editedEmails[customer.id]) {
-                            subject = editedEmails[customer.id].subject;
-                            body = editedEmails[customer.id].body;
-                        } else {
-                            // Fetch template
-                            const token = localStorage.getItem('authToken');
-                            const previewResponse = await fetch(`${API_URL}/emails/preview`, {
+                // Use bulk send endpoint for better performance
+                const token = localStorage.getItem('authToken');
+                
+                // Prepare customers for bulk send (map to format expected by send-bulk)
+                const customersForBulk = selectedCustomers.map(customer => ({
+                    id: customer.id,
+                    full_name: customer.full_name || customer.name,
+                    email: customer.email,
+                    customer_type: customer.customer_type || customer.type || 'retail',
+                    country_code: customer.country_code || customer.country || 'USA',
+                    language: customer.language || 'en'
+                }));
+
+                // Send bulk emails
+                const sendResponse = await fetch(`${API_URL}/emails/send-bulk`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        customers: customersForBulk
+                    })
+                });
+
+                const sendData = await sendResponse.json();
+                
+                if (sendResponse.ok && sendData.success) {
+                    successCount = sendData.sent || 0;
+                    failedCount = sendData.failed || 0;
+                    
+                    if (sendData.results) {
+                        sendData.results.forEach(result => {
+                            if (!result.success) {
+                                errors.push(`${result.email}: ${result.error || 'Failed'}`);
+                            }
+                        });
+                    }
+                } else {
+                    // Fallback to individual sends if bulk fails
+                    console.warn('Bulk send failed, falling back to individual sends');
+                    for (const customer of selectedCustomers) {
+                        try {
+                            const customerType = customer.customer_type || customer.type || 'retail';
+                            const sendResponse = await fetch(`${API_URL}/emails/send`, {
                                 method: 'POST',
                                 headers: {
                                     'Authorization': `Bearer ${token}`,
                                     'Content-Type': 'application/json'
                                 },
                                 body: JSON.stringify({
-                                    customerType: customerType,
-                                    language: language,
-                                    customerName: customer.name || customer.full_name,
-                                    countryCode: customer.country_code || customer.country || ''
+                                    customer_ids: [customer.id],
+                                    template_type: customerType
                                 })
                             });
 
-                            if (previewResponse.ok) {
-                                const previewData = await previewResponse.json();
-                                subject = previewData.subject || `Hello ${(customer.name || customer.full_name).split(' ')[0]}!`;
-                                body = previewData.body || `Hi ${customer.name || customer.full_name},\n\nThank you for your interest!\n\nBest regards`;
+                            const sendData = await sendResponse.json();
+                            
+                            if (sendResponse.ok && sendData.success) {
+                                successCount++;
                             } else {
-                                // Fallback
-                                const firstName = (customer.name || customer.full_name || '').split(' ')[0];
-                                subject = `Hello ${firstName}!`;
-                                body = `Hi ${customer.name || customer.full_name},\n\nThank you for your interest in doTERRA!\n\nBest regards`;
+                                failedCount++;
+                                errors.push(`${customer.email}: ${sendData.error || sendData.message || 'Failed'}`);
                             }
-                        }
-
-                        // Send email
-                        const sendResponse = await fetch(`${API_URL}/emails/send`, {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                customer_ids: [customer.id],
-                                template_type: customerType,
-                                subject: subject,
-                                body: body
-                            })
-                        });
-
-                        const sendData = await sendResponse.json();
-                        
-                        if (sendResponse.ok && sendData.success) {
-                            successCount++;
-                        } else {
+                        } catch (error) {
                             failedCount++;
-                            errors.push(`${customer.email}: ${sendData.error || sendData.message || 'Failed'}`);
-                            console.error(`Failed to send to ${customer.email}:`, sendData);
+                            errors.push(`${customer.email}: ${error.message}`);
                         }
-                    } catch (error) {
-                        failedCount++;
-                        errors.push(`${customer.email}: ${error.message}`);
-                        console.error(`Error sending to ${customer.email}:`, error);
+                        await new Promise(resolve => setTimeout(resolve, 500));
                     }
-
-                    // Small delay between emails
-                    await new Promise(resolve => setTimeout(resolve, 500));
                 }
 
                 // Show results
