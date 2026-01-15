@@ -1119,7 +1119,7 @@
                     </div>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-                    <button class="btn btn-primary" onclick="showSection('machine', event)">
+                    <button class="btn btn-primary" onclick="showSection('followup', event)">
                         🚀 Launch Follow-Up Machine
                     </button>
                     <button class="btn btn-secondary" onclick="showSection('customers', event)">
@@ -1409,7 +1409,7 @@
                         <button class="btn btn-secondary" onclick="openAddCustomerModal()">
                             ➕ Add Customer
                         </button>
-                        <button class="btn btn-primary" onclick="showSection('machine', event)">
+                        <button class="btn btn-primary" onclick="showSection('followup', event)">
                             📤 Upload Screenshot
                         </button>
                     </div>
@@ -1428,7 +1428,7 @@
                     <div class="empty-state">
                         <div class="empty-icon">📭</div>
                         <p style="font-size: 16px; margin-bottom: 16px;">No customers yet</p>
-                        <button class="btn btn-primary" onclick="showSection('machine', event)">
+                        <button class="btn btn-primary" onclick="showSection('followup', event)">
                             Upload Screenshot to Get Started
                         </button>
                     </div>
@@ -2033,7 +2033,7 @@
                     try {
                         if (sectionName === 'dashboard' && typeof loadDashboardStats === 'function') {
                             loadDashboardStats();
-                        } else if (sectionName === 'machine') {
+                        } else if (sectionName === 'followup') {
                             if (typeof checkGmailConnection === 'function') checkGmailConnection();
                         } else if (sectionName === 'customers' && typeof loadCustomers === 'function') {
                             loadCustomers();
@@ -3336,7 +3336,7 @@
                             title: 'No customers yet',
                             message: 'Upload a screenshot to extract customer data and see country breakdown',
                             actionText: 'Upload Screenshot',
-                            onAction: () => showSection('machine', {target: {closest: () => null}})
+                            onAction: () => showSection('followup', {target: {closest: () => null}})
                         });
                     }
                 }
@@ -3722,7 +3722,7 @@
                 } else if (sectionName === 'templates' && typeof loadUserTemplates === 'function') {
                     loadUserTemplates();
                     if (typeof loadDefaultLanguageForTemplates === 'function') loadDefaultLanguageForTemplates();
-                } else if (sectionName === 'machine') {
+                } else if (sectionName === 'followup') {
                     if (typeof loadMachineGmailStatus === 'function') loadMachineGmailStatus();
                     if (typeof loadMachineUsageLimits === 'function') loadMachineUsageLimits();
                     if (typeof checkGmailConnection === 'function') checkGmailConnection();
@@ -6551,8 +6551,8 @@ Best regards,
             const gmailStatus = urlParams.get('gmail');
             if (gmailStatus === 'connected') {
                 showToast('Gmail connected successfully!', 'success');
-                // Refresh Gmail status if on machine section
-                if (document.getElementById('machine-section')?.style.display !== 'none') {
+                // Refresh Gmail status if on followup section
+                if (document.getElementById('followup-section')?.style.display !== 'none') {
                     checkGmailConnection();
                 }
                 // Clean URL
