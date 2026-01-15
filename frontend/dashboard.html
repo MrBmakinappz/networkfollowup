@@ -1878,29 +1878,52 @@
     <script src="https://js.stripe.com/v3/"></script>
     <!-- CRITICAL: Define showSection IMMEDIATELY so buttons work -->
     <script>
-        // Define showSection function IMMEDIATELY - must be available before page loads
-        function showSection(section, event) {
-            try {
-                if (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
-                const allSections = document.querySelectorAll('.section-content');
-                allSections.forEach(content => content.style.display = 'none');
-                const targetSection = document.getElementById(section + '-section');
-                if (targetSection) {
-                    targetSection.style.display = 'block';
-                    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-                    document.querySelectorAll('.nav-item').forEach(item => {
+        // CRITICAL: showSection function - must work for all menu navigation
+        function showSection(sectionName, event) {
+            console.log('Switching to section:', sectionName);
+            
+            // Hide all sections
+            const sections = document.querySelectorAll('.section-content');
+            sections.forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Show requested section
+            const targetSection = document.getElementById(sectionName + '-section');
+            if (targetSection) {
+                targetSection.style.display = 'block';
+            } else {
+                console.error('Section not found:', sectionName + '-section');
+            }
+            
+            // Update active menu state
+            const menuItems = document.querySelectorAll('.nav-item');
+            menuItems.forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Add active class to clicked menu
+            if (event && event.target) {
+                const navItem = event.target.closest('.nav-item');
+                if (navItem) {
+                    navItem.classList.add('active');
+                } else {
+                    // Fallback: find nav item by onclick attribute
+                    menuItems.forEach(item => {
                         const onclick = item.getAttribute('onclick');
-                        if (onclick && onclick.includes("'" + section + "'")) {
+                        if (onclick && onclick.includes("'" + sectionName + "'")) {
                             item.classList.add('active');
                         }
                     });
                 }
-            } catch (error) {
-                console.error('Error in showSection:', error);
-                alert('Error loading section: ' + section);
+            } else {
+                // Fallback: find nav item by onclick attribute
+                menuItems.forEach(item => {
+                    const onclick = item.getAttribute('onclick');
+                    if (onclick && onclick.includes("'" + sectionName + "'")) {
+                        item.classList.add('active');
+                    }
+                });
             }
         }
         window.showSection = showSection;
@@ -3544,39 +3567,42 @@
             }
         }
 
-        // Enhanced showSection with data loading (extends the early definition)
-        const originalShowSection = window.showSection;
-        window.showSection = function(section, event) {
-            // Call the original function first
-            if (originalShowSection) {
-                originalShowSection(section, event);
-            }
-            
-            // Then load section-specific data
+        // Load section-specific data after navigation
+        function loadSectionData(sectionName) {
             try {
-                if (section === 'settings' && typeof loadUserSettings === 'function') {
+                if (sectionName === 'settings' && typeof loadUserSettings === 'function') {
                     loadUserSettings();
                     if (typeof loadUserTemplates === 'function') loadUserTemplates();
-                } else if (section === 'templates' && typeof loadUserTemplates === 'function') {
+                } else if (sectionName === 'templates' && typeof loadUserTemplates === 'function') {
                     loadUserTemplates();
                     if (typeof loadDefaultLanguageForTemplates === 'function') loadDefaultLanguageForTemplates();
-                } else if (section === 'machine') {
+                } else if (sectionName === 'machine') {
                     if (typeof loadMachineGmailStatus === 'function') loadMachineGmailStatus();
                     if (typeof loadMachineUsageLimits === 'function') loadMachineUsageLimits();
                     if (typeof checkGmailConnection === 'function') checkGmailConnection();
-                } else if (section === 'billing') {
+                } else if (sectionName === 'billing') {
                     if (typeof loadBillingInfo === 'function') loadBillingInfo();
                     if (typeof loadPaymentHistory === 'function') loadPaymentHistory();
-                } else if (section === 'dashboard' && typeof loadDashboardStats === 'function') {
+                } else if (sectionName === 'dashboard' && typeof loadDashboardStats === 'function') {
                     loadDashboardStats();
-                } else if (section === 'customers' && typeof loadCustomers === 'function') {
+                } else if (sectionName === 'customers' && typeof loadCustomers === 'function') {
                     loadCustomers();
-                } else if (section === 'history' && typeof loadEmailHistory === 'function') {
+                } else if (sectionName === 'history' && typeof loadEmailHistory === 'function') {
                     loadEmailHistory();
                 }
             } catch (loadError) {
                 console.error('Error loading section data:', loadError);
             }
+        }
+        
+        // Enhance showSection to load data after navigation
+        const originalShowSection = window.showSection;
+        window.showSection = function(sectionName, event) {
+            if (originalShowSection) {
+                originalShowSection(sectionName, event);
+            }
+            // Load section data after showing section
+            setTimeout(() => loadSectionData(sectionName), 100);
         };
 
         // BUG 10: Load Gmail status and usage limits for Follow-Up Machine
