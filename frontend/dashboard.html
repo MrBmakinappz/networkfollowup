@@ -1982,39 +1982,8 @@
     <script src="https://js.stripe.com/v3/"></script>
     <!-- CRITICAL: Define showSection IMMEDIATELY so buttons work -->
     <script>
-        // showSection is already defined in <head>, this is just for data loading
-        // Add data loading after navigation
-        const originalShowSection = window.showSection;
-        if (originalShowSection) {
-            window.showSection = function(sectionName, event) {
-                // Call original navigation
-                originalShowSection(sectionName, event);
-                
-                // Load data after navigation (non-blocking)
-                setTimeout(() => {
-                    try {
-                        if (sectionName === 'dashboard' && typeof loadDashboardStats === 'function') {
-                            loadDashboardStats();
-                        } else if (sectionName === 'followup') {
-                            // Follow-Up Machine ready - no Gmail check needed for upload
-                        } else if (sectionName === 'customers' && typeof loadCustomers === 'function') {
-                            loadCustomers();
-                        } else if (sectionName === 'history' && typeof loadEmailHistory === 'function') {
-                            loadEmailHistory();
-                        } else if (sectionName === 'billing') {
-                            if (typeof loadBillingInfo === 'function') loadBillingInfo();
-                            if (typeof loadPaymentHistory === 'function') loadPaymentHistory();
-                        } else if (sectionName === 'templates' && typeof loadUserTemplates === 'function') {
-                            loadUserTemplates();
-                        } else if (sectionName === 'settings' && typeof loadUserSettings === 'function') {
-                            loadUserSettings();
-                        }
-                    } catch (err) {
-                        console.error('Error loading section data:', err);
-                    }
-                }, 100);
-            };
-        }
+        // showSection is already defined in <head> with data loading built-in
+        // No need to wrap it - the original function already handles everything
     </script>
     
     <style>
@@ -3650,18 +3619,8 @@
             }
         }
         
-        // Enhance showSection to load data after navigation
-        const originalShowSection = window.showSection;
-        window.showSection = function(sectionName, event) {
-            // Call original function to show/hide sections
-            if (originalShowSection) {
-                originalShowSection(sectionName, event);
-            }
-            // Load section-specific data after showing section
-            setTimeout(() => {
-                loadSectionData(sectionName);
-            }, 100);
-        };
+        // showSection is already defined in <head> with data loading built-in
+        // No need to wrap it - the original function already handles everything
 
         // BUG 10: Load Gmail status and usage limits for Follow-Up Machine
         async function loadMachineGmailStatus() {
