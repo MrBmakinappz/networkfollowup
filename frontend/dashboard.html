@@ -819,31 +819,31 @@
         <div class="logo">NFU</div>
         
         <nav>
-            <a class="nav-item active" href="#" onclick="showSection('dashboard', event); return false;">
+            <a class="nav-item active" href="javascript:void(0)" onclick="showSection('dashboard', event)">
                 <span class="nav-icon">📊</span>
                 <span>Dashboard</span>
             </a>
-            <a class="nav-item" href="#" onclick="showSection('machine', event); return false;">
+            <a class="nav-item" href="javascript:void(0)" onclick="showSection('machine', event)">
                 <span class="nav-icon">🚀</span>
                 <span>Follow-Up Machine</span>
             </a>
-            <a class="nav-item" href="#" onclick="showSection('customers', event); return false;">
+            <a class="nav-item" href="javascript:void(0)" onclick="showSection('customers', event)">
                 <span class="nav-icon">👥</span>
                 <span>Customers</span>
             </a>
-            <a class="nav-item" href="#" onclick="showSection('history', event); return false;">
+            <a class="nav-item" href="javascript:void(0)" onclick="showSection('history', event)">
                 <span class="nav-icon">📜</span>
                 <span>History</span>
             </a>
-            <a class="nav-item" href="#" onclick="showSection('billing', event); return false;">
+            <a class="nav-item" href="javascript:void(0)" onclick="showSection('billing', event)">
                 <span class="nav-icon">💳</span>
                 <span>Billing</span>
             </a>
-            <a class="nav-item" href="#" onclick="showSection('templates', event); return false;">
+            <a class="nav-item" href="javascript:void(0)" onclick="showSection('templates', event)">
                 <span class="nav-icon">📧</span>
                 <span>Email Templates</span>
             </a>
-            <a class="nav-item" href="#" onclick="showSection('settings', event); return false;">
+            <a class="nav-item" href="javascript:void(0)" onclick="showSection('settings', event)">
                 <span class="nav-icon">⚙️</span>
                 <span>Settings</span>
             </a>
@@ -1057,7 +1057,180 @@
                 </div>
             </div>
 
+            <!-- Step 1: Upload (initial step) -->
+            <div id="machineStep1" class="machine-step" style="display: block;">
+                <!-- Upload zone is already in uploadScreenSection above -->
+            </div>
+
             <!-- Step 2: Extract & Display (hidden initially) -->
+            <div id="machineStep2" class="machine-step" style="display: none; margin-top: 24px;">
+                <!-- Loading State -->
+                <div id="step2Loading" style="text-align: center; padding: 60px 20px;">
+                    <div style="font-size: 64px; margin-bottom: 24px; animation: pulse 2s infinite;">🤖</div>
+                    <div style="font-size: 20px; font-weight: 600; color: #1E293B; margin-bottom: 12px;">
+                        AI is analyzing your screenshot
+                    </div>
+                    <div style="font-size: 14px; color: #64748B; margin-bottom: 24px;">
+                        Extracting customer names, emails, types, and countries...
+                    </div>
+                    <div class="spinner" style="width: 40px; height: 40px; margin: 0 auto;"></div>
+                </div>
+
+                <!-- Results State -->
+                <div id="step2Results" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <h3 style="margin: 0; color: #1E293B;">
+                            ✅ Extracted <span id="extractCount" style="color: #10B981; font-weight: 700;">0</span> Customers
+                        </h3>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-sm btn-secondary" onclick="selectAllExtracted()">Select All</button>
+                            <button class="btn btn-sm btn-secondary" onclick="deselectAllExtracted()">Deselect All</button>
+                        </div>
+                    </div>
+
+                    <div class="extracted-customers-table" style="background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead style="background: #F8FAFC;">
+                                <tr>
+                                    <th style="width: 50px; padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">
+                                        <input type="checkbox" id="selectAllExtracted" onchange="toggleSelectAllExtracted(this)" style="cursor: pointer;">
+                                    </th>
+                                    <th style="padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Name</th>
+                                    <th style="padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Email</th>
+                                    <th style="padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Type</th>
+                                    <th style="padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Country</th>
+                                    <th style="padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Language</th>
+                                    <th style="padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="extractedCustomersBody" style="font-size: 14px;">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center; padding: 20px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); border-radius: 16px; color: white;">
+                        <div>
+                            <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;">Ready to continue</div>
+                            <div style="font-size: 18px; font-weight: 700;">
+                                <span id="selectedCountStep2">0</span> customer<span id="selectedCountPlural">s</span> selected
+                            </div>
+                        </div>
+                        <button id="sendSelectedEmails" class="btn btn-primary" onclick="sendSelectedEmails()" style="background: white; color: #10B981; font-weight: 600; padding: 12px 32px; border: none;">
+                            📧 Send Selected Emails
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Review & Preview (hidden initially) -->
+            <div id="machineStep3" class="machine-step" style="display: none; margin-top: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <h3 style="margin: 0; color: #1E293B;">📧 Review & Customize Emails</h3>
+                    <button class="btn btn-sm btn-secondary" onclick="goBackToStep2()">← Back</button>
+                </div>
+
+                <div class="bulk-actions" style="background: white; padding: 20px; border-radius: 16px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                        <label style="font-weight: 600; color: #1E293B; font-size: 14px;">Apply template to all:</label>
+                        <select id="bulkTemplateSelect" style="flex: 1; min-width: 200px; padding: 10px 16px; border: 2px solid #E2E8F0; border-radius: 8px; font-size: 14px; background: white;">
+                            <option value="">Select template...</option>
+                            <option value="retail-en">Retail - English</option>
+                            <option value="retail-it">Retail - Italian</option>
+                            <option value="retail-de">Retail - German</option>
+                            <option value="retail-fr">Retail - French</option>
+                            <option value="retail-es">Retail - Spanish</option>
+                            <option value="wholesale-en">Wholesale - English</option>
+                            <option value="wholesale-it">Wholesale - Italian</option>
+                            <option value="wholesale-de">Wholesale - German</option>
+                            <option value="wholesale-fr">Wholesale - French</option>
+                            <option value="wholesale-es">Wholesale - Spanish</option>
+                            <option value="advocates-en">Advocates - English</option>
+                            <option value="advocates-it">Advocates - Italian</option>
+                            <option value="advocates-de">Advocates - German</option>
+                            <option value="advocates-fr">Advocates - French</option>
+                            <option value="advocates-es">Advocates - Spanish</option>
+                        </select>
+                        <button id="applyBulkTemplate" class="btn btn-secondary" onclick="applyBulkTemplate()" style="padding: 10px 20px;">
+                            Apply to All
+                        </button>
+                    </div>
+                </div>
+
+                <div id="emailPreviews" style="display: flex; flex-direction: column; gap: 20px;">
+                    <!-- Populated via JS -->
+                </div>
+
+                <div style="margin-top: 32px; display: flex; justify-content: space-between; align-items: center; padding: 24px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); border-radius: 16px; color: white;">
+                    <div>
+                        <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;">Ready to send</div>
+                        <div style="font-size: 18px; font-weight: 700;">
+                            <span id="approvedCount">0</span> email<span id="approvedCountPlural">s</span> approved
+                        </div>
+                    </div>
+                    <button id="approveAndSend" class="btn btn-primary" onclick="proceedToSend()" style="background: white; color: #10B981; font-weight: 600; padding: 12px 32px; border: none;">
+                        Approve & Send →
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 4: Send Confirmation & Progress (hidden initially) -->
+            <div id="machineStep4" class="machine-step" style="display: none; margin-top: 24px;">
+                <!-- Send Summary -->
+                <div id="sendSummary" style="background: white; padding: 32px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px;">
+                    <h3 style="margin: 0 0 8px 0; color: #1E293B;">🚀 Ready to Send</h3>
+                    <p style="color: #64748B; margin-bottom: 24px;">Review your send details before proceeding</p>
+                    
+                    <div style="background: #F8FAFC; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                        <div style="font-size: 16px; font-weight: 600; color: #1E293B; margin-bottom: 12px;">
+                            You're about to send <strong style="color: #10B981;"><span id="totalEmails">0</span> emails</strong>
+                        </div>
+                        <ul id="recipientList" style="list-style: none; padding: 0; margin: 0; max-height: 200px; overflow-y: auto;">
+                            <!-- Populated via JS -->
+                        </ul>
+                    </div>
+
+                    <div style="display: flex; gap: 12px;">
+                        <button id="sendNowBtn" class="btn btn-primary" onclick="sendEmailsNow()" style="flex: 1; padding: 14px 24px; font-weight: 600;">
+                            ✉️ Send Now
+                        </button>
+                        <button id="scheduleBtn" class="btn btn-secondary" onclick="scheduleEmails()" style="flex: 1; padding: 14px 24px;">
+                            ⏰ Schedule for Later
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Send Progress -->
+                <div id="sendProgress" style="display: none; background: white; padding: 32px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px;">
+                    <h3 style="margin: 0 0 24px 0; color: #1E293B;">Sending Emails...</h3>
+                    
+                    <div style="background: #F8FAFC; height: 12px; border-radius: 6px; overflow: hidden; margin-bottom: 16px;">
+                        <div id="progressFill" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); height: 100%; width: 0%; transition: width 0.3s ease; border-radius: 6px;"></div>
+                    </div>
+                    
+                    <p style="text-align: center; color: #64748B; font-size: 14px;">
+                        Sending <strong style="color: #1E293B;"><span id="currentEmail">1</span></strong> of <strong style="color: #1E293B;"><span id="totalEmailsProgress">10</span></strong>...
+                    </p>
+                </div>
+
+                <!-- Send Success -->
+                <div id="sendSuccess" style="display: none; background: white; padding: 40px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center;">
+                    <div style="font-size: 64px; margin-bottom: 16px;">✅</div>
+                    <h3 style="margin: 0 0 8px 0; color: #1E293B;">Success!</h3>
+                    <p style="color: #64748B; margin-bottom: 24px; font-size: 16px;">
+                        <strong style="color: #10B981; font-size: 20px;"><span id="sentCount">0</span> emails</strong> sent successfully!
+                    </p>
+                    <div style="display: flex; gap: 12px; justify-content: center;">
+                        <button id="viewHistory" class="btn btn-secondary" onclick="showSection('history', event)" style="padding: 12px 24px;">
+                            📜 View Email History
+                        </button>
+                        <button id="sendMore" class="btn btn-primary" onclick="resetMachineFlow()" style="padding: 12px 24px; font-weight: 600;">
+                            🚀 Send More Follow-Ups
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- CUSTOMERS SECTION -->
         <div id="customers-section" class="section-content" style="display: none;">
@@ -1121,120 +1294,7 @@
             </div>
         </div>
 
-            <!-- Step 2: Extract & Display (hidden initially) -->
-            <div id="machineStep2" class="machine-step" style="display: none;">
-                    <!-- Loading State -->
-                    <div id="step2Loading" style="text-align: center; padding: 60px 20px;">
-                        <div style="font-size: 64px; margin-bottom: 24px; animation: pulse 2s infinite;">🤖</div>
-                        <div style="font-size: 20px; font-weight: 600; color: #1E293B; margin-bottom: 12px;">
-                            AI is analyzing your screenshot
-                        </div>
-                        <div style="font-size: 14px; color: #64748B; margin-bottom: 24px;">
-                            Extracting customer names, emails, types, and countries...
-                        </div>
-                        <div class="spinner" style="width: 40px; height: 40px; margin: 0 auto;"></div>
-                    </div>
-
-                    <!-- Results State -->
-                    <div id="step2Results" style="display: none;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                            <h3 style="margin: 0; color: #1E293B;">
-                                ✅ Extracted <span id="extractCount" style="color: #10B981; font-weight: 700;">0</span> Customers
-                            </h3>
-                            <div style="display: flex; gap: 8px;">
-                                <button class="btn btn-sm btn-secondary" onclick="selectAllExtracted()">Select All</button>
-                                <button class="btn btn-sm btn-secondary" onclick="deselectAllExtracted()">Deselect All</button>
-                            </div>
-                        </div>
-
-                        <div class="extracted-customers-table" style="background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-                            <table style="width: 100%; border-collapse: collapse;">
-                                <thead style="background: #F8FAFC;">
-                                    <tr>
-                                        <th style="width: 50px; padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">
-                                            <input type="checkbox" id="selectAllExtracted" onchange="toggleSelectAllExtracted(this)" style="cursor: pointer;">
-                                        </th>
-                                        <th style="padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Name</th>
-                                        <th style="padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Email</th>
-                                        <th style="padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Type</th>
-                                        <th style="padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Country</th>
-                                        <th style="padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Language</th>
-                                        <th style="padding: 16px; text-align: left; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase;">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="extractedCustomersBody" style="font-size: 14px;">
-                                    <!-- Populated via JS -->
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center; padding: 20px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); border-radius: 16px; color: white;">
-                            <div>
-                                <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;">Ready to continue</div>
-                                <div style="font-size: 18px; font-weight: 700;">
-                                    <span id="selectedCountStep2">0</span> customer<span id="selectedCountPlural">s</span> selected
-                                </div>
-                            </div>
-                            <button id="sendSelectedEmails" class="btn btn-primary" onclick="sendSelectedEmails()" style="background: white; color: #10B981; font-weight: 600; padding: 12px 32px; border: none;">
-                                📧 Send Selected Emails
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step 3: Review & Preview (hidden initially) -->
-                <div id="machineStep3" class="machine-step" style="display: none;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                        <h3 style="margin: 0; color: #1E293B;">📧 Review & Customize Emails</h3>
-                        <button class="btn btn-sm btn-secondary" onclick="goBackToStep2()">← Back</button>
-                    </div>
-
-                    <div class="bulk-actions" style="background: white; padding: 20px; border-radius: 16px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-                        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                            <label style="font-weight: 600; color: #1E293B; font-size: 14px;">Apply template to all:</label>
-                            <select id="bulkTemplateSelect" style="flex: 1; min-width: 200px; padding: 10px 16px; border: 2px solid #E2E8F0; border-radius: 8px; font-size: 14px; background: white;">
-                                <option value="">Select template...</option>
-                                <option value="retail-en">Retail - English</option>
-                                <option value="retail-it">Retail - Italian</option>
-                                <option value="retail-de">Retail - German</option>
-                                <option value="retail-fr">Retail - French</option>
-                                <option value="retail-es">Retail - Spanish</option>
-                                <option value="wholesale-en">Wholesale - English</option>
-                                <option value="wholesale-it">Wholesale - Italian</option>
-                                <option value="wholesale-de">Wholesale - German</option>
-                                <option value="wholesale-fr">Wholesale - French</option>
-                                <option value="wholesale-es">Wholesale - Spanish</option>
-                                <option value="advocates-en">Advocates - English</option>
-                                <option value="advocates-it">Advocates - Italian</option>
-                                <option value="advocates-de">Advocates - German</option>
-                                <option value="advocates-fr">Advocates - French</option>
-                                <option value="advocates-es">Advocates - Spanish</option>
-                            </select>
-                            <button id="applyBulkTemplate" class="btn btn-secondary" onclick="applyBulkTemplate()" style="padding: 10px 20px;">
-                                Apply to All
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="emailPreviews" style="display: flex; flex-direction: column; gap: 20px;">
-                        <!-- Populated via JS -->
-                    </div>
-
-                    <div style="margin-top: 32px; display: flex; justify-content: space-between; align-items: center; padding: 24px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); border-radius: 16px; color: white;">
-                        <div>
-                            <div style="font-size: 14px; opacity: 0.9; margin-bottom: 4px;">Ready to send</div>
-                            <div style="font-size: 18px; font-weight: 700;">
-                                <span id="approvedCount">0</span> email<span id="approvedCountPlural">s</span> approved
-                            </div>
-                        </div>
-                        <button id="approveAndSend" class="btn btn-primary" onclick="proceedToSend()" style="background: white; color: #10B981; font-weight: 600; padding: 12px 32px; border: none;">
-                            Approve & Send →
-                        </button>
-                    </div>
-                </div>
-
-            <!-- Step 4: Send Confirmation & Progress (hidden initially) -->
-            <div id="machineStep4" class="machine-step" style="display: none; margin-top: 24px;">
+        <!-- HISTORY SECTION -->
                     <!-- Send Summary -->
                     <div id="sendSummary" style="background: white; padding: 32px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px;">
                         <h3 style="margin: 0 0 8px 0; color: #1E293B;">🚀 Ready to Send</h3>
@@ -1293,32 +1353,30 @@
         </div>
 
         <!-- HISTORY SECTION -->
-
-            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
-                <div class="stat-card">
-                    <div class="stat-icon">👥</div>
-                    <div class="stat-label">Total</div>
-                    <div class="stat-value" id="custTotalCount">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">✓</div>
-                    <div class="stat-label">Contacted</div>
-                    <div class="stat-value" id="custContactedCount">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">⏰</div>
-                    <div class="stat-label">Pending</div>
-                    <div class="stat-value" id="custPendingCount">0</div>
-                </div>
+        <div id="history-section" class="section-content" style="display: none;">
+            <div class="header">
+                <h1 class="welcome-text">Email History 📜</h1>
+                <p class="welcome-subtext">View all sent emails and their status</p>
             </div>
 
             <div class="card">
                 <div class="card-header">
                     <div>
-                        <h2 class="card-title">Customer List</h2>
-                        <p class="card-subtitle">Filter and manage your customers</p>
+                        <h2 class="card-title">Email Log</h2>
+                        <p class="card-subtitle">Track all your email communications</p>
                     </div>
-                    <div style="display: flex; gap: 12px;">
+                </div>
+                <div id="emailHistoryLoading" style="text-align: center; padding: 60px 20px; display: none;">
+                    <div class="spinner" style="width: 40px; height: 40px; margin: 0 auto;"></div>
+                    <p style="margin-top: 16px; color: #64748B;">Loading email history...</p>
+                </div>
+                <div id="emailHistoryContent">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- BILLING SECTION -->
                         <button class="btn btn-secondary" onclick="openAddCustomerModal()">
                             ➕ Add Customer
                         </button>
@@ -3516,7 +3574,9 @@
             }
         }
 
-        function showSection(section, event) {
+        // Make showSection globally accessible
+        window.showSection = function(section, event) {
+            console.log('showSection called:', section);
             try {
                 if (event) {
                     event.preventDefault();
@@ -3533,10 +3593,12 @@
                 const targetSection = document.getElementById(section + '-section');
                 if (!targetSection) {
                     console.error('Section not found:', section + '-section');
+                    console.error('Available sections:', Array.from(document.querySelectorAll('.section-content')).map(s => s.id));
                     return;
                 }
                 
                 targetSection.style.display = 'block';
+                console.log('Section displayed successfully:', section);
                 
                 // Update navigation active state
                 document.querySelectorAll('.nav-item').forEach(item => {
@@ -3575,7 +3637,7 @@
             } catch (error) {
                 console.error('Error in showSection:', error);
             }
-        }
+        };
 
         // BUG 10: Load Gmail status and usage limits for Follow-Up Machine
         async function loadMachineGmailStatus() {
@@ -6278,6 +6340,13 @@ Best regards,
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
+            // Verify showSection is available
+            if (typeof window.showSection !== 'function') {
+                console.error('❌ showSection function not available!');
+            } else {
+                console.log('✅ showSection function is available');
+            }
+            
             // Check auth first
             if (!checkAuth()) {
                 console.error('❌ Authentication check failed on page load');
